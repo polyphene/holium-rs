@@ -9,6 +9,7 @@ members = [
     "holium-runtime-cli",
     "holium-runtime-lib",
     "holium-wasm",
+    "tests/rust",
 ]
 
 [dependencies]
