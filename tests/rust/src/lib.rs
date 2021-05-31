@@ -1,4 +1,4 @@
-use holium_wasm::{get_payload, set_payload};
+use holium_wasm::set_payload;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
