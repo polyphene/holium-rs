@@ -20,6 +20,8 @@ pub enum ExecutionError {
     OutOfMemoryError,
     #[error("Serialization error")]
     ExteralSerializationError,
+    #[error("Serialization error")]
+    SerializationError(#[from] serde_json::Error),
     #[error("Unknown error")]
     UnknownError,
 }
