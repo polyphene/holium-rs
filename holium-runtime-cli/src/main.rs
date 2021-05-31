@@ -4,8 +4,9 @@ use clap::{Arg, App};
 use holium_runtime_lib::*;
 use std::path::PathBuf;
 use std::fs;
+use holium_runtime_lib::error::HoliumRuntimeError;
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), HoliumRuntimeError> {
     let matches = App::new("Holium Runtime")
         .version("1.0")
         .author("Polyphene <contact@polyphene.io>")
@@ -14,20 +15,7 @@ fn main() -> Result<(), Error> {
             .about("Sets the input file to use")
             .required(true)
             .index(1))
-        .arg(Arg::new("v")
-            .short('v')
-            .multiple(true)
-            .takes_value(true)
-            .about("Sets the level of verbosity"))
         .get_matches();
-
-    let config: HoliumRuntimeConfig;
-
-    match matches.occurrences_of("v") {
-        0 => config = HoliumRuntimeConfig::new(false),
-        1 => config = HoliumRuntimeConfig::new(true),
-        _ => panic!("Verbose value should be either 0 or 1"),
-    }
 
     let file_path: &str = match matches.value_of("INPUT") {
         Some(x) => x,
@@ -36,7 +24,7 @@ fn main() -> Result<(), Error> {
 
     let wasm = fetch_wasm(file_path);
 
-    let runtime: HoliumRuntime = HoliumRuntime::new(&wasm, config)?;
+    let runtime: HoliumRuntime = HoliumRuntime::new(&wasm)?;
 
     runtime.run(&[])?;
 
