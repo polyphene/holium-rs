@@ -1,10 +1,8 @@
 [package]
 name = "holium-runtime-cli"
 version = "0.1.0"
-authors = ["tchataigner <tom.chataigner@yahoo.fr>"]
+authors = ["tchataigner <thomas@polyphene.io>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 holium-runtime-lib = { path = "../holium-runtime-lib" }
