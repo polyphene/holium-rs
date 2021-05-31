@@ -30,7 +30,7 @@ impl HoliumRuntime {
     }
 
     pub fn run(&self, arguments: &[Val]) -> Result<Box<[Val]>, HoliumRuntimeError> {
-        let main = self.runtime.exports.get_function("main.rs")?;
+        let main = self.runtime.exports.get_function("main")?;
         let result = main.call(arguments)?;
 
         Ok(result)
