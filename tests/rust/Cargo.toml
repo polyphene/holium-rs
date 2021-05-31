@@ -1,0 +1,12 @@
+[package]
+name = "simple-rust-test"
+version = "0.1.0"
+authors = ["tchataigner <tom.chataigner@yahoo.fr>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+holium-wasm={path="../../holium-wasm"}
+serde = { version = "1.0.125", features = ["derive"] }
