@@ -1,68 +1,13 @@
-extern crate wasmer_runtime;
+pub(crate) mod env;
+pub mod error;
 
-use wasmer_runtime::{Array, Ctx, func, ImportObject, imports, Instance, instantiate, Value, WasmPtr};
-use wasmer_runtime::error::{CallError, CacheError};
-use wasmer_runtime::error::Error as WasmerRuntimeError;
-use std::fmt;
-
-/*****************************************
- * Errors
- *****************************************/
-#[derive(Debug)]
-pub enum Error {
-    WasmerCallError(CallError),
-    WasmerCacheError(CacheError),
-    WasmerRuntimeError(WasmerRuntimeError),
-}
-
-impl From<CallError> for Error {
-    fn from(error: CallError) -> Error {
-        Error::WasmerCallError(error)
-    }
-}
-
-impl From<CacheError> for Error {
-    fn from(error: CacheError) -> Error {
-        Error::WasmerCacheError(error)
-    }
-}
-
-impl From<WasmerRuntimeError> for Error {
-    fn from(error: WasmerRuntimeError) -> Error {
-        Error::WasmerRuntimeError(error)
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::WasmerCallError(inner) => write!(f, "{}", inner),
-            Error::WasmerCacheError(inner) => write!(f, "{:?}", inner),
-            Error::WasmerRuntimeError(inner) => write!(f, "{}", inner)
-        }
-    }
-}
-
-impl std::error::Error for Error {}
+use crate::env::HoliumEnv;
+use crate::error::HoliumRuntimeError;
+use wasmer::{ImportObject, Instance, Module, Store, Val};
 
 /*****************************************
  * Library
  *****************************************/
-
-pub struct HoliumRuntimeConfig {
-    #[allow(dead_code)]
-    logging: bool
-}
-
-impl HoliumRuntimeConfig {
-    #[allow(dead_code)]
-    pub fn new(logging: bool) -> HoliumRuntimeConfig {
-        HoliumRuntimeConfig {
-            logging
-        }
-    }
-}
-
 
 pub struct HoliumRuntime {
     #[allow(dead_code)]
@@ -70,57 +15,24 @@ pub struct HoliumRuntime {
     runtime: Instance,
 }
 
-
 impl HoliumRuntime {
     #[allow(dead_code)]
-    pub fn new(wasm: &[u8], config: HoliumRuntimeConfig) -> Result<HoliumRuntime, Error> {
-        let imports: ImportObject = generate_imports(config);
+    pub fn new(wasm: &[u8]) -> Result<HoliumRuntime, HoliumRuntimeError> {
+        let store = Store::default();
+        let module = Module::new(&store, wasm)?;
 
-        let runtime = instantiate(wasm, &imports)?;
+        let holium_env: HoliumEnv = env::HoliumEnv::new();
+        let imports: ImportObject = holium_env.import_object(&module);
 
-        Ok(HoliumRuntime {
-            imports,
-            runtime,
-        })
+        let runtime = Instance::new(&module, &imports)?;
+
+        Ok(HoliumRuntime { imports, runtime })
     }
 
-    pub fn run(&self, arguments: &[Value]) -> Result<Vec<Value>, Error> {
-        let result = self.runtime.call("main", arguments)?;
+    pub fn run(&self, arguments: &[Val]) -> Result<Box<[Val]>, HoliumRuntimeError> {
+        let main = self.runtime.exports.get_function("main.rs")?;
+        let result = main.call(arguments)?;
 
         Ok(result)
     }
-}
-
-fn generate_imports(config: HoliumRuntimeConfig) -> ImportObject {
-    let mut imports = imports! {};
-    if config.logging {
-        imports = imports! {
-            // Define the "env" namespace
-            "env" => {
-                // name
-                "print_str" => func!(print_str),
-            },
-        };
-    }
-
-    return imports
-}
-
-// print_str is used to log transformations
-fn print_str(ctx: &mut Ctx, ptr: WasmPtr<u8, Array>, len: u32) {
-    // Get a slice that maps to the memory currently used by the webassembly
-    // instance.
-    //
-    // Webassembly only supports a single memory for now,
-    // but in the near future, it'll support multiple.
-    //
-    // Therefore, we don't assume you always just want to access first
-    // memory and force you to specify the first memory.
-    let memory = ctx.memory(0);
-
-    // Use helper method on `WasmPtr` to read a utf8 string
-    let string = ptr.get_utf8_string(memory, len).unwrap();
-
-    // Print it!
-    println!("Transformation log: {}", string);
 }
