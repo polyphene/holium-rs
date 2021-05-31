@@ -25,3 +25,41 @@ pub type HoliumPtr<T> = *const T;
 pub type HoliumMutPtr<T> = *mut T;
 
 pub type ExecutionError = Char32;
+
+/// EXTERNAL_ERROR embodies the errors that could happen on the host while calling an external function
+#[allow(non_snake_case)]
+pub mod EXTERNAL_ERROR {
+    use super::ExecutionError;
+    pub const SUCCESS: ExecutionError = 0;
+    pub const INVALID_STORAGE_KEY_ERROR: ExecutionError = 1;
+    pub const NO_CONTENT_ERROR: ExecutionError = 2;
+    pub const OUT_OF_MEMORY_ERROR: ExecutionError = 3;
+    pub const SERIALIZATION_ERROR: ExecutionError = 4;
+}
+
+/// Function to interact with the external `set_payload` function. It will set a value in a temporary
+/// storage inside the host memory.
+///
+/// As the host will read value directly from the linear memory both `storage_key` and `payload` are
+/// passed by pointers and length.
+pub fn set_payload(
+    storage_key_ptr: HoliumPtr<u8>,
+    storage_key_len: usize,
+    payload_ptr: HoliumPtr<u8>,
+    payload_len: usize,
+) -> Result<(), Error> {
+    extern "C" {
+        fn set_payload(
+            storage_key_ptr: HoliumPtr<u8>,
+            storage_key_len: usize,
+            payload_ptr: HoliumPtr<u8>,
+            payload_len: usize,
+        ) -> ExecutionError;
+    }
+    let res: u32 =
+        unsafe { set_payload(storage_key_ptr, storage_key_len, payload_ptr, payload_len) };
+    if res != 0 {
+        return Err(Error::HoliumError(res as _));
+    }
+    Ok(())
+}
