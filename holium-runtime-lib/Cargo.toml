@@ -1,13 +1,14 @@
 [package]
 name = "holium-runtime-lib"
 version = "0.1.0"
-authors = ["tchataigner <tom.chataigner@yahoo.fr>"]
+authors = ["tchataigner <thomas@polyphene.io>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+anyhow = "1.0.40"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.64"
+thiserror = "1.0.24"
 wasmer = "1.0.2"
 wasmer-compiler = "1.0.2"
 wasmer-runtime = "0.17.1"
-anyhow = "1.0.40"
