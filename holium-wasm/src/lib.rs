@@ -61,3 +61,27 @@ where
 
     Ok(())
 }
+
+/// Function meant to be a generic deserializer for any data retrieved from a storage on the host.
+pub fn get_payload<T: serde::de::DeserializeOwned>(storage_key: &str) -> Result<T, ExecutionError> {
+    if storage_key.len() == 0 {
+        return Err(ExecutionError::InvalidStorageKeyError);
+    }
+
+    let storage_key_slice = serde_json::to_vec(storage_key)?;
+
+    let capacity = 64 * 1024;
+    let mut buf = vec![0u8; capacity];
+
+    return match utils::get_payload(
+        storage_key_slice.as_ptr(),
+        storage_key_slice.len(),
+        buf.as_mut_ptr(),
+    ) {
+        Ok(written) => {
+            buf.truncate(written);
+            Ok(serde_json::from_slice(&buf)?)
+        }
+        Err(e) => Err(e.into()),
+    };
+}
