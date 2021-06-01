@@ -63,3 +63,39 @@ pub fn set_payload(
     }
     Ok(())
 }
+
+/// Function to interact with the external `get_payload` function. It will get a value from a temporary
+/// storage inside the host memory.
+///
+/// As the host will read value directly from the linear memory the `storage_key` is passed by
+/// a pointer and a length. Pointer are also prepared for the payload and its length to be written on
+/// by the host.
+pub fn get_payload(
+    storage_key_ptr: HoliumPtr<u8>,
+    storage_key_len: usize,
+    payload_buf_ptr: HoliumMutPtr<u8>,
+) -> Result<WrittenBytes, Error> {
+    extern "C" {
+        fn get_payload(
+            storage_key_ptr: HoliumPtr<u8>,
+            storage_key_len: usize,
+            payload_buf_ptr: HoliumMutPtr<Char8>,
+            result_ptr: HoliumMutPtr<WrittenBytes>,
+        ) -> ExecutionError;
+    }
+
+    let mut result_ptr: MaybeUninit<usize> = std::mem::MaybeUninit::uninit();
+    let res: u32 = unsafe {
+        get_payload(
+            storage_key_ptr,
+            storage_key_len,
+            payload_buf_ptr,
+            result_ptr.as_mut_ptr(),
+        )
+    };
+    if res != 0 {
+        return Err(Error::HoliumError(res as _));
+    }
+
+    Ok(unsafe { result_ptr.assume_init() })
+}
