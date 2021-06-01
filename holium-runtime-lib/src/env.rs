@@ -37,14 +37,15 @@ impl From<ExecutionError> for u32 {
 /// instantiation but before execution. It serves to expose data that can only be accessed after
 /// instantiation.
 ///
-/// In our case the data that we want accessible is `tmp_storage`. This structure represents a temporary
-/// storage with which our runtime can interact with.
+/// In our case the data that we want accessible are located both in `tmp_input` & `tmp_output`. In our
+/// case the first is read only and the other write only.
 #[derive(WasmerEnv, Clone)]
 pub struct HoliumEnv {
     #[wasmer(export)]
     memory: LazyInit<Memory>,
     // TODO @PhilippeMts we need to see if a serde_json::Map is our best option
-    pub tmp_storage: Arc<Mutex<Map<String, Value>>>,
+    pub tmp_input: HoliumTmpStorage,
+    pub tmp_output: HoliumTmpStorage,
 }
 
 impl HoliumEnv {
@@ -52,7 +53,8 @@ impl HoliumEnv {
     pub fn new() -> Self {
         Self {
             memory: LazyInit::new(),
-            tmp_storage: Arc::new(Mutex::new(Map::new())),
+            tmp_input: HoliumTmpStorage::new(),
+            tmp_output: HoliumTmpStorage::new(),
         }
     }
 
@@ -89,6 +91,34 @@ impl HoliumEnv {
         unsafe { Some(std::slice::from_raw_parts(ptr, value_len as usize)) }
     }
 
+    /// Write `&[u8]` in guest `wasmer::Memory`, at a given `wasmer::WasmPtr`.
+    ///
+    /// In case of problem with memory allocation will return an `ExecutionError`
+    fn write_in_memory(
+        &self,
+        target_value_ptr: WasmPtr<u8, Array>,
+        value_slice: &[u8],
+    ) -> Result<(), ExecutionError> {
+        let memory = self.memory();
+
+        // Allocate necessary memory space on guest
+        let guest_value_slice: &[Cell<u8>] =
+            match target_value_ptr.deref(memory, 0, value_slice.len() as u32) {
+                Some(slice) => slice,
+                None => &[],
+            };
+        if guest_value_slice.len() == 0 {
+            return Err(ExecutionError::OutOfMemoryError);
+        }
+
+        // Copy bytes to guest
+        for i in 0..value_slice.len() {
+            guest_value_slice[i].set(value_slice[i]);
+        }
+
+        Ok(())
+    }
+
     /// Returns an `Option<&str>` type from a `wasmer::Memory` given a `wasmer::WasmPtr`.
     ///
     /// Returns `None` in case there was no value at the given pointer.
@@ -109,20 +139,48 @@ impl HoliumEnv {
 
         Some(value)
     }
+}
 
-    /// Sets a value in the `HoliumEnv::tmp_storage` of the environment
-    fn set_tmp_value(&self, storage_key: String, value: &[u8]) -> Result<(), ExecutionError> {
-        let tmp_storage = Arc::clone(&self.tmp_storage);
+/// HoliumTmpStorage is a structure to help us handle temporary storage that the guest wasm module can
+/// write on and read from.
+#[derive(Clone)]
+pub struct HoliumTmpStorage {
+    store: Arc<Mutex<Map<String, Value>>>,
+}
+
+impl HoliumTmpStorage {
+    fn new() -> Self {
+        HoliumTmpStorage {
+            store: Arc::new(Mutex::new(Map::new())),
+        }
+    }
+
+    /// Sets a value in the store
+    fn set_value(&self, storage_key: String, value: &[u8]) -> Result<(), ExecutionError> {
+        let tmp_storage = Arc::clone(&self.store);
         let mut storage: MutexGuard<Map<String, Value>> = match tmp_storage.lock() {
             Ok(storage) => storage,
             Err(poisoned) => poisoned.into_inner(),
         };
         let json_value = json!(value);
-        println!("set_tmp_value value: {:?}", value);
-        println!("set_tmp_value json_value: {:?}", json_value);
 
         storage.insert(storage_key, json_value);
         Ok(())
+    }
+
+    /// Gets a value in the store
+    fn get_value(&self, storage_key: String) -> Option<Vec<u8>> {
+        let tmp_storage = Arc::clone(&self.store);
+        let storage: MutexGuard<Map<String, Value>> = match tmp_storage.lock() {
+            Ok(storage) => storage,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        let serialized_value_clone = storage.get(&storage_key)?.clone();
+        let value: Option<Vec<u8>> = match serde_json::from_value(serialized_value_clone) {
+            Ok(value) => Some(value),
+            Err(_) => None,
+        };
+        return value;
     }
 }
 
@@ -153,10 +211,55 @@ fn set_payload(
         return u32::from(ExecutionError::NoContentError);
     }
 
-    match env.set_tmp_value(String::from(storage_key), value_slice) {
+    match env
+        .tmp_output
+        .set_value(String::from(storage_key), value_slice)
+    {
         Ok(_) => 0 as u32,
         Err(e) => u32::from(e),
     }
+}
+
+/// Function that will be imported by the Wasm Runtime. It handles communication from the Runtime
+/// to `HoliumEnv::tpm_storage` to get a value previously stored.
+///
+/// It takes a `storage_key` to retrieve a `payload` and write it in memory. It is also passing the
+/// length of the payload so that the Runtime can read it.
+fn get_payload(
+    env: &HoliumEnv,
+    storage_key_ptr: WasmPtr<u8, Array>,
+    storage_key_len: u32,
+    payload_ptr: WasmPtr<u8, Array>,
+    result_ptr: WasmPtr<u8, Array>,
+) -> u32 {
+    let storage_key: &str = match env.get_str_from_memory(storage_key_ptr, storage_key_len) {
+        Some(storage_key) => storage_key,
+        None => "",
+    };
+    if storage_key.len() == 0 {
+        return u32::from(ExecutionError::InvalidStorageKeyError);
+    }
+
+    let payload_slice: Vec<u8> = match env.tmp_input.get_value(String::from(storage_key)) {
+        Some(value) => value,
+        None => b"".to_vec(),
+    };
+
+    let res: u32 = match env.write_in_memory(payload_ptr, &payload_slice) {
+        Err(e) => u32::from(e),
+        _ => 0 as u32,
+    };
+    if res != 0 {
+        return res;
+    }
+
+    let res: u32 =
+        match env.write_in_memory(result_ptr, &(payload_slice.len() as u32).to_le_bytes()) {
+            Err(e) => u32::from(e),
+            _ => 0 as u32,
+        };
+
+    res
 }
 
 /// Function that will generate a `Wasmer::ImportObject` for our custom environment.
@@ -164,6 +267,7 @@ pub fn generate_import_object_from_env(store: &Store, env: HoliumEnv) -> ImportO
     imports! {
         "env" => {
             "set_payload" => Function::new_native_with_env(store, env.clone(), set_payload),
+            "get_payload" => Function::new_native_with_env(store, env.clone(), get_payload),
         }
     }
 }
