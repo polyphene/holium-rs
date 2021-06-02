@@ -64,6 +64,7 @@ impl HoliumEnv {
      ***********************************************************************/
 
     /// Clears temporary storage for guest's inputs & outputs
+    #[allow(dead_code)]
     pub fn clear_tmp(&mut self) {
         self.tmp_input = HoliumTmpStorage::new();
         self.tmp_output = HoliumTmpStorage::new();

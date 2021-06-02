@@ -1,4 +1,3 @@
-use holium_wasm::set_payload;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -9,9 +8,12 @@ pub struct MyStruct {
 
 #[no_mangle]
 pub extern "C" fn main() {
+    let res: String = holium_wasm::get_payload("input").unwrap();
+
     let payload = MyStruct {
-        string: String::from("hello"),
+        string: res,
         uint: 0,
     };
-    let res = holium_wasm::set_payload("testA", &payload).unwrap();
+
+    let _res = holium_wasm::set_payload("output", &payload).unwrap();
 }
