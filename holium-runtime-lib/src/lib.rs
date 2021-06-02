@@ -19,7 +19,6 @@ pub struct HoliumRuntime {
 }
 
 impl HoliumRuntime {
-    #[allow(dead_code)]
     pub fn new() -> Result<HoliumRuntime, HoliumRuntimeError> {
         let store = Store::default();
 
