@@ -21,25 +21,11 @@ The CLI can be used with `cargo run`
 
 Example:
 ```bash
-$ cargo run -p holium-runtime-cli -- --help
+$ cargo run -p holium-runtime-cli -- ./target/wasm32-unknown-unknown/release/simple_rust_test.wasm -i input=\"string\"
 
-Holium Runtime 1.0
-Polyphene <contact@polyphene.io>
-Runtime CLI for transformations
-
-USAGE:
-    holium-runtime-cli.exe [OPTIONS] <INPUT>
-
-ARGS:
-    <INPUT>    Sets the input file to use
-
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-
-OPTIONS:
-    -v <v>...        Sets the level of verbosity
-
+------------------- RESULTS -------------------
+KEY : output
+VALUE : {"string":"string","uint":0}
 ```
 
 #### 🛠️ Build executable with `cargo build`
