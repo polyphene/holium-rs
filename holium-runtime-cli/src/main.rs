@@ -16,7 +16,7 @@ fn main() -> Result<(), HoliumRuntimeError> {
             App::new("run")
                 .about("Used to run a transformation")
                 .arg(
-                    Arg::new("INPUT")
+                    Arg::new("WASM_FILE")
                         .about("Sets the wasm file to run")
                         .required(true)
                         .index(1),
@@ -92,7 +92,7 @@ fn handle_run_subcommand(cli_matches: ArgMatches) -> Result<(), HoliumRuntimeErr
         None => panic!("Run subcommand should have at least an wasm file path specified"),
     };
 
-    let file_path: &str = match run_matches.value_of("INPUT") {
+    let file_path: &str = match run_matches.value_of("WASM_FILE") {
         Some(file_path) => file_path,
         None => panic!("Input should be relative path to wasm file"),
     };
