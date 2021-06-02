@@ -42,6 +42,4 @@ serialized type.
 
 #### 🛠️ Build executable with `cargo build`
 
-The CLI can be built by running `cargo build -p holium-runtime-cli --release`.
-
-Executable is located in `<project-root>/target/release/holium-runtime-cli`
+The CLI can be built by running `cargo build --release`.
