@@ -1,6 +1,6 @@
 use std::fmt;
-use wasmer_runtime::error::{CallError, CacheError};
-use wasmer::{ExportError, InstantiationError, CompileError, RuntimeError};
+use wasmer::{CompileError, ExportError, InstantiationError, RuntimeError};
+use wasmer_runtime::error::{CacheError, CallError};
 
 /*****************************************
  * Errors
@@ -13,19 +13,7 @@ pub enum HoliumRuntimeError {
     WasmerExportError(ExportError),
     WasmerInstantiationError(InstantiationError),
     WasmerCompileError(CompileError),
-}
-
-impl From<HoliumRuntimeError> for u32 {
-    fn from(e: HoliumRuntimeError) -> u32 {
-        match e {
-            HoliumRuntimeError::WasmerCallError(_) => 1,
-            HoliumRuntimeError::WasmerCacheError(_) => 2,
-            HoliumRuntimeError::WasmerRuntimeError(_) => 3,
-            HoliumRuntimeError::WasmerExportError(_) => 4,
-            HoliumRuntimeError::WasmerInstantiationError(_) => 5,
-            HoliumRuntimeError::WasmerCompileError(_) => 6,
-        }
-    }
+    WasmerWatToWasmError(wat::Error),
 }
 
 impl From<CallError> for HoliumRuntimeError {
@@ -64,6 +52,11 @@ impl From<CompileError> for HoliumRuntimeError {
     }
 }
 
+impl From<wat::Error> for HoliumRuntimeError {
+    fn from(error: wat::Error) -> HoliumRuntimeError {
+        HoliumRuntimeError::WasmerWatToWasmError(error)
+    }
+}
 
 impl fmt::Display for HoliumRuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -74,6 +67,7 @@ impl fmt::Display for HoliumRuntimeError {
             HoliumRuntimeError::WasmerExportError(inner) => write!(f, "{}", inner),
             HoliumRuntimeError::WasmerInstantiationError(inner) => write!(f, "{}", inner),
             HoliumRuntimeError::WasmerCompileError(inner) => write!(f, "{}", inner),
+            HoliumRuntimeError::WasmerWatToWasmError(inner) => write!(f, "{}", inner),
         }
     }
 }

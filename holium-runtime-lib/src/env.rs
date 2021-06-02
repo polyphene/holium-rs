@@ -1,5 +1,6 @@
 use serde_json::{json, Map, Value};
 use std::cell::Cell;
+use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
 use thiserror::Error;
 use wasmer::{
@@ -45,7 +46,7 @@ pub struct HoliumEnv {
     memory: LazyInit<Memory>,
     // TODO @PhilippeMts we need to see if a serde_json::Map is our best option
     pub tmp_input: HoliumTmpStorage,
-    pub tmp_output: HoliumTmpStorage,
+    tmp_output: HoliumTmpStorage,
 }
 
 impl HoliumEnv {
@@ -58,10 +59,29 @@ impl HoliumEnv {
         }
     }
 
-    /// Get an import object
-    pub fn import_object(&self, module: &Module) -> ImportObject {
-        generate_import_object_from_env(module.store(), self.clone())
+    /***********************************************************************
+     * Temporary storage utils
+     ***********************************************************************/
+
+    /// Clears temporary storage for guest's inputs & outputs
+    pub fn clear_tmp(&mut self) {
+        self.tmp_input = HoliumTmpStorage::new();
+        self.tmp_output = HoliumTmpStorage::new();
     }
+
+    /// Set inputs for guest's module to access
+    pub fn set_inputs(&mut self, inputs_map: Map<String, Value>) {
+        self.tmp_input = HoliumTmpStorage::from(inputs_map);
+    }
+
+    /// Get outputs written by guest's module
+    pub fn get_outputs(&mut self) -> Map<String, Value> {
+        self.tmp_output.data()
+    }
+
+    /***********************************************************************
+     * Memory manipulation utils
+     ***********************************************************************/
 
     /// Function to access the environment memory
     fn memory(&self) -> &Memory {
@@ -139,13 +159,30 @@ impl HoliumEnv {
 
         Some(value)
     }
+
+    /***********************************************************************
+     * Utils
+     ***********************************************************************/
+
+    /// Get an import object
+    pub fn import_object(&self, module: &Module) -> ImportObject {
+        generate_import_object_from_env(module.store(), self.clone())
+    }
 }
 
 /// HoliumTmpStorage is a structure to help us handle temporary storage that the guest wasm module can
 /// write on and read from.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct HoliumTmpStorage {
     store: Arc<Mutex<Map<String, Value>>>,
+}
+
+impl From<Map<String, Value>> for HoliumTmpStorage {
+    fn from(inputs_map: Map<String, Value>) -> Self {
+        HoliumTmpStorage {
+            store: Arc::new(Mutex::new(inputs_map)),
+        }
+    }
 }
 
 impl HoliumTmpStorage {
@@ -181,6 +218,17 @@ impl HoliumTmpStorage {
             Err(_) => None,
         };
         return value;
+    }
+
+    /// Retrieve outputs written by guest module
+    fn data(&self) -> Map<String, Value> {
+        let tmp_storage = Arc::clone(&self.store);
+        let storage: MutexGuard<Map<String, Value>> = match tmp_storage.lock() {
+            Ok(storage) => storage,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+
+        return storage.deref().clone();
     }
 }
 
