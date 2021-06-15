@@ -11,11 +11,3 @@ fn pack_can_be_validated() {
     let pack: HoliumPack = vec![0xc0, 0xc0];
     pack.validate();
 }
-
-#[test]
-fn bytes_are_not_valid_packs_by_default() {
-    let mut pack: HoliumPack = vec![];
-    assert!(!pack.validate());
-    pack = vec![0xc0, 0xc0];
-    assert!(!pack.validate());
-}
