@@ -8,6 +8,6 @@ pub trait Validatable {
 
 impl Validatable for HoliumPack {
     fn validate(&self) -> bool {
-        true
+        false
     }
 }
