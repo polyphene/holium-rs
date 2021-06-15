@@ -12,7 +12,9 @@ pub trait Validatable {
 impl Validatable for HoliumPack {
     fn validate(&self) -> bool {
         match read_marker(&mut &self[..]).unwrap() {
-            Marker::Null => true,
+            Marker::Null
+                | Marker::False
+                | Marker::True => true,
             _ => false
         }
     }
