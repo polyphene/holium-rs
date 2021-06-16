@@ -41,10 +41,56 @@ fn true_bool_msg_pack_is_valid_holium_pack() {
 }
 
 #[test]
-fn int_0_is_valid_holium_pack() {
+fn int_2_pow_64_minus_1_should_take_9_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_32_should_take_9_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_32_minus_1_should_take_5_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_16_should_take_5_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_16_minus_1_should_take_3_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_8_should_take_3_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_8_minus_1_should_take_2_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_7_should_take_2_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_2_pow_7_minus_1_should_take_1_byte() {
     let mut pack: HoliumPack = Vec::new();
-    rmp::encode::write_sint(&mut pack, 0).unwrap();
+    rmp::encode::write_sint(&mut pack, 127).unwrap();
+    assert_eq!(1, pack.len());
     assert!(pack.validate());
+    // try with larger sizes
+    pack.clear();
+    rmp::encode::write_u8(&mut pack, 127).unwrap();
+    assert_eq!(2, pack.len());
+    assert!(!pack.validate());
 }
 
 #[test]
@@ -52,27 +98,12 @@ fn int_0_should_take_1_byte() {
     let mut pack: HoliumPack = Vec::new();
     rmp::encode::write_sint(&mut pack, 0).unwrap();
     assert_eq!(1, pack.len());
-}
-
-#[test]
-fn int_127_is_valid_holium_pack() {
-    let mut pack: HoliumPack = Vec::new();
-    rmp::encode::write_sint(&mut pack, 127).unwrap();
     assert!(pack.validate());
-}
-
-#[test]
-fn int_127_should_take_1_byte() {
-    let mut pack: HoliumPack = Vec::new();
-    rmp::encode::write_sint(&mut pack, 127).unwrap();
-    assert_eq!(1, pack.len());
-}
-
-#[test]
-fn int_minus_1_is_valid_holium_pack() {
-    let mut pack: HoliumPack = Vec::new();
-    rmp::encode::write_sint(&mut pack, -1).unwrap();
-    assert!(pack.validate());
+    // try with larger sizes
+    pack.clear();
+    rmp::encode::write_u8(&mut pack, 0).unwrap();
+    assert_eq!(2, pack.len());
+    assert!(!pack.validate());
 }
 
 #[test]
@@ -80,18 +111,63 @@ fn int_minus_1_should_take_1_byte() {
     let mut pack: HoliumPack = Vec::new();
     rmp::encode::write_sint(&mut pack, -1).unwrap();
     assert_eq!(1, pack.len());
-}
-
-#[test]
-fn int_minus_32_is_valid_holium_pack() {
-    let mut pack: HoliumPack = Vec::new();
-    rmp::encode::write_sint(&mut pack, -32).unwrap();
     assert!(pack.validate());
+    // try with larger sizes
+    pack.clear();
+    rmp::encode::write_i8(&mut pack, -1).unwrap();
+    assert_eq!(2, pack.len());
+    assert!(!pack.validate());
 }
 
 #[test]
-fn int_minus_32_should_take_1_byte() {
+fn int_minus_2_pow_5_should_take_1_byte() {
     let mut pack: HoliumPack = Vec::new();
     rmp::encode::write_sint(&mut pack, -32).unwrap();
     assert_eq!(1, pack.len());
+    assert!(pack.validate());
+    // try with larger sizes
+    pack.clear();
+    rmp::encode::write_i8(&mut pack, -32).unwrap();
+    assert_eq!(2, pack.len());
+    assert!(!pack.validate());
+}
+
+#[test]
+fn int_minus_2_pow_5_minus_1_should_take_2_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_7_should_take_2_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_7_minus_1_should_take_3_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_15_should_take_3_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_15_minus_1_should_take_5_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_31_should_take_5_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_31_minus_1_should_take_9_bytes() {
+    // TODO
+}
+
+#[test]
+fn int_minus_2_pow_63_should_take_9_bytes() {
+    // TODO
 }
