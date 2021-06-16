@@ -47,7 +47,19 @@ fn positive_fixint_msg_pack_is_valid_holium_pack() {
     assert!(pack.validate());
     assert_eq!(1, pack.len());
     pack.clear();
-    rmp::encode::write_pfix(&mut pack, 0x7f).unwrap();
+    rmp::encode::write_pfix(&mut pack, 127).unwrap();
+    assert!(pack.validate());
+    assert_eq!(1, pack.len());
+}
+
+#[test]
+fn negative_fixint_msg_pack_is_valid_holium_pack() {
+    let mut pack: HoliumPack = Vec::new();
+    rmp::encode::write_nfix(&mut pack, -1).unwrap();
+    assert!(pack.validate());
+    assert_eq!(1, pack.len());
+    pack.clear();
+    rmp::encode::write_nfix(&mut pack, -32).unwrap();
     assert!(pack.validate());
     assert_eq!(1, pack.len());
 }
