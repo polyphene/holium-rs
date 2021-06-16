@@ -15,6 +15,7 @@ impl Validatable for HoliumPack {
             Marker::Null
                 | Marker::False
                 | Marker::True => true,
+            Marker::FixPos(u8) => u8 < 0x80,
             _ => false
         }
     }
