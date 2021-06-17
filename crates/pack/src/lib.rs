@@ -32,7 +32,8 @@ impl Validatable for HoliumPack {
             | Marker::Bin16
             | Marker::Bin32
             | Marker::Array16
-            | Marker::Array32 => true,
+            | Marker::Array32
+            | Marker::Ext8 => true,
             Marker::FixArray(u8) => u8 < 15,
             Marker::FixStr(u8) => u8 < 32,
             Marker::FixPos(u8) => u8 < 128,

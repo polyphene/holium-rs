@@ -185,3 +185,6 @@ fn int_minus_2_pow_63_should_take_9_bytes() {
 // TODO add tests on the representation of arrays (for each of the 3 possible size methods) in Holium packs
 
 // TODO add tests on the non-representation of maps (for each of the 3 possible size methods) in Holium packs
+
+// TODO add tests on the non-representation of all extensions (for each of the 9 possible size methods) in Holium packs
+// except for the CID extension type where the size (probably 32 bytes for blake3-256) should always be the same
