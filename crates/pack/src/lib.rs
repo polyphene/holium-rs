@@ -24,7 +24,11 @@ impl Validatable for HoliumPack {
             | Marker::I32
             | Marker::I64
             | Marker::F32
-            | Marker::F64 => true,
+            | Marker::F64
+            | Marker::Str8
+            | Marker::Str16
+            | Marker::Str32 => true,
+            | Marker::FixStr(u8) => u8 < 32,
             Marker::FixPos(u8) => u8 < 128,
             Marker::FixNeg(i8) => -32 <= i8 && i8 < 0,
             _ => false
