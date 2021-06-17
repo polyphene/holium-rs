@@ -1,8 +1,5 @@
 [package]
-name = "holium-runtime"
+name = "holium-transformation"
 version = "0.1.0"
 authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
-
-[workspace]
-members=["crates/transformation"]
