@@ -3,14 +3,15 @@ extern crate rmp;
 use rmp::decode::read_marker;
 use rmp::Marker;
 
-pub type HoliumPack = Vec<u8>;
+pub trait HoliumTypes {
+    fn is_holium_primitive_msg(&self) -> bool;
 
-pub trait Validatable {
-    fn validate(&self) -> bool;
+    fn is_holium_array_pack(&self) -> bool;
+    fn is_holium_pack(&self) -> bool;
 }
 
-impl Validatable for HoliumPack {
-    fn validate(&self) -> bool {
+impl HoliumTypes for Vec<u8> {
+    fn is_holium_primitive_msg(&self) -> bool {
         match read_marker(&mut &self[..]).unwrap() {
             Marker::Null
             | Marker::False
@@ -30,14 +31,24 @@ impl Validatable for HoliumPack {
             | Marker::Str32
             | Marker::Bin8
             | Marker::Bin16
-            | Marker::Bin32
-            | Marker::Array16
-            | Marker::Array32 => true,
-            Marker::FixArray(u8) => u8 < 15,
+            | Marker::Bin32 => true,
             Marker::FixStr(u8) => u8 < 32,
             Marker::FixPos(u8) => u8 < 128,
             Marker::FixNeg(i8) => -32 <= i8 && i8 < 0,
             _ => false
         }
+    }
+
+    fn is_holium_array_pack(&self) -> bool {
+        match read_marker(&mut &self[..]).unwrap() {
+            Marker::Array16 => true,
+            Marker::Array32 => true,
+            Marker::FixArray(u8) => u8 < 15,
+            _ => false
+        }
+    }
+
+    fn is_holium_pack(&self) -> bool {
+        self.is_holium_primitive_msg() || self.is_holium_array_pack()
     }
 }

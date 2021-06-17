@@ -1,41 +1,41 @@
 extern crate holium_pack;
 
-use holium_pack::{HoliumPack, Validatable};
+use holium_pack::{HoliumTypes};
 
 #[test]
 fn pack_is_bytes() {
-    let _: HoliumPack = vec![0xc0, 0xc0];
+    let _: Vec<u8>  = vec![0xc0, 0xc0];
 }
 
 #[test]
 fn pack_can_be_validated() {
-    let pack: HoliumPack = vec![0xc0, 0xc0];
-    pack.validate();
+    let pack: Vec<u8>  = vec![0xc0, 0xc0];
+    pack.is_holium_pack();
 }
 
 #[test]
 fn nil_msg_pack_is_valid_holium_pack() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_nil(&mut pack).unwrap();
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // also test the shape of the message itself
     assert_eq!(vec![0xc0], pack);
 }
 
 #[test]
 fn false_bool_msg_pack_is_valid_holium_pack() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_bool(&mut pack, false).unwrap();
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // also test the shape of the message itself
     assert_eq!(vec![0xc2], pack);
 }
 
 #[test]
 fn true_bool_msg_pack_is_valid_holium_pack() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_bool(&mut pack, true).unwrap();
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // also test the shape of the message itself
     assert_eq!(vec![0xc3], pack);
 }
@@ -82,10 +82,10 @@ fn int_2_pow_7_should_take_2_bytes() {
 
 #[test]
 fn int_2_pow_7_minus_1_should_take_1_byte() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_sint(&mut pack, 127).unwrap();
     assert_eq!(1, pack.len());
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -96,10 +96,10 @@ fn int_2_pow_7_minus_1_should_take_1_byte() {
 
 #[test]
 fn int_0_should_take_1_byte() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_sint(&mut pack, 0).unwrap();
     assert_eq!(1, pack.len());
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -110,10 +110,10 @@ fn int_0_should_take_1_byte() {
 
 #[test]
 fn int_minus_1_should_take_1_byte() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_sint(&mut pack, -1).unwrap();
     assert_eq!(1, pack.len());
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -124,10 +124,10 @@ fn int_minus_1_should_take_1_byte() {
 
 #[test]
 fn int_minus_2_pow_5_should_take_1_byte() {
-    let mut pack: HoliumPack = Vec::new();
+    let mut pack: Vec<u8>  = Vec::new();
     rmp::encode::write_sint(&mut pack, -32).unwrap();
     assert_eq!(1, pack.len());
-    assert!(pack.validate());
+    assert!(pack.is_holium_pack());
     // TODO fix
     // try with larger sizes
     // pack.clear();
