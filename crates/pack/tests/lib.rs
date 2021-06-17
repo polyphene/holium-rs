@@ -183,6 +183,6 @@ fn int_minus_2_pow_63_should_take_9_bytes() {
 // TODO add tests on the representation of binaries (for each of the 3 possible size methods) in Holium packs
 
 // TODO add tests on the representation of arrays (for each of the 3 possible size methods) in Holium packs
-// verifying that **all elements of any array should only be CIDs**
+// verifying that all elements of any array should be other packs (not CIDs)
 
 // TODO add tests on the non-representation of maps (for each of the 3 possible size methods) in Holium packs
