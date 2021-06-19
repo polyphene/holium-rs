@@ -151,7 +151,7 @@ fn test_new_package() {
     assert_eq!(name, package.name);
     assert_eq!(String::new(), package.documentation);
     assert_eq!(&bytecode, package.bytecode());
-    assert_eq!(&transformations_vec, package.handles());
+    assert_eq!(&transformations_vec, package.transformations());
 }
 
 #[test]
@@ -170,7 +170,7 @@ fn test_tag_package() {
     let name = String::from("name");
     let bytecode: Vec<u8> = vec![];
 
-    let mut package = Package::new(name.clone(), bytecode.clone(), transformations_vec.clone());
+    let mut package = Package::new(name, bytecode, transformations_vec);
 
     let version = String::from("0.1.0");
     package.tag(version.clone());
@@ -194,7 +194,7 @@ fn test_document_package() {
     let name = String::from("name");
     let bytecode: Vec<u8> = vec![];
 
-    let mut package = Package::new(name.clone(), bytecode.clone(), transformations_vec.clone());
+    let mut package = Package::new(name, bytecode, transformations_vec);
 
     let documentation = String::from("documentation");
     package.document(documentation.clone());
@@ -211,25 +211,115 @@ fn test_update_package() {
     let output_type = HoliumPackPlaceHolder::Type1;
     let outputs = vec![Io::new(String::from("output0"), output_type.clone())];
 
-    let transformation = Transformation::new(transformation_name.clone(), inputs.clone(), outputs.clone());
+    let transformation = Transformation::new(transformation_name, inputs.clone(), outputs.clone());
     let transformations_vec = vec![transformation];
 
     // Prepare package metadata
     let name = String::from("name");
     let bytecode: Vec<u8> = vec![];
 
-    let mut package = Package::new(name.clone(), bytecode.clone(), transformations_vec.clone());
+    let mut package = Package::new(name, bytecode, transformations_vec);
 
     // Prepare new bytecode & transformation information
     let bytecode: Vec<u8> = vec![0];
     let transformation_name = String::from("new_name");
 
-    let transformation = Transformation::new(transformation_name.clone(), inputs.clone(), outputs.clone());
+    let transformation = Transformation::new(transformation_name, inputs, outputs);
     let transformations_vec = vec![transformation];
 
     // Update package
     package.update(bytecode.clone(), transformations_vec.clone());
 
     assert_eq!(&bytecode, package.bytecode());
-    assert_eq!(transformations_vec, package.handles());
+    assert_eq!(transformations_vec, package.transformations());
+}
+
+#[test]
+fn test_has_transformation_with_input_type_package() {
+    // Prepare transformations
+    let transformation_name = String::from("name");
+    let input_type = HoliumPackPlaceHolder::Type0;
+    let inputs = vec![Io::new(String::from("input0"), input_type.clone())];
+    let output_type = HoliumPackPlaceHolder::Type1;
+    let outputs = vec![Io::new(String::from("output0"), output_type.clone())];
+
+    let transformation = Transformation::new(transformation_name, inputs, outputs);
+    let transformations_vec = vec![transformation];
+
+    // Prepare package metadata
+    let name = String::from("name");
+    let bytecode: Vec<u8> = vec![];
+
+    let package = Package::new(name, bytecode, transformations_vec);
+
+    assert_eq!(false, package.has_transformation_with_input_type(output_type));
+    assert_eq!(true, package.has_transformation_with_input_type(input_type));
+}
+
+#[test]
+fn test_has_transformation_with_output_type_package() {
+    // Prepare transformations
+    let transformation_name = String::from("name");
+    let input_type = HoliumPackPlaceHolder::Type0;
+    let inputs = vec![Io::new(String::from("input0"), input_type.clone())];
+    let output_type = HoliumPackPlaceHolder::Type1;
+    let outputs = vec![Io::new(String::from("output0"), output_type.clone())];
+
+    let transformation = Transformation::new(transformation_name, inputs, outputs);
+    let transformations_vec = vec![transformation];
+
+    // Prepare package metadata
+    let name = String::from("name");
+    let bytecode: Vec<u8> = vec![];
+
+    let package = Package::new(name, bytecode, transformations_vec);
+
+    assert_eq!(false, package.has_transformation_with_output_type(input_type));
+    assert_eq!(true, package.has_transformation_with_output_type(output_type));
+}
+
+#[test]
+fn test_transformations_with_input_type_package() {
+    // Prepare transformations
+    let transformation_name = String::from("name");
+    let input_type = HoliumPackPlaceHolder::Type0;
+    let inputs = vec![Io::new(String::from("input0"), input_type.clone())];
+    let output_type = HoliumPackPlaceHolder::Type1;
+    let outputs = vec![Io::new(String::from("output0"), output_type.clone())];
+
+    let transformation = Transformation::new(transformation_name, inputs, outputs);
+    let transformations_vec = vec![transformation];
+
+    // Prepare package metadata
+    let name = String::from("name");
+    let bytecode: Vec<u8> = vec![];
+
+    let package = Package::new(name, bytecode, transformations_vec.clone());
+
+    let empty_transformation_vec: Vec<Transformation> = vec![];
+    assert_eq!(empty_transformation_vec, package.transformations_with_input_type(output_type));
+    assert_eq!(transformations_vec, package.transformations_with_input_type(input_type));
+}
+
+#[test]
+fn test_transformations_with_output_type_package() {
+    // Prepare transformations
+    let transformation_name = String::from("name");
+    let input_type = HoliumPackPlaceHolder::Type0;
+    let inputs = vec![Io::new(String::from("input0"), input_type.clone())];
+    let output_type = HoliumPackPlaceHolder::Type1;
+    let outputs = vec![Io::new(String::from("output0"), output_type.clone())];
+
+    let transformation = Transformation::new(transformation_name, inputs, outputs);
+    let transformations_vec = vec![transformation];
+
+    // Prepare package metadata
+    let name = String::from("name");
+    let bytecode: Vec<u8> = vec![];
+
+    let package = Package::new(name, bytecode, transformations_vec.clone());
+
+    let empty_transformation_vec: Vec<Transformation> = vec![];
+    assert_eq!(empty_transformation_vec, package.transformations_with_output_type(input_type));
+    assert_eq!(transformations_vec, package.transformations_with_output_type(output_type));
 }
