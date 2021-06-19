@@ -45,8 +45,8 @@ fn test_new_transformation() {
     let transformation = Transformation::new(name.clone(), inputs.clone(), outputs.clone());
 
     assert_eq!(name, transformation.name);
-    assert_eq!(inputs, transformation.inputs());
-    assert_eq!(outputs, transformation.outputs());
+    assert_eq!(&inputs, transformation.inputs());
+    assert_eq!(&outputs, transformation.outputs());
     assert_eq!(String::new(), transformation.documentation);
 }
 
@@ -151,7 +151,7 @@ fn test_new_package() {
     assert_eq!(name, package.name);
     assert_eq!(String::new(), package.documentation);
     assert_eq!(&bytecode, package.bytecode());
-    assert_eq!(transformations_vec, package.handles());
+    assert_eq!(&transformations_vec, package.handles());
 }
 
 #[test]
