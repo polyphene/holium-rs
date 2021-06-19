@@ -1,4 +1,35 @@
-use holium_transformation::types::{Transformation, Package, HoliumPackPlaceHolder, Io};
+use holium_transformation::types::{Transformation, Package, HoliumPackPlaceHolder, Io, PackageBytecode};
+
+/*************************************************************
+ * Package bytecode testing
+ *************************************************************/
+
+#[test]
+fn test_new_package_bytecode() {
+    let cid = String::from("cid");
+    let binaries: Vec<u8> = vec![];
+
+    let package_bytecode: PackageBytecode = PackageBytecode::new(cid.clone(), binaries.clone());
+
+    assert_eq!(cid, package_bytecode.cid);
+    assert_eq!(&binaries, package_bytecode.binaries());
+}
+
+#[test]
+fn test_update_package_bytecode() {
+    let cid = String::from("cid");
+    let binaries: Vec<u8> = vec![];
+
+    let mut package_bytecode: PackageBytecode = PackageBytecode::new(cid, binaries);
+
+    let cid = String::from("cid2");
+    let binaries: Vec<u8> = vec![0, 1];
+
+    package_bytecode.update(cid.clone(), binaries.clone());
+
+    assert_eq!(cid, package_bytecode.cid);
+    assert_eq!(&binaries, package_bytecode.binaries());
+}
 
 /*************************************************************
  * Io testing

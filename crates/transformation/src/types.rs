@@ -1,3 +1,36 @@
+/// A `PacakgeBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
+/// bytecode is the compiled source code of a package containing multiple transformations.
+#[derive(Debug, Eq, PartialEq)]
+pub struct PackageBytecode {
+    // TODO might become something like [u8;32] ?
+    pub cid: String,
+    binaries: Vec<u8>
+}
+
+// TODO Should we generate CID on a new based on binary ?
+impl PackageBytecode {
+    pub fn new(cid: String, binaries: Vec<u8>) -> Self {
+        PackageBytecode { cid, binaries }
+    }
+
+    /*************************************************************
+     * Getter
+     *************************************************************/
+
+    pub fn binaries(&self) -> &[u8] {
+        &self.binaries
+    }
+
+    /*************************************************************
+     * Setter
+     *************************************************************/
+
+    pub fn update(&mut self, cid: String, binaries: Vec<u8>) {
+        self.cid = cid;
+        self.binaries = binaries
+    }
+}
+
 /// A `Package` structure is a Rust representation of a package in the Holium Framework. A `Package`
 /// is mainly composed of a wasm bytecode that contains `Transformation`.
 #[derive(Debug, Eq, PartialEq)]
