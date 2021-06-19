@@ -28,8 +28,8 @@ impl Package {
         &self.bytecode
     }
 
-    pub fn handles(&self) -> Vec<Transformation> {
-        self.handles.clone()
+    pub fn handles(&self) ->  &[Transformation] {
+        &self.handles
     }
 
     /*************************************************************
@@ -73,20 +73,20 @@ impl Transformation {
      * Getter
      *************************************************************/
 
-    pub fn inputs(&self) -> Vec<Io> {
-        self.inputs.clone()
+    pub fn inputs(&self) -> &[Io] {
+        &self.inputs
     }
 
-    pub fn outputs(&self) -> Vec<Io> {
-        self.outputs.clone()
+    pub fn outputs(&self) -> &[Io] {
+        &self.outputs
     }
 
     pub fn inputs_with_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
-        filter_on_io_type(self.inputs(), hp_type)
+        filter_on_io_type(self.inputs.clone(), hp_type)
     }
 
     pub fn outputs_with_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
-        filter_on_io_type(self.outputs(), hp_type)
+        filter_on_io_type(self.outputs.clone(), hp_type)
     }
 
     /*************************************************************
