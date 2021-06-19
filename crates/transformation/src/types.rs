@@ -1,6 +1,6 @@
 /// A `PacakgeBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
 /// bytecode is the compiled source code of a package containing multiple transformations.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PackageBytecode {
     // TODO might become something like [u8;32] ?
     pub cid: String,
@@ -38,12 +38,12 @@ pub struct Package {
     pub version: String,
     pub name: String,
     pub documentation: String,
-    bytecode: Vec<u8>,
+    bytecode: PackageBytecode,
     transformations: Vec<Transformation>
 }
 
 impl Package {
-    pub fn new(name: String, bytecode: Vec<u8>, transformations: Vec<Transformation>) -> Self {
+    pub fn new(name: String, bytecode: PackageBytecode, transformations: Vec<Transformation>) -> Self {
         Package {
             version: String::new(),
             name,
@@ -57,7 +57,7 @@ impl Package {
      * Getter
      *************************************************************/
 
-    pub fn bytecode(&self) -> &[u8] {
+    pub fn bytecode(&self) -> &PackageBytecode {
         &self.bytecode
     }
 
@@ -85,7 +85,7 @@ impl Package {
         self.documentation = documentation
     }
 
-    pub fn update(&mut self, bytecode: Vec<u8>, transformations: Vec<Transformation>) {
+    pub fn update(&mut self, bytecode: PackageBytecode, transformations: Vec<Transformation>) {
         self.bytecode = bytecode;
         self.transformations = transformations
     }
