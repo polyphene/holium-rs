@@ -6,17 +6,17 @@ pub struct Package {
     pub name: String,
     pub documentation: String,
     bytecode: Vec<u8>,
-    handles: Vec<Transformation>
+    transformations: Vec<Transformation>
 }
 
 impl Package {
-    pub fn new(name: String, bytecode: Vec<u8>, handles: Vec<Transformation>) -> Self {
+    pub fn new(name: String, bytecode: Vec<u8>, transformations: Vec<Transformation>) -> Self {
         Package {
             version: String::new(),
             name,
             documentation: String::new(),
             bytecode,
-            handles
+            transformations
         }
     }
 
@@ -28,8 +28,16 @@ impl Package {
         &self.bytecode
     }
 
-    pub fn handles(&self) ->  &[Transformation] {
-        &self.handles
+    pub fn transformations(&self) ->  &[Transformation] {
+        &self.transformations
+    }
+
+    pub fn transformations_with_input_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Transformation> {
+        self.transformations.clone().into_iter().filter(|t| t.has_input_type(hp_type.clone())).collect()
+    }
+
+    pub fn transformations_with_output_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Transformation> {
+        self.transformations.clone().into_iter().filter(|t| t.has_output_type(hp_type.clone())).collect()
     }
 
     /*************************************************************
@@ -44,9 +52,39 @@ impl Package {
         self.documentation = documentation
     }
 
-    pub fn update(&mut self, bytecode: Vec<u8>, handles: Vec<Transformation>) {
+    pub fn update(&mut self, bytecode: Vec<u8>, transformations: Vec<Transformation>) {
         self.bytecode = bytecode;
-        self.handles = handles
+        self.transformations = transformations
+    }
+
+    /*************************************************************
+     * Utils
+     *************************************************************/
+
+    pub fn has_transformation_with_input_type(&self, hp_type: HoliumPackPlaceHolder) -> bool {
+        let mut exists = false;
+
+        for handle in self.transformations.iter() {
+            if handle.has_input_type(hp_type.clone()) {
+                exists = true;
+                break
+            }
+        }
+
+        exists
+    }
+
+    pub fn has_transformation_with_output_type(&self, hp_type: HoliumPackPlaceHolder) -> bool {
+        let mut exists = false;
+
+        for handle in self.transformations.iter() {
+            if handle.has_output_type(hp_type.clone()) {
+                exists = true;
+                break
+            }
+        }
+
+        exists
     }
 }
 
@@ -150,7 +188,7 @@ pub enum HoliumPackPlaceHolder {
 fn contains_io_type(vector: &[Io], hp_type: HoliumPackPlaceHolder) -> bool {
     let mut exists = false;
     for io in vector.iter() {
-        if io.hp_type == hp_type {
+        if std::mem::discriminant(&io.hp_type) == std::mem::discriminant(&hp_type) {
             exists = true;
             break;
         }
