@@ -8,3 +8,8 @@ edition = "2018"
 
 [dependencies]
 rmp = "^0.8"
+flate2 = "^1.0"
+blake3 = "^0.3"
+
+[dev-dependencies]
+hex = "^0.4"

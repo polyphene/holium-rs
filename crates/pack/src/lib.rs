@@ -2,6 +2,13 @@ extern crate rmp;
 
 use rmp::decode::read_marker;
 use rmp::Marker;
+use flate2::Compression;
+use flate2::write::ZlibEncoder;
+use std::io::Write;
+
+static ZLIB_COMPRESSION: Compression = Compression::new(6);
+
+type HoliumFragmentCID = [u8; 32];
 
 pub trait HoliumTypes {
     fn is_holium_primitive_msg(&self) -> bool;
@@ -11,6 +18,10 @@ pub trait HoliumTypes {
 
     fn is_holium_array_fragment(&self) -> bool;
     fn is_holium_fragment(&self) -> bool;
+}
+
+pub trait HoliumFragments {
+    fn compute_cid(&self) -> HoliumFragmentCID;
 }
 
 impl HoliumTypes for Vec<u8> {
@@ -66,5 +77,19 @@ impl HoliumTypes for Vec<u8> {
 
     fn is_holium_fragment(&self) -> bool {
         self.is_holium_primitive_msg() || self.is_holium_array_fragment()
+    }
+}
+
+
+impl HoliumFragments for Vec<u8> {
+    fn compute_cid(&self) -> HoliumFragmentCID {
+        if self.is_holium_primitive_msg() {
+            let mut zlib_encoder = ZlibEncoder::new(Vec::new(), ZLIB_COMPRESSION);
+            zlib_encoder.write_all(self).unwrap();
+            let compressed_bytes = zlib_encoder.finish().unwrap();
+            let cid = blake3::hash(&*compressed_bytes);
+            return *cid.as_bytes();
+        }
+        panic!()
     }
 }

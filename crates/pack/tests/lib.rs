@@ -1,6 +1,7 @@
 extern crate holium_pack;
+extern crate hex;
 
-use holium_pack::{HoliumTypes};
+use holium_pack::{HoliumTypes, HoliumFragments};
 
 #[test]
 fn pack_is_bytes() {
@@ -191,3 +192,14 @@ fn int_minus_2_pow_63_should_take_9_bytes() {
 
 // TODO add tests on the representation of arrays (for each of the 3 possible size methods) in Holium fragments
 // verifying that **all elements of any array should only be CIDs**
+
+
+#[test]
+fn primitive_values_have_cids() {
+    let mut pack: Vec<u8>  = Vec::new();
+    rmp::encode::write_nil(&mut pack).unwrap();
+    assert_eq!(
+        hex::decode("4e00a27d72b9cafbd6b13c870f1c25bf6f819f23e16a2a0b9f6aaffb06c45843").unwrap(),
+        pack.compute_cid()
+    )
+}
