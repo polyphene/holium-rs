@@ -37,7 +37,7 @@ impl PackageBytecode {
 
 /// A `Package` structure is a Rust representation of a package in the Holium Framework. A `Package`
 /// is mainly composed of a wasm bytecode that contains `Transformation`.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Package {
     pub version: String,
     pub name: String,
