@@ -1,4 +1,6 @@
-use holium_transformation::types::{Transformation, Package, HoliumPackPlaceHolder, Io, PackageBytecode};
+use holium_transformation::types::{
+    HoliumPackPlaceHolder, Io, Package, PackageBytecode, Transformation,
+};
 
 /*************************************************************
  * Package bytecode testing
@@ -7,28 +9,28 @@ use holium_transformation::types::{Transformation, Package, HoliumPackPlaceHolde
 #[test]
 fn test_new_package_bytecode() {
     let cid = String::from("cid");
-    let binaries: Vec<u8> = vec![];
+    let bytecode: Vec<u8> = vec![];
 
-    let package_bytecode: PackageBytecode = PackageBytecode::new(cid.clone(), binaries.clone());
+    let package_bytecode: PackageBytecode = PackageBytecode::new(cid.clone(), bytecode.clone());
 
     assert_eq!(cid, package_bytecode.cid);
-    assert_eq!(&binaries, package_bytecode.binaries());
+    assert_eq!(&bytecode, package_bytecode.bytecode());
 }
 
 #[test]
 fn test_update_package_bytecode() {
     let cid = String::from("cid");
-    let binaries: Vec<u8> = vec![];
+    let bytecode: Vec<u8> = vec![];
 
-    let mut package_bytecode: PackageBytecode = PackageBytecode::new(cid, binaries);
+    let mut package_bytecode: PackageBytecode = PackageBytecode::new(cid, bytecode);
 
     let cid = String::from("cid2");
-    let binaries: Vec<u8> = vec![0, 1];
+    let bytecode: Vec<u8> = vec![0, 1];
 
-    package_bytecode.update(cid.clone(), binaries.clone());
+    package_bytecode.update(cid.clone(), bytecode.clone());
 
     assert_eq!(cid, package_bytecode.cid);
-    assert_eq!(&binaries, package_bytecode.binaries());
+    assert_eq!(&bytecode, package_bytecode.bytecode());
 }
 
 /*************************************************************
@@ -137,7 +139,10 @@ fn test_inputs_with_type_transformation() {
     let transformation = Transformation::new(name, inputs.clone(), outputs);
 
     let empty_io_vec: Vec<Io> = vec![];
-    assert_eq!(empty_io_vec, transformation.inputs_with_type(output_type.clone()));
+    assert_eq!(
+        empty_io_vec,
+        transformation.inputs_with_type(output_type.clone())
+    );
     assert_eq!(inputs, transformation.inputs_with_type(input_type.clone()));
 }
 
@@ -152,8 +157,14 @@ fn test_outputs_with_type_transformation() {
     let transformation = Transformation::new(name, inputs, outputs.clone());
 
     let empty_io_vec: Vec<Io> = vec![];
-    assert_eq!(empty_io_vec, transformation.outputs_with_type(input_type.clone()));
-    assert_eq!(outputs, transformation.outputs_with_type(output_type.clone()));
+    assert_eq!(
+        empty_io_vec,
+        transformation.outputs_with_type(input_type.clone())
+    );
+    assert_eq!(
+        outputs,
+        transformation.outputs_with_type(output_type.clone())
+    );
 }
 
 /*************************************************************
@@ -175,10 +186,14 @@ fn test_new_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
-    let package = Package::new(name.clone(), package_bytecode.clone(), transformations_vec.clone());
+    let package = Package::new(
+        name.clone(),
+        package_bytecode.clone(),
+        transformations_vec.clone(),
+    );
 
     assert_eq!(String::new(), package.version);
     assert_eq!(name, package.name);
@@ -202,8 +217,8 @@ fn test_tag_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let mut package = Package::new(name, package_bytecode, transformations_vec);
 
@@ -228,8 +243,8 @@ fn test_document_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let mut package = Package::new(name, package_bytecode, transformations_vec);
 
@@ -254,15 +269,15 @@ fn test_update_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let mut package = Package::new(name.clone(), package_bytecode, transformations_vec);
 
     // Prepare new bytecode & transformation information
     let bytecode_cid = String::from("cid2");
-    let bytecode_binaries: Vec<u8> = vec![0, 1];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![0, 1];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let transformation_name = String::from("new_name");
 
@@ -271,7 +286,7 @@ fn test_update_package() {
 
     // Update package
     package.update(package_bytecode.clone(), transformations_vec.clone());
-// TODO not checking cid
+    // TODO not checking cid
     assert_eq!(&package_bytecode, package.bytecode());
     assert_eq!(transformations_vec, package.transformations());
 }
@@ -291,12 +306,15 @@ fn test_has_transformation_with_input_type_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let package = Package::new(name, package_bytecode, transformations_vec);
 
-    assert_eq!(false, package.has_transformation_with_input_type(output_type));
+    assert_eq!(
+        false,
+        package.has_transformation_with_input_type(output_type)
+    );
     assert_eq!(true, package.has_transformation_with_input_type(input_type));
 }
 
@@ -315,13 +333,19 @@ fn test_has_transformation_with_output_type_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries);
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let package = Package::new(name, package_bytecode, transformations_vec);
 
-    assert_eq!(false, package.has_transformation_with_output_type(input_type));
-    assert_eq!(true, package.has_transformation_with_output_type(output_type));
+    assert_eq!(
+        false,
+        package.has_transformation_with_output_type(input_type)
+    );
+    assert_eq!(
+        true,
+        package.has_transformation_with_output_type(output_type)
+    );
 }
 
 #[test]
@@ -339,14 +363,20 @@ fn test_transformations_with_input_type_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries.clone());
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode.clone());
 
     let package = Package::new(name, package_bytecode, transformations_vec.clone());
 
     let empty_transformation_vec: Vec<Transformation> = vec![];
-    assert_eq!(empty_transformation_vec, package.transformations_with_input_type(output_type));
-    assert_eq!(transformations_vec, package.transformations_with_input_type(input_type));
+    assert_eq!(
+        empty_transformation_vec,
+        package.transformations_with_input_type(output_type)
+    );
+    assert_eq!(
+        transformations_vec,
+        package.transformations_with_input_type(input_type)
+    );
 }
 
 #[test]
@@ -364,12 +394,18 @@ fn test_transformations_with_output_type_package() {
     // Prepare package metadata
     let name = String::from("name");
     let bytecode_cid = String::from("cid");
-    let bytecode_binaries: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode_binaries.clone());
+    let bytecode: Vec<u8> = vec![];
+    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode.clone());
 
     let package = Package::new(name, package_bytecode, transformations_vec.clone());
 
     let empty_transformation_vec: Vec<Transformation> = vec![];
-    assert_eq!(empty_transformation_vec, package.transformations_with_output_type(input_type));
-    assert_eq!(transformations_vec, package.transformations_with_output_type(output_type));
+    assert_eq!(
+        empty_transformation_vec,
+        package.transformations_with_output_type(input_type)
+    );
+    assert_eq!(
+        transformations_vec,
+        package.transformations_with_output_type(output_type)
+    );
 }

@@ -4,30 +4,30 @@
 pub struct PackageBytecode {
     // TODO might become something like [u8;32] ?
     pub cid: String,
-    binaries: Vec<u8>,
+    bytecode: Vec<u8>,
 }
 
-// TODO Should we generate CID on a new based on binary ?
+// TODO Should we generate CID on a new based on bytecode ?
 impl PackageBytecode {
-    pub fn new(cid: String, binaries: Vec<u8>) -> Self {
-        PackageBytecode { cid, binaries }
+    pub fn new(cid: String, bytecode: Vec<u8>) -> Self {
+        PackageBytecode { cid, bytecode }
     }
 
     /*************************************************************
      * Getter
      *************************************************************/
 
-    pub fn binaries(&self) -> &[u8] {
-        &self.binaries
+    pub fn bytecode(&self) -> &[u8] {
+        &self.bytecode
     }
 
     /*************************************************************
      * Setter
      *************************************************************/
 
-    pub fn update(&mut self, cid: String, binaries: Vec<u8>) {
+    pub fn update(&mut self, cid: String, bytecode: Vec<u8>) {
         self.cid = cid;
-        self.binaries = binaries
+        self.bytecode = bytecode
     }
 }
 
