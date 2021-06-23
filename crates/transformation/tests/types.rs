@@ -110,8 +110,8 @@ fn test_has_input_type_transformation() {
 
     let transformation = Transformation::new(name, inputs, outputs);
 
-    assert_eq!(false, transformation.has_input_type(output_type.clone()));
-    assert_eq!(true, transformation.has_input_type(input_type.clone()));
+    assert_eq!(false, transformation.has_input_type(&output_type));
+    assert_eq!(true, transformation.has_input_type(&input_type));
 }
 
 #[test]
@@ -124,8 +124,8 @@ fn test_has_output_type_transformation() {
 
     let transformation = Transformation::new(name, inputs, outputs);
 
-    assert_eq!(false, transformation.has_output_type(input_type.clone()));
-    assert_eq!(true, transformation.has_output_type(output_type.clone()));
+    assert_eq!(false, transformation.has_output_type(&input_type));
+    assert_eq!(true, transformation.has_output_type(&output_type));
 }
 
 #[test]
@@ -313,9 +313,12 @@ fn test_has_transformation_with_input_type_package() {
 
     assert_eq!(
         false,
-        package.has_transformation_with_input_type(output_type)
+        package.has_transformation_with_input_type(&output_type)
     );
-    assert_eq!(true, package.has_transformation_with_input_type(input_type));
+    assert_eq!(
+        true,
+        package.has_transformation_with_input_type(&input_type)
+    );
 }
 
 #[test]
@@ -340,11 +343,11 @@ fn test_has_transformation_with_output_type_package() {
 
     assert_eq!(
         false,
-        package.has_transformation_with_output_type(input_type)
+        package.has_transformation_with_output_type(&input_type)
     );
     assert_eq!(
         true,
-        package.has_transformation_with_output_type(output_type)
+        package.has_transformation_with_output_type(&output_type)
     );
 }
 
@@ -371,11 +374,11 @@ fn test_transformations_with_input_type_package() {
     let empty_transformation_vec: Vec<Transformation> = vec![];
     assert_eq!(
         empty_transformation_vec,
-        package.transformations_with_input_type(output_type)
+        package.transformations_with_input_type(&output_type)
     );
     assert_eq!(
         transformations_vec,
-        package.transformations_with_input_type(input_type)
+        package.transformations_with_input_type(&input_type)
     );
 }
 
@@ -402,10 +405,10 @@ fn test_transformations_with_output_type_package() {
     let empty_transformation_vec: Vec<Transformation> = vec![];
     assert_eq!(
         empty_transformation_vec,
-        package.transformations_with_output_type(input_type)
+        package.transformations_with_output_type(&input_type)
     );
     assert_eq!(
         transformations_vec,
-        package.transformations_with_output_type(output_type)
+        package.transformations_with_output_type(&output_type)
     );
 }

@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 /// A `PackageBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
 /// bytecode is the compiled source code of a package containing multiple transformations.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,23 +75,23 @@ impl Package {
 
     pub fn transformations_with_input_type(
         &self,
-        hp_type: HoliumPackPlaceHolder,
+        hp_type: &HoliumPackPlaceHolder,
     ) -> Vec<Transformation> {
         self.transformations
             .clone()
             .into_iter()
-            .filter(|t| t.has_input_type(hp_type.clone()))
+            .filter(|t| t.has_input_type(hp_type))
             .collect()
     }
 
     pub fn transformations_with_output_type(
         &self,
-        hp_type: HoliumPackPlaceHolder,
+        hp_type: &HoliumPackPlaceHolder,
     ) -> Vec<Transformation> {
         self.transformations
             .clone()
             .into_iter()
-            .filter(|t| t.has_output_type(hp_type.clone()))
+            .filter(|t| t.has_output_type(hp_type))
             .collect()
     }
 
@@ -114,30 +116,16 @@ impl Package {
      * Utils
      *************************************************************/
 
-    pub fn has_transformation_with_input_type(&self, hp_type: HoliumPackPlaceHolder) -> bool {
-        let mut exists = false;
-
-        for handle in self.transformations.iter() {
-            if handle.has_input_type(hp_type.clone()) {
-                exists = true;
-                break;
-            }
-        }
-
-        exists
+    pub fn has_transformation_with_input_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
+        self.transformations
+            .iter()
+            .any(|t| t.has_input_type(hp_type))
     }
 
-    pub fn has_transformation_with_output_type(&self, hp_type: HoliumPackPlaceHolder) -> bool {
-        let mut exists = false;
-
-        for handle in self.transformations.iter() {
-            if handle.has_output_type(hp_type.clone()) {
-                exists = true;
-                break;
-            }
-        }
-
-        exists
+    pub fn has_transformation_with_output_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
+        self.transformations
+            .iter()
+            .any(|t| t.has_output_type(hp_type))
     }
 }
 
@@ -192,11 +180,11 @@ impl Transformation {
      * Utils
      *************************************************************/
 
-    pub fn has_input_type(&self, hp_type: HoliumPackPlaceHolder) -> bool {
+    pub fn has_input_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
         contains_io_type(&self.inputs, hp_type)
     }
 
-    pub fn has_output_type(&self, hp_type: HoliumPackPlaceHolder) -> bool {
+    pub fn has_output_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
         contains_io_type(&self.outputs, hp_type)
     }
 }
@@ -240,10 +228,10 @@ pub enum HoliumPackPlaceHolder {
  * Utils
  *************************************************************/
 
-fn contains_io_type(vector: &[Io], hp_type: HoliumPackPlaceHolder) -> bool {
+fn contains_io_type(vector: &[Io], hp_type: &HoliumPackPlaceHolder) -> bool {
     let mut exists = false;
     for io in vector.iter() {
-        if std::mem::discriminant(&io.hp_type) == std::mem::discriminant(&hp_type) {
+        if std::mem::discriminant(&io.hp_type) == std::mem::discriminant(hp_type) {
             exists = true;
             break;
         }
