@@ -181,11 +181,15 @@ impl Transformation {
      *************************************************************/
 
     pub fn has_input_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
-        contains_io_type(&self.inputs, hp_type)
+        self.inputs
+            .iter()
+            .any(|io| std::mem::discriminant(&io.hp_type) == std::mem::discriminant(hp_type))
     }
 
     pub fn has_output_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
-        contains_io_type(&self.outputs, hp_type)
+        self.outputs
+            .iter()
+            .any(|io| std::mem::discriminant(&io.hp_type) == std::mem::discriminant(hp_type))
     }
 }
 
@@ -227,18 +231,6 @@ pub enum HoliumPackPlaceHolder {
 /*************************************************************
  * Utils
  *************************************************************/
-
-fn contains_io_type(vector: &[Io], hp_type: &HoliumPackPlaceHolder) -> bool {
-    let mut exists = false;
-    for io in vector.iter() {
-        if std::mem::discriminant(&io.hp_type) == std::mem::discriminant(hp_type) {
-            exists = true;
-            break;
-        }
-    }
-
-    exists
-}
 
 fn filter_on_io_type(vector: Vec<Io>, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
     vector
