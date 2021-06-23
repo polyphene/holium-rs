@@ -1,10 +1,10 @@
-/// A `PacakgeBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
+/// A `PackageBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
 /// bytecode is the compiled source code of a package containing multiple transformations.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PackageBytecode {
     // TODO might become something like [u8;32] ?
     pub cid: String,
-    binaries: Vec<u8>
+    binaries: Vec<u8>,
 }
 
 // TODO Should we generate CID on a new based on binary ?
@@ -39,17 +39,21 @@ pub struct Package {
     pub name: String,
     pub documentation: String,
     bytecode: PackageBytecode,
-    transformations: Vec<Transformation>
+    transformations: Vec<Transformation>,
 }
 
 impl Package {
-    pub fn new(name: String, bytecode: PackageBytecode, transformations: Vec<Transformation>) -> Self {
+    pub fn new(
+        name: String,
+        bytecode: PackageBytecode,
+        transformations: Vec<Transformation>,
+    ) -> Self {
         Package {
             version: String::new(),
             name,
             documentation: String::new(),
             bytecode,
-            transformations
+            transformations,
         }
     }
 
@@ -61,16 +65,30 @@ impl Package {
         &self.bytecode
     }
 
-    pub fn transformations(&self) ->  &[Transformation] {
+    pub fn transformations(&self) -> &[Transformation] {
         &self.transformations
     }
 
-    pub fn transformations_with_input_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Transformation> {
-        self.transformations.clone().into_iter().filter(|t| t.has_input_type(hp_type.clone())).collect()
+    pub fn transformations_with_input_type(
+        &self,
+        hp_type: HoliumPackPlaceHolder,
+    ) -> Vec<Transformation> {
+        self.transformations
+            .clone()
+            .into_iter()
+            .filter(|t| t.has_input_type(hp_type.clone()))
+            .collect()
     }
 
-    pub fn transformations_with_output_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Transformation> {
-        self.transformations.clone().into_iter().filter(|t| t.has_output_type(hp_type.clone())).collect()
+    pub fn transformations_with_output_type(
+        &self,
+        hp_type: HoliumPackPlaceHolder,
+    ) -> Vec<Transformation> {
+        self.transformations
+            .clone()
+            .into_iter()
+            .filter(|t| t.has_output_type(hp_type.clone()))
+            .collect()
     }
 
     /*************************************************************
@@ -100,7 +118,7 @@ impl Package {
         for handle in self.transformations.iter() {
             if handle.has_input_type(hp_type.clone()) {
                 exists = true;
-                break
+                break;
             }
         }
 
@@ -113,7 +131,7 @@ impl Package {
         for handle in self.transformations.iter() {
             if handle.has_output_type(hp_type.clone()) {
                 exists = true;
-                break
+                break;
             }
         }
 
@@ -127,7 +145,7 @@ pub struct Transformation {
     pub name: String,
     pub documentation: String,
     inputs: Vec<Io>,
-    outputs: Vec<Io>
+    outputs: Vec<Io>,
 }
 
 impl Transformation {
@@ -136,7 +154,7 @@ impl Transformation {
             name,
             documentation: String::new(),
             inputs,
-            outputs
+            outputs,
         }
     }
 
@@ -193,7 +211,11 @@ pub struct Io {
 
 impl Io {
     pub fn new(name: String, hp_type: HoliumPackPlaceHolder) -> Self {
-        Io { name, documentation: String::new(), hp_type }
+        Io {
+            name,
+            documentation: String::new(),
+            hp_type,
+        }
     }
 
     /*************************************************************
@@ -205,14 +227,12 @@ impl Io {
     }
 }
 
-
 // TODO delete when using Holium pack enum
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum HoliumPackPlaceHolder {
     Type0,
-    Type1
+    Type1,
 }
-
 
 /*************************************************************
  * Utils
@@ -231,5 +251,8 @@ fn contains_io_type(vector: &[Io], hp_type: HoliumPackPlaceHolder) -> bool {
 }
 
 fn filter_on_io_type(vector: Vec<Io>, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
-    vector.into_iter().filter(|i| std::mem::discriminant(&i.hp_type) == std::mem::discriminant(&hp_type)).collect()
+    vector
+        .into_iter()
+        .filter(|i| std::mem::discriminant(&i.hp_type) == std::mem::discriminant(&hp_type))
+        .collect()
 }
