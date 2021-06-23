@@ -25,9 +25,11 @@ impl PackageBytecode {
      * Setter
      *************************************************************/
 
-    pub fn update(&mut self, cid: String, bytecode: Vec<u8>) {
+    pub fn update(&mut self, cid: String, bytecode: Vec<u8>) -> &mut Self {
         self.cid = cid;
-        self.bytecode = bytecode
+        self.bytecode = bytecode;
+
+        self
     }
 }
 
