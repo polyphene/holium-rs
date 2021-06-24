@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 /// A `PackageBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
 /// bytecode is the compiled source code of a package containing multiple transformations.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,59 +71,19 @@ impl Package {
         &self.transformations
     }
 
-    pub fn transformations_with_input_type(
-        &self,
-        hp_type: &HoliumPackPlaceHolder,
-    ) -> Vec<Transformation> {
-        self.transformations
-            .clone()
-            .into_iter()
-            .filter(|t| t.has_input_type(hp_type))
-            .collect()
-    }
-
-    pub fn transformations_with_output_type(
-        &self,
-        hp_type: &HoliumPackPlaceHolder,
-    ) -> Vec<Transformation> {
-        self.transformations
-            .clone()
-            .into_iter()
-            .filter(|t| t.has_output_type(hp_type))
-            .collect()
-    }
-
     /*************************************************************
      * Setter
      *************************************************************/
 
-    pub fn tag(&mut self, version: String) {
-        self.version = version
-    }
-
-    pub fn document(&mut self, documentation: String) {
-        self.documentation = documentation
-    }
-
-    pub fn update(&mut self, bytecode: PackageBytecode, transformations: Vec<Transformation>) {
+    pub fn update(
+        &mut self,
+        bytecode: PackageBytecode,
+        transformations: Vec<Transformation>,
+    ) -> &mut Self {
         self.bytecode = bytecode;
-        self.transformations = transformations
-    }
+        self.transformations = transformations;
 
-    /*************************************************************
-     * Utils
-     *************************************************************/
-
-    pub fn has_transformation_with_input_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
-        self.transformations
-            .iter()
-            .any(|t| t.has_input_type(hp_type))
-    }
-
-    pub fn has_transformation_with_output_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
-        self.transformations
-            .iter()
-            .any(|t| t.has_output_type(hp_type))
+        self
     }
 }
 
@@ -159,38 +117,6 @@ impl Transformation {
     pub fn outputs(&self) -> &[Io] {
         &self.outputs
     }
-
-    pub fn inputs_with_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
-        filter_on_io_type(self.inputs.clone(), hp_type)
-    }
-
-    pub fn outputs_with_type(&self, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
-        filter_on_io_type(self.outputs.clone(), hp_type)
-    }
-
-    /*************************************************************
-     * Setter
-     *************************************************************/
-
-    pub fn document(&mut self, documentation: String) {
-        self.documentation = documentation
-    }
-
-    /*************************************************************
-     * Utils
-     *************************************************************/
-
-    pub fn has_input_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
-        self.inputs
-            .iter()
-            .any(|io| std::mem::discriminant(&io.hp_type) == std::mem::discriminant(hp_type))
-    }
-
-    pub fn has_output_type(&self, hp_type: &HoliumPackPlaceHolder) -> bool {
-        self.outputs
-            .iter()
-            .any(|io| std::mem::discriminant(&io.hp_type) == std::mem::discriminant(hp_type))
-    }
 }
 
 /// Io is a structure used to represent the different inputs and outputs that can be found in a transformation.
@@ -200,25 +126,25 @@ impl Transformation {
 pub struct Io {
     pub name: String,
     pub documentation: String,
-    pub hp_type: HoliumPackPlaceHolder,
+    pub hp_type: HoliumPackDataType,
 }
 
 impl Io {
-    pub fn new(name: String, hp_type: HoliumPackPlaceHolder) -> Self {
+    pub fn new(name: String, hp_type: HoliumPackDataType) -> Self {
         Io {
             name,
             documentation: String::new(),
             hp_type,
         }
     }
+}
 
-    /*************************************************************
-     * Setter
-     *************************************************************/
-
-    pub fn document(&mut self, documentation: String) {
-        self.documentation = documentation
-    }
+/// `HoliumPackDataType` is an enumeration to point to either a complex data type (a `Vec` of `Io`)
+/// or a simple data type (a `HoliumPackPlaceHolder`)
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum HoliumPackDataType {
+    Simple(HoliumPackPlaceHolder),
+    Complex(Vec<Io>),
 }
 
 // TODO delete when using Holium pack enum
@@ -226,15 +152,4 @@ impl Io {
 pub enum HoliumPackPlaceHolder {
     Type0,
     Type1,
-}
-
-/*************************************************************
- * Utils
- *************************************************************/
-
-fn filter_on_io_type(vector: Vec<Io>, hp_type: HoliumPackPlaceHolder) -> Vec<Io> {
-    vector
-        .into_iter()
-        .filter(|i| std::mem::discriminant(&i.hp_type) == std::mem::discriminant(&hp_type))
-        .collect()
 }
