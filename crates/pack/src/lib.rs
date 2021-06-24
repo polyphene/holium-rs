@@ -1,95 +1,100 @@
-extern crate rmp;
+//! The `pack` crate is meant to provide essential structures and functions to manipulate holium
+//! data, also called _packs_ because of its connection with [MessagePack](https://msgpack.org/),
+//! in the Holium Framework.
 
-use rmp::decode::read_marker;
+pub mod importers;
+pub mod store;
+
+use rmp::decode::{read_marker};
 use rmp::Marker;
-use flate2::Compression;
-use flate2::write::ZlibEncoder;
 use std::io::Write;
 
-static ZLIB_COMPRESSION: Compression = Compression::new(6);
-
-type HoliumFragmentCID = [u8; 32];
-
-pub trait HoliumTypes {
-    fn is_holium_primitive_msg(&self) -> bool;
-
-    fn is_holium_array_pack(&self) -> bool;
-    fn is_holium_pack(&self) -> bool;
-
-    fn is_holium_array_fragment(&self) -> bool;
-    fn is_holium_fragment(&self) -> bool;
+/// The default type to handle data in the Holium framework.
+pub enum HoliumPack {
+    /// A primitive value. HoliumPack primitive types are a subset of [MessagePack](https://msgpack.org/) types.
+    Primitive(Vec<u8>),
+    /// All non-primitive values are _arrays_.
+    Array(Vec<HoliumPack>),
 }
 
-pub trait HoliumFragments {
-    fn compute_cid(&self) -> HoliumFragmentCID;
+/// Check if a MessagePack vector hold an HoliumPack primitive value.
+fn is_primitive_pack(mut buf: &[u8]) -> bool {
+    let marker = read_marker(&mut buf);
+    return match marker {
+        Ok(m) => {
+            match m {
+                Marker::Null
+                | Marker::False
+                | Marker::True
+                | Marker::U8
+                | Marker::U16
+                | Marker::U32
+                | Marker::U64
+                | Marker::I8
+                | Marker::I16
+                | Marker::I32
+                | Marker::I64
+                | Marker::F32
+                | Marker::F64
+                | Marker::Str8
+                | Marker::Str16
+                | Marker::Str32
+                | Marker::Bin8
+                | Marker::Bin16
+                | Marker::Bin32 => true,
+                Marker::FixStr(u8) => u8 < 32,
+                Marker::FixPos(u8) => u8 < 128,
+                Marker::FixNeg(i8) => -32 <= i8 && i8 < 0,
+                _ => false
+            }
+        }
+        Err(_) => { false }
+    };
 }
 
-impl HoliumTypes for Vec<u8> {
-    fn is_holium_primitive_msg(&self) -> bool {
-        match read_marker(&mut &self[..]).unwrap() {
-            Marker::Null
-            | Marker::False
-            | Marker::True
-            | Marker::U8
-            | Marker::U16
-            | Marker::U32
-            | Marker::U64
-            | Marker::I8
-            | Marker::I16
-            | Marker::I32
-            | Marker::I64
-            | Marker::F32
-            | Marker::F64
-            | Marker::Str8
-            | Marker::Str16
-            | Marker::Str32
-            | Marker::Bin8
-            | Marker::Bin16
-            | Marker::Bin32 => true,
-            Marker::FixStr(u8) => u8 < 32,
-            Marker::FixPos(u8) => u8 < 128,
-            Marker::FixNeg(i8) => -32 <= i8 && i8 < 0,
-            _ => false
-        }
+impl HoliumPack {
+    /// Constructs a new HoliumPack::Primitive.
+    ///
+    /// # Panics
+    ///
+    /// Providing a buffer that is not a valid HoliumPack primitive will cause this constructor to panic.
+    pub fn new_primitive(buf: Vec<u8>) -> HoliumPack {
+        // TODO check type and everything
+        if !is_primitive_pack(&buf) { panic!("Expected a valid holium primitive, got {:?}.", buf) }
+        HoliumPack::Primitive(buf)
     }
 
-    fn is_holium_array_pack(&self) -> bool {
-        match read_marker(&mut &self[..]).unwrap() {
-            Marker::Array16 => true,
-            Marker::Array32 => true,
-            Marker::FixArray(u8) => u8 < 15,
-            _ => false
-        }
+    /// Constructs a new HoliumPack::Array.
+    ///
+    /// # Panics
+    ///
+    /// Providing a vector that cannot be represented as a valid HoliumPack will cause this constructor to panic.
+    pub fn new_array(vec: Vec<HoliumPack>) -> HoliumPack {
+        // TODO check size or panic
+        HoliumPack::Array(vec)
     }
 
-    fn is_holium_pack(&self) -> bool {
-        self.is_holium_primitive_msg() || self.is_holium_array_pack()
+    /// Recursively turns a structured HoliumPack into a valid single binarized pack.
+    pub fn as_bytes(&self) -> Vec<u8> {
+        return match self {
+            HoliumPack::Primitive(buf) => buf.clone(),
+            HoliumPack::Array(v) => {
+                let mut pack: Vec<u8> = Vec::new();
+                rmp::encode::write_array_len(&mut pack, v.len() as u32).unwrap();
+                for p in v.iter() {
+                    pack.write_all(p.as_bytes().as_slice()).unwrap()
+                }
+                pack
+            }
+        };
     }
 
-    fn is_holium_array_fragment(&self) -> bool {
-        match read_marker(&mut &self[..]).unwrap() {
-            Marker::Array16 => true,
-            Marker::Array32 => true,
-            Marker::FixArray(u8) => u8 < 15,
-            _ => false
-        }
-    }
-
-    fn is_holium_fragment(&self) -> bool {
-        self.is_holium_primitive_msg() || self.is_holium_array_fragment()
-    }
-}
-
-
-impl HoliumFragments for Vec<u8> {
-    fn compute_cid(&self) -> HoliumFragmentCID {
-        if self.is_holium_primitive_msg() {
-            let mut zlib_encoder = ZlibEncoder::new(Vec::new(), ZLIB_COMPRESSION);
-            zlib_encoder.write_all(self).unwrap();
-            let compressed_bytes = zlib_encoder.finish().unwrap();
-            let cid = blake3::hash(&*compressed_bytes);
-            return *cid.as_bytes();
-        }
-        panic!()
+    /// Makes a structured HoliumPack from its binarized version.
+    ///
+    /// # Panics
+    ///
+    /// TODO
+    pub fn from_bytes(_buf: Vec<u8>) -> HoliumPack {
+        todo!()
     }
 }

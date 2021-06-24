@@ -1,44 +1,44 @@
+mod store;
+
 extern crate holium_pack;
 extern crate hex;
 
-use holium_pack::{HoliumTypes, HoliumFragments};
-
-#[test]
-fn pack_is_bytes() {
-    let _: Vec<u8>  = vec![0xc0, 0xc0];
-}
-
-#[test]
-fn pack_can_be_validated() {
-    let pack: Vec<u8>  = vec![0xc0, 0xc0];
-    pack.is_holium_pack();
-}
+use holium_pack::HoliumPack;
 
 #[test]
 fn nil_msg_pack_is_valid_holium_pack() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_nil(&mut pack).unwrap();
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_nil(&mut msg_pack).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
     // also test the shape of the message itself
-    assert_eq!(vec![0xc0], pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(vec![0xc0], buf),
+        _ => panic!()
+    }
 }
 
 #[test]
 fn false_bool_msg_pack_is_valid_holium_pack() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_bool(&mut pack, false).unwrap();
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_bool(&mut msg_pack, false).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
     // also test the shape of the message itself
-    assert_eq!(vec![0xc2], pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(vec![0xc2], buf),
+        _ => panic!()
+    }
 }
 
 #[test]
 fn true_bool_msg_pack_is_valid_holium_pack() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_bool(&mut pack, true).unwrap();
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_bool(&mut msg_pack, true).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
     // also test the shape of the message itself
-    assert_eq!(vec![0xc3], pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(vec![0xc3], buf),
+        _ => panic!()
+    }
 }
 
 #[test]
@@ -83,10 +83,13 @@ fn int_2_pow_7_should_take_2_bytes() {
 
 #[test]
 fn int_2_pow_7_minus_1_should_take_1_byte() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_sint(&mut pack, 127).unwrap();
-    assert_eq!(1, pack.len());
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_sint(&mut msg_pack, 127).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(1, buf.len()),
+        _ => panic!()
+    }
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -97,10 +100,13 @@ fn int_2_pow_7_minus_1_should_take_1_byte() {
 
 #[test]
 fn int_0_should_take_1_byte() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_sint(&mut pack, 0).unwrap();
-    assert_eq!(1, pack.len());
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_sint(&mut msg_pack, 0).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(1, buf.len()),
+        _ => panic!()
+    }
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -111,10 +117,13 @@ fn int_0_should_take_1_byte() {
 
 #[test]
 fn int_minus_1_should_take_1_byte() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_sint(&mut pack, -1).unwrap();
-    assert_eq!(1, pack.len());
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_sint(&mut msg_pack, -1).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(1, buf.len()),
+        _ => panic!()
+    }
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -125,10 +134,13 @@ fn int_minus_1_should_take_1_byte() {
 
 #[test]
 fn int_minus_2_pow_5_should_take_1_byte() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_sint(&mut pack, -32).unwrap();
-    assert_eq!(1, pack.len());
-    assert!(pack.is_holium_pack());
+    let mut msg_pack: Vec<u8> = Vec::new();
+    rmp::encode::write_sint(&mut msg_pack, -32).unwrap();
+    let holium_pack = HoliumPack::new_primitive(msg_pack);
+    match holium_pack {
+        HoliumPack::Primitive(buf) => assert_eq!(1, buf.len()),
+        _ => panic!()
+    }
     // TODO fix
     // try with larger sizes
     // pack.clear();
@@ -189,17 +201,7 @@ fn int_minus_2_pow_63_should_take_9_bytes() {
 // TODO add tests on the non-representation of maps (for each of the 3 possible size methods) in Holium packs
 
 
+// TODO add tests on the representation of primitive type values in Holium packs as bytes
 
-// TODO add tests on the representation of arrays (for each of the 3 possible size methods) in Holium fragments
+// TODO add tests on the representation of arrays (for each of the 3 possible size methods) in Holium packs as bytes
 // verifying that **all elements of any array should only be CIDs**
-
-
-#[test]
-fn primitive_values_have_cids() {
-    let mut pack: Vec<u8>  = Vec::new();
-    rmp::encode::write_nil(&mut pack).unwrap();
-    assert_eq!(
-        hex::decode("4e00a27d72b9cafbd6b13c870f1c25bf6f819f23e16a2a0b9f6aaffb06c45843").unwrap(),
-        pack.compute_cid()
-    )
-}
