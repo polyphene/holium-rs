@@ -1,6 +1,11 @@
 use crate::error::PipeError;
 use std::collections::HashMap;
 
+/// A `Connector` is a structure that describes a connection between two transformations. It is
+/// composed of a CID representing the sending `Transformation`, and a set of indexes to map the
+/// outputs of the sending transformation to the inputs of the receiving `Transformation`.
+///
+/// It has to be noted that output indexes can appear multiple times while input indexes can not.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Connector {
     // TODO once fixed change the type of cid
@@ -39,7 +44,8 @@ impl Connector {
     /*************************************************************
      * Setter
      *************************************************************/
-
+    /// Function used to add a new mapping between a sending `Transformation` output index and the
+    /// receiving `Transformation` input index.
     pub fn add_mapping(&mut self, output: String, input: String) -> Result<&mut Self, PipeError> {
         if !is_correct_index_string(output.as_str()) || !is_correct_index_string(input.as_str()) {
             return Err(PipeError::InvalidMappingFormat);
@@ -56,7 +62,7 @@ impl Connector {
     /*************************************************************
      * Utils
      *************************************************************/
-
+    /// Function used to generate a `Connector` from a correctly formatted string.
     pub fn parse(string: &str) -> Result<Connector, PipeError> {
         let parts: Vec<&str> = string.split_whitespace().collect();
 
@@ -79,6 +85,7 @@ impl Connector {
         Ok(Connector::new(cid, outputs, inputs).unwrap())
     }
 
+    /// Function used to serialize a `Connector` to a correctly formatted string.
     pub fn serialize(&mut self) -> Result<String, PipeError> {
         if self.outputs_index.len() != self.inputs_index.len() {
             return Err(PipeError::InvalidMappingError);
@@ -93,10 +100,15 @@ impl Connector {
     }
 }
 
+/// A `Pipe` is a structure representing a connection between one or multiple `Transformation` to
+/// a receiving `Transformation`.
+///
+/// It is composed of a CID pointing to a wasm bytecode, the handle of the receiving transformation,
+/// and a list of `Connector`.
 struct Pipe {
     // TODO Should all of our CID be a struct containing utils functions ?
-    bytecode_cid: String,
-    transformation_handle: String,
+    pub(crate) bytecode_cid: String,
+    pub(crate) transformation_handle: String,
     pub connectors: Vec<Connector>,
 }
 
