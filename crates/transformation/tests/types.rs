@@ -1,37 +1,6 @@
 use holium_transformation::types::{
-    HoliumPackDataType, HoliumPackPlaceHolder, Io, Package, PackageBytecode, Transformation,
+    HoliumPackDataType, HoliumPackPlaceHolder, Io, Package, Transformation,
 };
-
-/*************************************************************
- * Package bytecode testing
- *************************************************************/
-
-#[test]
-fn test_new_package_bytecode() {
-    let cid = String::from("cid");
-    let bytecode: Vec<u8> = vec![];
-
-    let package_bytecode: PackageBytecode = PackageBytecode::new(cid.clone(), bytecode.clone());
-
-    assert_eq!(cid, package_bytecode.cid);
-    assert_eq!(&bytecode, package_bytecode.bytecode());
-}
-
-#[test]
-fn test_update_package_bytecode() {
-    let cid = String::from("cid");
-    let bytecode: Vec<u8> = vec![];
-
-    let mut package_bytecode: PackageBytecode = PackageBytecode::new(cid, bytecode);
-
-    let cid = String::from("cid2");
-    let bytecode: Vec<u8> = vec![0, 1];
-
-    package_bytecode.update(cid.clone(), bytecode.clone());
-
-    assert_eq!(cid, package_bytecode.cid);
-    assert_eq!(&bytecode, package_bytecode.bytecode());
-}
 
 /*************************************************************
  * Io testing
@@ -87,20 +56,14 @@ fn test_new_package() {
 
     // Prepare package metadata
     let name = String::from("name");
-    let bytecode_cid = String::from("cid");
     let bytecode: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
-    let package = Package::new(
-        name.clone(),
-        package_bytecode.clone(),
-        transformations_vec.clone(),
-    );
+    let package = Package::new(name.clone(), bytecode.clone(), transformations_vec.clone());
 
     assert_eq!(String::new(), package.version);
     assert_eq!(name, package.name);
     assert_eq!(String::new(), package.documentation);
-    assert_eq!(&package_bytecode, package.bytecode());
+    assert_eq!(&bytecode, package.bytecode());
     assert_eq!(&transformations_vec, package.transformations());
 }
 
@@ -118,16 +81,12 @@ fn test_update_package() {
 
     // Prepare package metadata
     let name = String::from("name");
-    let bytecode_cid = String::from("cid");
     let bytecode: Vec<u8> = vec![];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
-    let mut package = Package::new(name.clone(), package_bytecode, transformations_vec);
+    let mut package = Package::new(name.clone(), bytecode, transformations_vec);
 
     // Prepare new bytecode & transformation information
-    let bytecode_cid = String::from("cid2");
     let bytecode: Vec<u8> = vec![0, 1];
-    let package_bytecode = PackageBytecode::new(bytecode_cid, bytecode);
 
     let transformation_name = String::from("new_name");
 
@@ -135,8 +94,8 @@ fn test_update_package() {
     let transformations_vec = vec![transformation];
 
     // Update package
-    package.update(package_bytecode.clone(), transformations_vec.clone());
+    package.update(bytecode.clone(), transformations_vec.clone());
     // TODO not checking cid
-    assert_eq!(&package_bytecode, package.bytecode());
+    assert_eq!(&bytecode, package.bytecode());
     assert_eq!(transformations_vec, package.transformations());
 }

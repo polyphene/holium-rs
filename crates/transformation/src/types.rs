@@ -1,38 +1,3 @@
-/// A `PackageBytecode` structure is a Rust representation of a Wasm package bytecode and its CID. A
-/// bytecode is the compiled source code of a package containing multiple transformations.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct PackageBytecode {
-    // TODO might become something like [u8;32] ?
-    pub cid: String,
-    bytecode: Vec<u8>,
-}
-
-// TODO Should we generate CID on a new based on bytecode ?
-impl PackageBytecode {
-    pub fn new(cid: String, bytecode: Vec<u8>) -> Self {
-        PackageBytecode { cid, bytecode }
-    }
-
-    /*************************************************************
-     * Getter
-     *************************************************************/
-
-    pub fn bytecode(&self) -> &[u8] {
-        &self.bytecode
-    }
-
-    /*************************************************************
-     * Setter
-     *************************************************************/
-
-    pub fn update(&mut self, cid: String, bytecode: Vec<u8>) -> &mut Self {
-        self.cid = cid;
-        self.bytecode = bytecode;
-
-        self
-    }
-}
-
 /// A `Package` structure is a Rust representation of a package in the Holium Framework. A `Package`
 /// is mainly composed of a wasm bytecode that contains `Transformation`.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -40,16 +5,12 @@ pub struct Package {
     pub version: String,
     pub name: String,
     pub documentation: String,
-    bytecode: PackageBytecode,
+    bytecode: Vec<u8>,
     transformations: Vec<Transformation>,
 }
 
 impl Package {
-    pub fn new(
-        name: String,
-        bytecode: PackageBytecode,
-        transformations: Vec<Transformation>,
-    ) -> Self {
+    pub fn new(name: String, bytecode: Vec<u8>, transformations: Vec<Transformation>) -> Self {
         Package {
             version: String::new(),
             name,
@@ -63,7 +24,7 @@ impl Package {
      * Getter
      *************************************************************/
 
-    pub fn bytecode(&self) -> &PackageBytecode {
+    pub fn bytecode(&self) -> &[u8] {
         &self.bytecode
     }
 
@@ -75,11 +36,7 @@ impl Package {
      * Setter
      *************************************************************/
 
-    pub fn update(
-        &mut self,
-        bytecode: PackageBytecode,
-        transformations: Vec<Transformation>,
-    ) -> &mut Self {
+    pub fn update(&mut self, bytecode: Vec<u8>, transformations: Vec<Transformation>) -> &mut Self {
         self.bytecode = bytecode;
         self.transformations = transformations;
 
