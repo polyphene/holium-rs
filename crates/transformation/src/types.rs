@@ -83,7 +83,7 @@ impl Transformation {
 pub struct Io {
     pub name: String,
     pub documentation: String,
-    pub hp_type: HoliumPackDataType,
+    pub data_type: HoliumPackDataType,
 }
 
 impl Io {
@@ -91,7 +91,7 @@ impl Io {
         Io {
             name,
             documentation: String::new(),
-            hp_type,
+            data_type: hp_type,
         }
     }
 }

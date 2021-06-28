@@ -15,7 +15,7 @@ fn test_new_io() {
 
     assert_eq!(name, io.name);
     assert_eq!(String::new(), io.documentation);
-    assert_eq!(hp_type, io.hp_type);
+    assert_eq!(hp_type, io.data_type);
 }
 
 /*************************************************************
