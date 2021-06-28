@@ -124,6 +124,20 @@ impl Pipe {
             connectors,
         }
     }
+
+    /*************************************************************
+     * Getter
+     *************************************************************/
+
+    pub fn bytecode_cid(&self) -> &str {
+        &self.bytecode_cid
+    }
+
+    pub fn transformation_handle(&self) -> &str {
+        &self.transformation_handle
+    }
+
+    // TODO add parse and serialize functions here also ?
 }
 
 /*************************************************************
