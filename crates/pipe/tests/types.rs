@@ -1,5 +1,9 @@
 use holium_pipe::error::PipeError;
-use holium_pipe::types::Connector;
+use holium_pipe::types::{Connector, Pipe};
+
+/*************************************************************
+ * Test Connector
+ *************************************************************/
 
 #[test]
 fn test_new_connector() {
@@ -156,10 +160,31 @@ fn test_add_mapping_connector() {
 
     let mut parsed_connector = Connector::parse(connector_string).unwrap();
 
-    parsed_connector.add_mapping(output_index, input_index);
+    let _result_add_mapping = parsed_connector.add_mapping(output_index, input_index);
 
     let should_be_connector =
         Connector::parse("iamacid 0,1,2.0.0.0-2.0.0.4,3 2.4,0,3-6,8-9").unwrap();
 
     assert_eq!(should_be_connector, parsed_connector);
+}
+
+/*************************************************************
+ * Test Pipe
+ *************************************************************/
+
+#[test]
+fn test_new_pipe() {
+    let bytecode_cid = String::from("imacid");
+    let transformation_handle = String::from("imahandle");
+    let connectors: Vec<Connector> = vec![];
+
+    let pipe = Pipe::new(
+        bytecode_cid.clone(),
+        transformation_handle.clone(),
+        connectors.clone(),
+    );
+
+    assert_eq!(bytecode_cid, pipe.bytecode_cid());
+    assert_eq!(transformation_handle, pipe.transformation_handle());
+    assert_eq!(connectors, pipe.connectors);
 }

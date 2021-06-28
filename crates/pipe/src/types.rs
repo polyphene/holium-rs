@@ -6,7 +6,7 @@ use std::collections::HashMap;
 /// outputs of the sending transformation to the inputs of the receiving `Transformation`.
 ///
 /// It has to be noted that output indexes can appear multiple times while input indexes can not.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Connector {
     // TODO once fixed change the type of cid
     pub cid: String,
@@ -105,7 +105,8 @@ impl Connector {
 ///
 /// It is composed of a CID pointing to a wasm bytecode, the handle of the receiving transformation,
 /// and a list of `Connector`.
-struct Pipe {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Pipe {
     // TODO Should all of our CID be a struct containing utils functions ?
     pub(crate) bytecode_cid: String,
     pub(crate) transformation_handle: String,
