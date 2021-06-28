@@ -3,6 +3,8 @@
 pub enum PipeError {
     #[error("Invalid mapping")]
     InvalidMappingError,
+    #[error("Invalid mapping format")]
+    InvalidMappingFormat,
     #[error("Error in serialization process")]
     SerializationError,
 }

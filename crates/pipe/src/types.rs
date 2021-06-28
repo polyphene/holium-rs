@@ -5,41 +5,59 @@ use std::collections::HashMap;
 pub struct Connector {
     // TODO once fixed change the type of cid
     pub cid: String,
-    pub outputs: Vec<String>,
-    pub inputs: Vec<String>,
+    pub outputs_index: Vec<String>,
+    pub inputs_index: Vec<String>,
 }
 
 impl Connector {
-    pub fn new(cid: String, outputs: Vec<String>, inputs: Vec<String>) -> Self {
-        Connector {
-            cid,
-            outputs,
-            inputs,
+    pub fn new(
+        cid: String,
+        outputs_index: Vec<String>,
+        inputs_index: Vec<String>,
+    ) -> Result<Self, PipeError> {
+        if outputs_index.len() != inputs_index.len() {
+            return Err(PipeError::InvalidMappingError);
         }
+
+        if outputs_index
+            .iter()
+            .any(|o| !is_correct_index_string(o.as_str()))
+            || inputs_index
+                .iter()
+                .any(|o| !is_correct_index_string(o.as_str()))
+        {
+            return Err(PipeError::InvalidMappingFormat);
+        }
+
+        Ok(Connector {
+            cid,
+            outputs_index,
+            inputs_index,
+        })
     }
 
     /*************************************************************
      * Setter
      *************************************************************/
 
-    pub fn add_mapping(&mut self, output: String, input: String) -> Result<(), PipeError> {
+    pub fn add_mapping(&mut self, output: String, input: String) -> Result<&mut Self, PipeError> {
         if !is_correct_index_string(output.as_str()) || !is_correct_index_string(input.as_str()) {
-            //TODO Add err
+            return Err(PipeError::InvalidMappingFormat);
         }
 
-        self.outputs.push(output);
-        self.inputs.push(input);
+        self.outputs_index.push(output);
+        self.inputs_index.push(input);
 
-        sort_io_mappings(&mut self.outputs, &mut self.inputs);
+        sort_io_mappings(&mut self.outputs_index, &mut self.inputs_index);
 
-        Ok(())
+        Ok(self)
     }
 
     /*************************************************************
      * Utils
      *************************************************************/
 
-    pub fn parse(string: String) -> Result<Connector, PipeError> {
+    pub fn parse(string: &str) -> Result<Connector, PipeError> {
         let parts: Vec<&str> = string.split_whitespace().collect();
 
         if parts.len() != 3 {
@@ -58,18 +76,18 @@ impl Connector {
             return Err(PipeError::InvalidMappingError);
         }
 
-        Ok(Connector::new(cid, outputs, inputs))
+        Ok(Connector::new(cid, outputs, inputs).unwrap())
     }
 
     pub fn serialize(&mut self) -> Result<String, PipeError> {
-        if self.outputs.len() != self.inputs.len() {
-            return Err(PipeError::SerializationError);
+        if self.outputs_index.len() != self.inputs_index.len() {
+            return Err(PipeError::InvalidMappingError);
         }
 
-        sort_io_mappings(&mut self.outputs, &mut self.inputs);
+        sort_io_mappings(&mut self.outputs_index, &mut self.inputs_index);
 
-        let outputs_string = serialize_connector_mapping(self.outputs.clone());
-        let inputs_string = serialize_connector_mapping(self.inputs.clone());
+        let outputs_string = serialize_connector_mapping(self.outputs_index.clone());
+        let inputs_string = serialize_connector_mapping(self.inputs_index.clone());
 
         Ok(format!("{} {} {}", self.cid, outputs_string, inputs_string))
     }
@@ -146,12 +164,13 @@ fn parse_connector_mapping(mapping_string: &str) -> Result<Vec<String>, PipeErro
 }
 
 fn is_correct_mapping_string(string: &str) -> bool {
-    let re = regex::Regex::new(r"^[\d,.-]*$").unwrap();
+    let re =
+        regex::Regex::new(r"^([0-9]*([.]?[0-9]+)+)([-]([0-9]*([.]?[0-9]+)+))?([,]([0-9]*([.]?[0-9]+)+)([-]([0-9]*([.]?[0-9]+)+))?)*$").unwrap();
     re.is_match(string)
 }
 
 fn is_correct_index_string(string: &str) -> bool {
-    let re = regex::Regex::new(r"^[\d.]*$").unwrap();
+    let re = regex::Regex::new(r"^([0-9]*([.]?[0-9]+)+)$").unwrap();
     re.is_match(string)
 }
 
