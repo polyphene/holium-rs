@@ -1,6 +1,10 @@
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
 
+use crate::error::PipelineError;
+use crate::error::PipelineError::ConnectionError;
+use holium_pipe::types::Pipe;
+
 /*************************************************************
  * Pipelines
  *************************************************************/
@@ -13,7 +17,7 @@ pub type HoliumGraph = DiGraph<String, String>;
 pub struct Pipeline {
     pub name: String,
     pub documentation: String,
-    pub dag: HoliumGraph,
+    dag: HoliumGraph,
 }
 
 impl Pipeline {
@@ -26,30 +30,107 @@ impl Pipeline {
     }
 
     /*************************************************************
+     * Getter
+     *************************************************************/
+    pub fn dag(&self) -> &HoliumGraph {
+        &self.dag
+    }
+
+    /*************************************************************
      * Setter
      *************************************************************/
-    /// Function to set a new pipe in the pipeline
+    /// Function to set a new lone pipe in the pipeline
     // TODO here set cid as the type that will exist once developed
-    pub fn add_pipe(&mut self, pipe_cid: String) -> &mut Self {
-        self.dag.add_node(pipe_cid);
-        self
+    pub fn add_pipe(
+        &mut self,
+        holium_object: &HoliumCidPlaceHolder,
+        connections: Vec<&HoliumCidPlaceHolder>,
+    ) -> Result<&mut Self, PipelineError> {
+        self.add_lone_pipe(holium_object)?;
+        self.connect_pipe(holium_object, connections)
+    }
+
+    /// Function to set a new lone pipe in the pipeline
+    // TODO here set cid as the type that will exist once developed
+    pub fn add_lone_pipe(
+        &mut self,
+        holium_object: &HoliumCidPlaceHolder,
+    ) -> Result<&mut Self, PipelineError> {
+        if !holium_object.object.is_pipe() {
+            return Err(PipelineError::ObjectNotPipe(holium_object.cid.clone()));
+        }
+
+        self.dag.add_node(holium_object.cid.clone());
+        Ok(self)
     }
 
     /// Function to remove a pipe from the pipeline, returns `None` if the pipe is not in the pipeline
     /// and the pipe CID in case of success
-    pub fn remove_pipe(&mut self, pipe_cid: String) -> Option<String> {
+    pub fn remove_pipe(&mut self, pipe_cid: String) -> Result<&mut Self, PipelineError> {
         let result = self.dag.node_indices().find(|i| self.dag[*i] == pipe_cid);
         if result.is_none() {
-            return None;
+            return Err(PipelineError::CidNotFound(pipe_cid));
         }
 
-        self.dag.remove_node(result.unwrap())
+        self.dag.remove_node(result.unwrap());
+        Ok(self)
     }
 
-    pub fn connect(&mut self, left_pipe: String, right_pipe: String) -> &mut Self {
-        // TODO
+    pub fn connect_pipe(
+        &mut self,
+        holium_object_to_connect: &HoliumCidPlaceHolder,
+        connections: Vec<&HoliumCidPlaceHolder>,
+    ) -> Result<&mut Self, PipelineError> {
+        // Basic data check
+        if !holium_object_to_connect.object.is_pipe() {
+            return Err(PipelineError::ObjectNotPipe(
+                holium_object_to_connect.cid.clone(),
+            ));
+        }
 
-        self
+        let node_result = self
+            .dag
+            .node_indices()
+            .find(|i| self.dag[*i] == holium_object_to_connect.cid);
+        if node_result.is_none() {
+            return Err(PipelineError::CidNotFound(
+                holium_object_to_connect.cid.clone(),
+            ));
+        }
+
+        let pipe_to_connect = holium_object_to_connect.object.pipe().unwrap();
+
+        if pipe_to_connect.connectors.len() != connections.len() {
+            return Err(ConnectionError);
+        }
+
+        // Before connecting, making sure all nodes exists
+        let mut connections_indexes: Vec<NodeIndex> = vec![];
+
+        for i in 0..connections.len() {
+            let connection = self
+                .dag
+                .node_indices()
+                .find(|n_i| self.dag[*n_i] == connections[i].cid);
+            if connection.is_none() {
+                return Err(PipelineError::CidNotFound(connections[i].cid.clone()));
+            }
+
+            if !connections[i].object.is_pipe() {
+                return Err(PipelineError::ObjectNotPipe(connections[i].cid.clone()));
+            }
+            connections_indexes.push(connection.unwrap());
+        }
+
+        // Connecting nodes
+        let node_to_connect = node_result.unwrap();
+
+        for connection in connections_indexes {
+            self.dag
+                .add_edge(connection, node_to_connect.clone(), String::new());
+        }
+
+        Ok(self)
     }
 
     /*************************************************************
@@ -93,4 +174,42 @@ fn get_directed_cids<'a>(
     dag.neighbors_directed(*node_index, direction)
         .map(|i| dag[i].as_str())
         .collect()
+}
+
+/*************************************************************
+ * TODO code to adapt once CID crate developed
+ *************************************************************/
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum HoliumObject {
+    Pipe(Pipe),
+    Other,
+}
+
+impl HoliumObject {
+    fn is_pipe(&self) -> bool {
+        match self {
+            HoliumObject::Pipe(_) => true,
+            _ => false,
+        }
+    }
+
+    fn pipe(&self) -> Option<&Pipe> {
+        match self {
+            HoliumObject::Pipe(pipe) => Some(pipe),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HoliumCidPlaceHolder {
+    cid: String,
+    object: HoliumObject,
+}
+
+impl HoliumCidPlaceHolder {
+    pub fn new(cid: String, object: HoliumObject) -> Self {
+        HoliumCidPlaceHolder { cid, object }
+    }
 }
