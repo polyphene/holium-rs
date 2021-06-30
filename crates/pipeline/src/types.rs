@@ -39,7 +39,7 @@ impl Pipeline {
     /*************************************************************
      * Setter
      *************************************************************/
-    /// Function to set a new lone pipe in the pipeline
+    /// Function to set a new pipe in the pipeline and connecting it at the same time
     // TODO here set cid as the type that will exist once developed
     pub fn add_pipe(
         &mut self,
@@ -50,7 +50,7 @@ impl Pipeline {
         self.connect_pipe(holium_object, connections)
     }
 
-    /// Function to set a new lone pipe in the pipeline
+    /// Function to set a new lone pipe in the pipeline, a pipe without connections
     // TODO here set cid as the type that will exist once developed
     pub fn add_lone_pipe(
         &mut self,
@@ -64,8 +64,8 @@ impl Pipeline {
         Ok(self)
     }
 
-    /// Function to remove a pipe from the pipeline, returns `None` if the pipe is not in the pipeline
-    /// and the pipe CID in case of success
+    /// Function to remove a pipe from the pipeline
+    /// TODO this function might break our logic, to see
     pub fn remove_pipe(&mut self, pipe_cid: String) -> Result<&mut Self, PipelineError> {
         let result = self.dag.node_indices().find(|i| self.dag[*i] == pipe_cid);
         if result.is_none() {
@@ -76,6 +76,7 @@ impl Pipeline {
         Ok(self)
     }
 
+    /// Function to connect a lone pipe to a set of pipes, already included in the DAG
     pub fn connect_pipe(
         &mut self,
         holium_object_to_connect: &HoliumCidPlaceHolder,
