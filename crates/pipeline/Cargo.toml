@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 holium-pipe = { path = "../pipe" , version = "=0.1.0" }
 petgraph = "0.5.1"
+thiserror = "1.0.25"
