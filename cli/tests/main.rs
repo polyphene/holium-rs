@@ -1,3 +1,3 @@
 /**********************************************************************************
- * Src directory is where the source code is supposed to be
+ * Tests directory should contain integration tests for our source code
  **********************************************************************************/
