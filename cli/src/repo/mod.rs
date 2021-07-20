@@ -20,8 +20,14 @@ const LOCAL_CONFIG_FILE: &'static str = "config.local";
 /// Errors for the repo module.
 enum RepoError {
     /// Thrown when trying to initialize a repository twice, without the force option.
-    #[error("failed to initiate, as '.holium' exists. Use `-f` to force.")]
-    RepoAlreadyInitialized,
+    #[error("failed to initiate as '.holium' already exists. Use `-f` to force.")]
+    AlreadyInitialized,
+    /// Thrown when trying to initialize a repository that is not tracked by any supported SCM tool, without the dedicated option.
+    #[error("failed to initiate as current repository is not tracked by any SCM tool. Use `--no-scm` to initialize anyway.")]
+    NotScmTracked,
+    /// Thrown when trying to initialize a repository that is not tracked by any supported DVC tool, without the dedicated option.
+    #[error("failed to initiate as current repository is not tracked by any DVC tool. Use `--no-dvc` to initialize anyway.")]
+    NotDvcTracked,
     /// Thrown when the process running git exits with an error code.
     #[error("failed to run git")]
     FailedToRunGit,
@@ -36,7 +42,7 @@ enum RepoError {
 /// the options `--no-scm` and/or `--no-dvc` should be used.
 ///
 /// In case the directory is not empty, the `--force` option must be used in order to override it.
-pub fn init(root_dir: &PathBuf, _no_scm: bool, _no_dvc: bool, force: bool) -> Result<()> {
+pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
 
     // If root directory is already an initialized repository, force re-initialization or throw an error
     let local_holium_path = root_dir.join(PROJECT_DIR);
@@ -48,25 +54,24 @@ pub fn init(root_dir: &PathBuf, _no_scm: bool, _no_dvc: bool, force: bool) -> Re
                 fs::remove_file(local_holium_path)?;
             }
         } else {
-            return Err(RepoError::RepoAlreadyInitialized.into());
+            return Err(RepoError::AlreadyInitialized.into());
         }
     }
 
-    create_project_structure(&root_dir)?;
-
-    Ok(())
-}
-
-fn create_project_structure(root_dir: &PathBuf) -> Result<()> {
     // Check if the repository is tracked with an SCM and/or a Data Version Control tool
     let is_scm_enabled = root_dir.join(".git").exists();
     let is_dvc_enabled = root_dir.join(".dvc").exists();
 
-    // Warn against the use of SCM with no DVC tool
-    if is_scm_enabled && !is_dvc_enabled {
-        println!("{}", style("Initializing a repository without data version control may lead to commit large files.\nConsider using DVC : https://dvc.org/\n").yellow())
-    }
+    // Enforce usage with an SCM and/or a Data Version Control tool, or with appropriate forcing options
+    verify_scm_and_dvc_usage(is_scm_enabled, is_dvc_enabled, no_scm, no_dvc)?;
 
+    // Create project structure
+    create_project_structure(&root_dir, is_scm_enabled, is_dvc_enabled)?;
+
+    Ok(())
+}
+
+fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_enabled: bool) -> Result<()> {
     // Create project structure
     let holium_dir = root_dir.join(PROJECT_DIR);
     fs::create_dir(&holium_dir)?;
@@ -107,5 +112,19 @@ fn create_project_structure(root_dir: &PathBuf) -> Result<()> {
     // Print success message
     println!("Initialized Holium repository.");
 
+    Ok(())
+}
+
+fn verify_scm_and_dvc_usage(is_scm_enabled: bool, is_dvc_enabled: bool, no_scm: bool, no_dvc: bool) -> Result<()> {
+    if !is_scm_enabled && !no_scm {
+        return Err(RepoError::NotScmTracked.into());
+    }
+    if !is_dvc_enabled && !no_dvc {
+        return Err(RepoError::NotDvcTracked.into());
+    }
+    if is_scm_enabled && !is_dvc_enabled {
+        // Warn against the use of SCM with no DVC tool
+        println!("{}", style("Initializing a repository without data version control may lead to commit large files.\nConsider using DVC : https://dvc.org/\n").yellow())
+    }
     Ok(())
 }

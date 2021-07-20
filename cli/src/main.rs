@@ -15,6 +15,12 @@ fn main() {
             SubCommand::with_name("init")
                 .about("Initializes a repository of Holium objects")
                 .args(&[
+                    Arg::with_name("no-scm")
+                        .help("Initiate Holium in directory that is not tracked by any SCM tool.")
+                        .long("no-scm"),
+                    Arg::with_name("no-dvc")
+                        .help("Initiate Holium in directory that is not tracked by any DVC tool.")
+                        .long("no-dvc"),
                     Arg::with_name("force")
                         .help("Overwrites existing Holium project")
                         .short("f")
@@ -31,8 +37,8 @@ fn main() {
             // Initialize a Holium repository in current directory
             repo::init(
                 &cur_dir,
-                false,
-                false,
+                init_matches.is_present("no-scm"),
+                init_matches.is_present("no-dvc"),
                 init_matches.is_present("force"),
             )
         }

@@ -15,7 +15,7 @@ fn cli_is_callable() {
 
 #[test]
 fn cannot_unsafely_init_twice() {
-    // init a repository manually
+    // initialize a repository manually
     let temp_dir = assert_fs::TempDir::new().unwrap();
     fs::create_dir(&temp_dir.join(".holium")).unwrap();
     // try to unsafely initialize the repository again
@@ -31,9 +31,11 @@ fn cannot_unsafely_init_twice() {
 
 #[test]
 fn can_init_twice_with_the_force_option() {
-    // init a repository manually
+    // initialize a repository manually
     let temp_dir = assert_fs::TempDir::new().unwrap();
     fs::create_dir(&temp_dir.join(".holium")).unwrap();
+    fs::create_dir(&temp_dir.join(".git")).unwrap();
+    fs::create_dir(&temp_dir.join(".dvc")).unwrap();
     // try to initialize the repository again with the force option
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     cmd
@@ -45,6 +47,76 @@ fn can_init_twice_with_the_force_option() {
 }
 
 #[test]
+fn cannot_init_with_no_scm_by_default() {
+    // initialize a dvc repository manually
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    fs::create_dir(&temp_dir.join(".dvc")).unwrap();
+    // try to initialize a holium repository
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(temp_dir.path())
+        .arg("init")
+        .assert();
+    // check error message
+    assert
+        .failure()
+        .stderr(predicate::str::contains("failed to initiate"))
+        .stderr(predicate::str::contains("--no-scm"));
+}
+
+#[test]
+fn can_init_with_no_scm_with_option() {
+    // initialize a dvc repository manually
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    fs::create_dir(&temp_dir.join(".dvc")).unwrap();
+    // initialize a holium repository with the `--no-scm` option
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(temp_dir.path())
+        .arg("init")
+        .arg("--no-scm")
+        .assert();
+    // check success
+    assert
+        .success();
+}
+
+#[test]
+fn cannot_init_with_no_dvc_by_default() {
+    // initialize a git repository manually
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    fs::create_dir(&temp_dir.join(".git")).unwrap();
+    // try to initialize a holium repository
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(temp_dir.path())
+        .arg("init")
+        .assert();
+    // check error message
+    assert
+        .failure()
+        .stderr(predicate::str::contains("failed to initiate"))
+        .stderr(predicate::str::contains("--no-dvc"));
+}
+
+#[test]
+fn can_init_with_no_dvc_with_option() {
+    // initialize a git repository manually
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    fs::create_dir(&temp_dir.join(".git")).unwrap();
+    // initialize a holium repository with the `--no-dvc` option
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(temp_dir.path())
+        .arg("init")
+        .arg("--no-dvc")
+        .assert();
+    // check success
+    assert
+        .success();
+}
+
+#[test]
 fn init_cmd_creates_project_structure() {
     // initialize a repository
     let temp_dir = assert_fs::TempDir::new().unwrap();
@@ -52,6 +124,8 @@ fn init_cmd_creates_project_structure() {
     let assert = cmd
         .current_dir(temp_dir.path())
         .arg("init")
+        .arg("--no-scm")
+        .arg("--no-dvc")
         .assert();
     // check success message
     assert
