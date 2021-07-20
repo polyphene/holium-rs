@@ -39,6 +39,9 @@ fn main() {
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 
-    // Unwrap execution result
-    exec_res.unwrap()
+    // Use execution result
+    match exec_res {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
+    }
 }
