@@ -8,6 +8,7 @@ edition = "2018"
 holium = { path = "../api" }
 anyhow = "^1.0.42"
 clap = "^2.33"
+console = "^0.14.1"
 thiserror = "^1.0.26"
 
 [dev-dependencies]

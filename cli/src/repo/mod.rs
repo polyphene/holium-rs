@@ -7,6 +7,7 @@ use thiserror::Error;
 use std::fs;
 use std::io::Write;
 use std::process::Command;
+use console::style;
 
 /// The name of the directory where all data related to the Holium Framework in a repository is stored.
 const PROJECT_DIR: &'static str = ".holium";
@@ -41,7 +42,7 @@ pub fn init(root_dir: &PathBuf, _no_scm: bool, _no_dvc: bool, force: bool) -> Re
                 fs::remove_file(local_holium_path)?;
             }
         } else {
-            return Err(RepoError::RepoAlreadyInitialized.into())
+            return Err(RepoError::RepoAlreadyInitialized.into());
         }
     }
 
@@ -57,8 +58,7 @@ fn create_project_structure(root_dir: &PathBuf) -> Result<()> {
 
     // Warn against the use of SCM with no DVC tool
     if is_scm_enabled && !is_dvc_enabled {
-        println!("Initializing a repository without data version control may lead to commit large files.
-        Consider using DVC : https://dvc.org/\n")
+        println!("{}", style("Initializing a repository without data version control may lead to commit large files.\nConsider using DVC : https://dvc.org/\n").yellow())
     }
 
     // Create project structure
