@@ -40,8 +40,11 @@ fn main() {
     };
 
     // Use execution result
-    match exec_res {
-        Ok(_) => (),
-        Err(e) => eprintln!("{}", e),
-    }
+    std::process::exit(match exec_res {
+        Ok(_) => 0,
+        Err(err) => {
+            eprintln!("error: {:?}", err);
+            1
+        }
+    })
 }
