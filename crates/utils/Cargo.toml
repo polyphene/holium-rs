@@ -1,8 +1,8 @@
 [package]
-name = "holium-runtime"
+name = "holium-utils"
 version = "0.1.0"
 authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
 
-[workspace]
-members=["crates/utils"]
+[dependencies]
+thiserror = "1.0.25"
