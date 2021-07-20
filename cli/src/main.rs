@@ -22,6 +22,7 @@ fn main() {
                     Arg::with_name("root_dir")
                         .help("Path to the repository's root directory")
                         .takes_value(true)
+                        .long("root_dir")
                         .required(true)
                         .default_value(cur_dir),
                     Arg::with_name("force")
