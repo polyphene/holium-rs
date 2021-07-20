@@ -21,7 +21,7 @@ enum RepoError {
 /// the options `--no-scm` and/or `--no-dvc` should be used.
 ///
 /// In case the directory is not empty, the `--force` option must be used in order to override it.
-pub fn init(root_dir: &str, _no_scm: bool, _no_dvc: bool, _force: bool) -> Result<()> {
+pub fn init(root_dir: &str, _no_scm: bool, _no_dvc: bool, force: bool) -> Result<()> {
 
     // Initialize variables
     let local_holium_path = Path::new(root_dir).join(HOLIUM_DIR_NAME);
@@ -29,7 +29,7 @@ pub fn init(root_dir: &str, _no_scm: bool, _no_dvc: bool, _force: bool) -> Resul
     // Check if root directory is already an initialized repository
     let is_holium_dir = local_holium_path.exists();
 
-    if is_holium_dir {
+    if !force && is_holium_dir {
         return Err(RepoError::RepoAlreadyInitialized.into());
     }
 

@@ -18,13 +18,17 @@ fn main() {
         .subcommand(
             SubCommand::with_name("init")
                 .about("Initializes a repository of Holium objects")
-                .arg(
+                .args(&[
                     Arg::with_name("root_dir")
                         .help("Path to the repository's root directory")
                         .takes_value(true)
                         .required(true)
-                        .default_value(cur_dir)
-                ),
+                        .default_value(cur_dir),
+                    Arg::with_name("force")
+                        .help("Overwrites existing Holium project")
+                        .short("f")
+                        .long("force")
+                ]),
         )
         .get_matches();
 
@@ -35,7 +39,7 @@ fn main() {
                 init_matches.value_of("root_dir").unwrap(),
                 false,
                 false,
-                false,
+                init_matches.is_present("force"),
             ).unwrap();
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
