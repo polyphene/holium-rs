@@ -19,9 +19,15 @@ const LOCAL_CONFIG_FILE: &'static str = "config.local";
 #[derive(Error, Debug)]
 /// Errors for the repo module.
 enum RepoError {
-    #[error("failed to initiate, as '.holium' exists. Use `-f` to force.")]
     /// Thrown when trying to initialize a repository twice, without the force option.
+    #[error("failed to initiate, as '.holium' exists. Use `-f` to force.")]
     RepoAlreadyInitialized,
+    /// Thrown when the process running git exits with an error code.
+    #[error("failed to run git")]
+    FailedToRunGit,
+    /// Thrown when the process running dvc exits with an error code.
+    #[error("failed to run dvc")]
+    FailedToRunDvc,
 }
 
 /// Creates a new empty repository on the given directory, basically creating a `.holium` directory.
@@ -78,20 +84,24 @@ fn create_project_structure(root_dir: &PathBuf) -> Result<()> {
 
     // Run the DVC tool once
     if is_dvc_enabled {
-        Command::new("dvc")
+        let output = Command::new("dvc")
             .arg("add")
             .arg(&holium_dir.join(OBJECTS_DIR))
-            .output()
-            .expect("failed to execute dvc");
+            .output()?;
+        if !output.status.success() {
+            return Err(RepoError::FailedToRunDvc.into());
+        }
     }
 
     // Run the SCM tool once
     if is_scm_enabled {
-        Command::new("git")
+        let output = Command::new("git")
             .arg("add")
             .arg(&holium_dir)
-            .output()
-            .expect("failed to execute git");
+            .output()?;
+        if !output.status.success() {
+            return Err(RepoError::FailedToRunGit.into());
+        }
     }
 
     // Print success message
