@@ -4,10 +4,6 @@ use clap::{App, SubCommand, Arg, AppSettings, crate_authors, crate_version};
 use std::env;
 
 fn main() {
-    // Get environment variables
-    let cur_dir_path = env::current_dir().unwrap();
-    let cur_dir = cur_dir_path.to_str().unwrap();
-
     // Create CLI matches
     let matches = App::new("Holium")
         .bin_name("holium")
@@ -19,12 +15,6 @@ fn main() {
             SubCommand::with_name("init")
                 .about("Initializes a repository of Holium objects")
                 .args(&[
-                    Arg::with_name("root_dir")
-                        .help("Path to the repository's root directory")
-                        .takes_value(true)
-                        .long("root_dir")
-                        .required(true)
-                        .default_value(cur_dir),
                     Arg::with_name("force")
                         .help("Overwrites existing Holium project")
                         .short("f")
@@ -36,8 +26,11 @@ fn main() {
     // Match subcommands
     match matches.subcommand() {
         ("init", Some(init_matches)) => {
+            // Get path to current directory
+            let cur_dir = env::current_dir().unwrap();
+            // Initialize a Holium repository in current directory
             repo::init(
-                init_matches.value_of("root_dir").unwrap(),
+                &cur_dir,
                 false,
                 false,
                 init_matches.is_present("force"),
