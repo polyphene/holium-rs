@@ -24,7 +24,7 @@ fn main() {
         .get_matches();
 
     // Match subcommands
-    match matches.subcommand() {
+    let exec_res = match matches.subcommand() {
         ("init", Some(init_matches)) => {
             // Get path to current directory
             let cur_dir = env::current_dir().unwrap();
@@ -34,8 +34,11 @@ fn main() {
                 false,
                 false,
                 init_matches.is_present("force"),
-            ).unwrap();
+            )
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
-    }
+    };
+
+    // Unwrap execution result
+    exec_res.unwrap()
 }
