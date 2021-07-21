@@ -1,4 +1,5 @@
 mod repo;
+mod config;
 
 use clap::{App, SubCommand, Arg, AppSettings, crate_authors, crate_version};
 use std::env;
