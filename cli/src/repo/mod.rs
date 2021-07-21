@@ -8,13 +8,7 @@ use std::fs;
 use std::io::Write;
 use std::process::Command;
 use console::style;
-
-/// The name of the directory where all data related to the Holium Framework in a repository is stored.
-const PROJECT_DIR: &'static str = ".holium";
-const CACHE_DIR: &'static str = "cache";
-const OBJECTS_DIR: &'static str = "objects";
-const CONFIG_FILE: &'static str = "config";
-const LOCAL_CONFIG_FILE: &'static str = "config.local";
+use crate::utils;
 
 #[derive(Error, Debug)]
 /// Errors for the repo module.
@@ -45,7 +39,7 @@ enum RepoError {
 pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
 
     // If root directory is already an initialized repository, force re-initialization or throw an error
-    let local_holium_path = root_dir.join(PROJECT_DIR);
+    let local_holium_path = root_dir.join(utils::PROJECT_DIR);
     if local_holium_path.exists() {
         if force {
             if local_holium_path.is_dir() {
@@ -73,25 +67,25 @@ pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Resu
 
 fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_enabled: bool) -> Result<()> {
     // Create project structure
-    let holium_dir = root_dir.join(PROJECT_DIR);
+    let holium_dir = root_dir.join(utils::PROJECT_DIR);
     fs::create_dir(&holium_dir)?;
-    fs::create_dir(&holium_dir.join(CACHE_DIR))?;
-    fs::create_dir(&holium_dir.join(OBJECTS_DIR))?;
-    fs::File::create(&holium_dir.join(CONFIG_FILE))?;
-    fs::File::create(&holium_dir.join(LOCAL_CONFIG_FILE))?;
+    fs::create_dir(&holium_dir.join(utils::CACHE_DIR))?;
+    fs::create_dir(&holium_dir.join(utils::OBJECTS_DIR))?;
+    fs::File::create(&holium_dir.join(utils::CONFIG_FILE))?;
+    fs::File::create(&holium_dir.join(utils::LOCAL_CONFIG_FILE))?;
 
     // Add a .gitignore file
     if is_scm_enabled {
         let gitignore_file = fs::File::create(&holium_dir.join(".gitignore"))?;
-        writeln!(&gitignore_file, "{}", CACHE_DIR)?;
-        writeln!(&gitignore_file, "{}", LOCAL_CONFIG_FILE)?;
+        writeln!(&gitignore_file, "{}", utils::CACHE_DIR)?;
+        writeln!(&gitignore_file, "{}", utils::LOCAL_CONFIG_FILE)?;
     }
 
     // Run the DVC tool once
     if is_dvc_enabled {
         let output = Command::new("dvc")
             .arg("add")
-            .arg(&holium_dir.join(OBJECTS_DIR))
+            .arg(&holium_dir.join(utils::OBJECTS_DIR))
             .output()?;
         if !output.status.success() {
             return Err(RepoError::FailedToRunDvc.into());
