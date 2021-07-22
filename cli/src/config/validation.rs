@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 /// Configuration structure used for data validation.
-pub struct ConfigTemplate {
+pub(crate) struct ConfigTemplate {
     pub(crate) core: CoreTemplate,
 }
 
