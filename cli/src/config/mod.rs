@@ -155,7 +155,10 @@ mod tests {
         assert_eq!(config.fragments[0].level, ConfigLevel::Global);
         assert_eq!(config.fragments[1].level, ConfigLevel::Repo);
         assert_eq!(config.fragments[2].level, ConfigLevel::Local);
-        assert_eq!(config.config.core.no_scm, ConfigTemplate::standard().core.no_scm);
+        assert_eq!(
+            config.config.core.no_scm,
+            ConfigTemplate::standard().core.no_scm
+        );
     }
 
     #[test]
@@ -165,7 +168,10 @@ mod tests {
 
         assert_eq!(config.fragments.len(), 1);
         assert_eq!(config.fragments[0].level, ConfigLevel::Global);
-        assert_eq!(config.config.core.no_scm, ConfigTemplate::standard().core.no_scm);
+        assert_eq!(
+            config.config.core.no_scm,
+            ConfigTemplate::standard().core.no_scm
+        );
     }
 
     #[test]
@@ -195,6 +201,9 @@ mod tests {
         assert_eq!(config.fragments.len(), 3);
         assert_eq!(config.config.core.no_scm, Some(false));
         assert!(config.config.core.no_dvc.is_some());
-        assert_eq!(config.config.core.no_dvc, ConfigTemplate::standard().core.no_dvc);
+        assert_eq!(
+            config.config.core.no_dvc,
+            ConfigTemplate::standard().core.no_dvc
+        );
     }
 }

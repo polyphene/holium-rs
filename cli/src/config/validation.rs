@@ -107,7 +107,6 @@ mod tests {
         assert!(config.core.no_scm.is_none());
     }
 
-
     /// Utility function used to scaffold tests on the `core.no_scp` configuration field.
     fn test_merge_config(shadowed: Option<bool>, shadowing: Option<bool>, expected: Option<bool>) {
         // Prepare original configurations
@@ -123,46 +122,26 @@ mod tests {
 
     #[test]
     fn can_merge_configs_none_none() {
-        test_merge_config(
-            None,
-            None,
-            None,
-        )
+        test_merge_config(None, None, None)
     }
 
     #[test]
     fn can_merge_configs_none_true() {
-        test_merge_config(
-            None,
-            Some(true),
-            Some(true),
-        )
+        test_merge_config(None, Some(true), Some(true))
     }
 
     #[test]
     fn can_merge_configs_true_none() {
-        test_merge_config(
-            Some(true),
-            None,
-            Some(true),
-        )
+        test_merge_config(Some(true), None, Some(true))
     }
 
     #[test]
     fn can_merge_configs_true_false() {
-        test_merge_config(
-            Some(true),
-            Some(false),
-            Some(false),
-        )
+        test_merge_config(Some(true), Some(false), Some(false))
     }
 
     #[test]
     fn can_merge_configs_false_true() {
-        test_merge_config(
-            Some(false),
-            Some(true),
-            Some(true),
-        )
+        test_merge_config(Some(false), Some(true), Some(true))
     }
 }
