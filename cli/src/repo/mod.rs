@@ -6,7 +6,6 @@ use anyhow::Result;
 use thiserror::Error;
 use std::fs;
 use std::io::Write;
-use std::process::Command;
 use console::style;
 
 /// The name of the directory where all data related to the Holium Framework in a repository is stored.
@@ -28,12 +27,6 @@ enum RepoError {
     /// Thrown when trying to initialize a repository that is not tracked by any supported DVC tool, without the dedicated option.
     #[error("failed to initiate as current repository is not tracked by any DVC tool. Use `--no-dvc` to initialize anyway.")]
     NotDvcTracked,
-    /// Thrown when the process running git exits with an error code.
-    #[error("failed to run git")]
-    FailedToRunGit,
-    /// Thrown when the process running dvc exits with an error code.
-    #[error("failed to run dvc")]
-    FailedToRunDvc,
 }
 
 /// Creates a new empty repository on the given directory, basically creating a `.holium` directory.
@@ -87,32 +80,28 @@ fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_ena
         writeln!(&gitignore_file, "{}", LOCAL_CONFIG_FILE)?;
     }
 
-    // Run the DVC tool once
-    if is_dvc_enabled {
-        let output = Command::new("dvc")
-            .arg("add")
-            .arg(&holium_dir.join(OBJECTS_DIR))
-            .output()?;
-        if !output.status.success() {
-            return Err(RepoError::FailedToRunDvc.into());
-        }
-    }
-
-    // Run the SCM tool once
-    if is_scm_enabled {
-        let output = Command::new("git")
-            .arg("add")
-            .arg(&holium_dir)
-            .output()?;
-        if !output.status.success() {
-            return Err(RepoError::FailedToRunGit.into());
-        }
-    }
+    // Advise on running the tracking tool(s) once
+    advise_to_track(is_scm_enabled, is_dvc_enabled);
 
     // Print success message
     println!("Initialized Holium repository.");
 
     Ok(())
+}
+
+/// Advise on running the appropriate tracking tool(s) once at initialisation
+fn advise_to_track(is_scm_enabled: bool, is_dvc_enabled: bool) {
+    if !is_scm_enabled && !is_dvc_enabled {
+        return;
+    }
+    println!("To track changes in the Holium project, run :\n");
+    if is_dvc_enabled {
+        println!("\tdvc add {}/{}", PROJECT_DIR, OBJECTS_DIR);
+    }
+    if is_scm_enabled {
+        println!("\tgit add {}", PROJECT_DIR);
+    }
+    println!()
 }
 
 fn verify_scm_and_dvc_usage(is_scm_enabled: bool, is_dvc_enabled: bool, no_scm: bool, no_dvc: bool) -> Result<()> {
