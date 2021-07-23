@@ -1,0 +1,5 @@
+[package]
+name = "holium"
+version = "1.0.0-alpha"
+authors = ["Polyphene <contact@polyphene.io>"]
+edition = "2018"
