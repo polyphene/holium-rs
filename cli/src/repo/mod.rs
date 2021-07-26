@@ -10,6 +10,7 @@ use std::process::Command;
 use console::style;
 use crate::utils;
 use clap::ArgMatches;
+use crate::config::models::ProjectConfig;
 
 #[derive(Error, Debug)]
 /// Errors for the repo module.
@@ -33,15 +34,15 @@ enum RepoError {
 
 /// Parses arguments and handles the command.
 pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
+    // Get configuration
+    let project_config = ProjectConfig::new(None)?;
     // Get path to current directory
     let cur_dir = env::current_dir().unwrap();
     // Initialize a Holium repository in current directory
-    init(
-        &cur_dir,
-        init_matches.is_present("no-scm"),
-        init_matches.is_present("no-dvc"),
-        init_matches.is_present("force"),
-    )
+    let no_scm = init_matches.is_present("no-scm") || project_config.config.core.no_scm;
+    let no_dvc = init_matches.is_present("no-dvc") || project_config.config.core.no_dvc;
+    let force = init_matches.is_present("force");
+    init(&cur_dir, no_scm, no_dvc, force)
 }
 
 /// Creates a new empty repository on the given directory, basically creating a `.holium` directory.

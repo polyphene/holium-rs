@@ -50,9 +50,9 @@ static LEVELS: &'static [ConfigLevel] =
     &[ConfigLevel::Global, ConfigLevel::Repo, ConfigLevel::Local];
 
 /// A structure built by merging configurations from multiple levels
-struct ProjectConfig {
+pub(crate) struct ProjectConfig {
     /// Configuration resulting from the merging process
-    config: Config,
+    pub(crate) config: Config,
     /// Individual fragments making for the merged configuration
     fragments: Vec<ProjectConfigFragment>,
 }

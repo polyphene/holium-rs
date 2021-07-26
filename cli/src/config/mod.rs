@@ -9,7 +9,7 @@ use crate::config::models::{ConfigLevel, ProjectConfigFragment};
 use crate::utils::PROJECT_DIR;
 
 mod config;
-mod models;
+pub(crate) mod models;
 mod shadow_merge;
 mod sparse_config;
 mod updatable_field;
