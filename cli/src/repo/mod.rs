@@ -4,11 +4,12 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use thiserror::Error;
-use std::fs;
+use std::{fs, env};
 use std::io::Write;
 use std::process::Command;
 use console::style;
 use crate::utils;
+use clap::ArgMatches;
 
 #[derive(Error, Debug)]
 /// Errors for the repo module.
@@ -28,6 +29,19 @@ enum RepoError {
     /// Thrown when the process running dvc exits with an error code.
     #[error("failed to run dvc")]
     FailedToRunDvc,
+}
+
+/// Parses arguments and handles the command.
+pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
+    // Get path to current directory
+    let cur_dir = env::current_dir().unwrap();
+    // Initialize a Holium repository in current directory
+    init(
+        &cur_dir,
+        init_matches.is_present("no-scm"),
+        init_matches.is_present("no-dvc"),
+        init_matches.is_present("force"),
+    )
 }
 
 /// Creates a new empty repository on the given directory, basically creating a `.holium` directory.
