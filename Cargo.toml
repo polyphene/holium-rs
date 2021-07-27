@@ -1,12 +1,4 @@
-[package]
-name = "holium-runtime"
-version = "0.1.0"
-authors = ["Polyphene <contact@polyphene.io>"]
-edition = "2018"
-
 [workspace]
 members=[
     "api",
     "cli",
-    "crates/utils",
-]
