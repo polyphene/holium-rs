@@ -1,114 +1,338 @@
 use crate::error::HoliumTreeError;
-use std::borrow::Borrow;
-use std::ops::Deref;
 
 /*************************************************************
  * Update Trait
  *************************************************************/
 
-/// TreeData is a trait that will determine data behaviour in the tree based on manipulations that
+/// `HoliumTreeData` is a trait that will determine data behaviour in the tree based on manipulations that
 /// are applied.
-pub trait HoliumTreeData<Ld: Clone, Nd = Ld>
+pub trait HoliumTreeData<Ld, Nd = Ld>
 where
     Ld: Clone,
     Nd: Clone,
 {
     /// Function when a node child is added
-    fn on_new_child(&mut self, child: &HoliumNode<Ld, Nd>) -> &mut Self;
+    fn on_new_child(&mut self, children: Vec<HoliumNode<Ld, Nd>>);
     /// Function called when a node child is updated
-    fn on_child_update(&mut self, child: &HoliumNode<Ld, Nd>) -> &mut Self;
+    fn on_child_updated(&mut self, children: Vec<HoliumNode<Ld, Nd>>);
     /// Function called when a node child is removed
-    fn on_child_removed(&mut self, child: &HoliumNode<Ld, Nd>) -> &mut Self;
+    fn on_child_removed(&mut self, children: Vec<HoliumNode<Ld, Nd>>);
+}
+
+/// `HoliumTreeEvents` is an internal enum used on recursive bottom up pathing to know which functions
+/// of the `HoliumTreeData` has to be called on the node
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum HoliumTreeEvents {
+    // Variant used to trigger a new child event on some node data
+    NewChildEvent,
+    // Variant used to trigger an updated child event on some node data
+    ChildUpdatedEvent,
+    // Variant used to trigger a removed child event on some node data
+    ChildRemovedEvent,
 }
 
 /*************************************************************
  * Tree
  *************************************************************/
-
-#[derive(Clone, Debug, Eq, PartialEq)]
+/// `HoliumTree` is a generic tree structure that holds generic data type in its nodes and leafs.
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct HoliumTree<Ld, Nd = Ld>
 where
     Ld: Clone,
     Nd: Clone,
 {
-    pub nodes: Vec<HoliumNode<Ld, Nd>>, // Tree's nodes list
+    nodes: Vec<HoliumNode<Ld, Nd>>, // Tree's nodes list
 }
 
-impl<Ld, Nd> HoliumTree<Ld, Nd>
+impl<Ld: Clone, Nd: Clone> HoliumTree<Ld, Nd>
 where
     Ld: Clone,
     Nd: Clone + HoliumTreeData<Ld, Nd>,
 {
-    pub fn new(root_type: HoliumNodeType<Ld, Nd>) -> Self {
-        HoliumTree {
-            nodes: vec![HoliumNode::root(root_type)],
+    /**************************************
+     * Initializer
+     **************************************/
+
+    pub fn new(root_type: HoliumNodeType<Ld, Nd>) -> Result<Self, HoliumTreeError> {
+        let root = HoliumNode::root(root_type)?;
+
+        Ok(HoliumTree { nodes: vec![root] })
+    }
+
+    /**************************************
+     * Getter
+     **************************************/
+
+    pub fn nodes(&self) -> &[HoliumNode<Ld, Nd>] {
+        &self.nodes
+    }
+
+    pub fn node(&self, node_index: NodeIndex) -> Option<&HoliumNode<Ld, Nd>> {
+        self.nodes.get(node_index as usize)
+    }
+
+    pub fn nodes_len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// `children` returns the children of a given `HoliumNode`. Will return `None` if either the node
+    /// type is a leaf or if the node has no children.
+    pub fn children(&self, node_index: NodeIndex) -> Option<Vec<HoliumNode<Ld, Nd>>> {
+        self.nodes.get(node_index as usize)?;
+
+        if self.nodes[node_index as usize].node_type.is_leaf()
+            || (self.nodes[node_index as usize].node_type.is_node()
+                && !self.nodes[node_index as usize].node_type.has_children())
+        {
+            return None;
         }
+
+        Some(
+            self.nodes
+                .iter()
+                .filter(|n| n.parent.is_some() && n.parent.unwrap() == node_index)
+                .map(|n| n.clone())
+                .collect(),
+        )
     }
 
-    fn push_node(&mut self, node: HoliumNode<Ld, Nd>) -> &mut Self {
-        self.nodes.push(node);
-
-        self
+    /// `children_references` same as [`HoliumTree::children(&self, node_index: NodeIndex)`] but with
+    /// children as references
+    pub fn children_references(&self, node_index: NodeIndex) -> Vec<&HoliumNode<Ld, Nd>> {
+        self.nodes
+            .iter()
+            .filter(|n| n.parent.is_some() && n.parent.unwrap() == node_index)
+            .collect()
     }
 
+    /**************************************
+     * Setter
+     **************************************/
+    /// `add_leaf` will add a new leaf to the `HoliumTree`. The parent as to be  [`HoliumNodeType::Node`].
+    /// Will trigger the trait [`HoliumTreeData::on_new_child()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// for subsequent parent nodes.
     pub fn add_leaf(
         &mut self,
         parent_index: NodeIndex,
         data: Ld,
     ) -> Result<&mut Self, HoliumTreeError> {
-        let leaf_index = self.nodes.deref().len() as u32 - 1;
-        if leaf_index < parent_index {
-            return Err(HoliumTreeError::ParentNotFoundError(parent_index));
+        if self.nodes.get(parent_index as usize).is_none() {
+            return Err(HoliumTreeError::NodeNotFound(parent_index));
         }
 
-        let parent = &mut self.nodes[parent_index as usize];
-
-        if parent.node_type.is_leaf() {
-            return Err(HoliumTreeError::WrongParentTypeError(parent_index));
+        if self.nodes[parent_index as usize].node_type.is_leaf() {
+            return Err(HoliumTreeError::WrongNodeTypeError(parent_index));
         }
 
         // First we add new node to tree
-        let leaf: HoliumNode<Ld, Nd> =
-            HoliumNode::new(leaf_index, parent_index, HoliumNodeType::Leaf(data));
+        let leaf: HoliumNode<Ld, Nd> = HoliumNode::new(
+            self.nodes_len() as u32,
+            parent_index,
+            HoliumNodeType::Leaf(data),
+        )?;
         self.nodes.push(leaf.clone());
+        self.nodes[parent_index as usize].new_child(leaf.index);
 
-        // Then we are going up the tree to call for data updates on parent
-        let mut current_node: &mut HoliumNode<Ld, Nd> = parent;
-        let mut child: &HoliumNode<Ld, Nd> = &leaf;
-        loop {
-            let data_mut = current_node.node_data_mut().unwrap();
+        let event = HoliumTreeEvents::NewChildEvent;
 
-            data_mut.on_new_child(child);
-
-            if current_node.parent.is_none() {
-                break;
-            } else {
-                if self.nodes[current_node.parent.unwrap() as usize]
-                    .node_type
-                    .is_leaf()
-                {
-                    return Err(HoliumTreeError::LeafIsParentError(current_node.index));
-                }
-
-                child = current_node.deref();
-                current_node = &mut self.nodes[current_node.parent.unwrap() as usize];
-            }
-        }
+        self.bottom_up_recursive_pathing(parent_index, event);
 
         Ok(self)
     }
 
-    pub fn add_node(&mut self) -> Result<&mut Self, HoliumTreeError> {
-        // TODO: implement node addition, node
+    /// `add_node` will add a new node to the `HoliumTree`. The parent as to be  [`HoliumNodeType::Node`].
+    /// Will trigger the trait [`HoliumTreeData::on_new_child()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// for subsequent parent nodes.
+    pub fn add_node(
+        &mut self,
+        parent_index: NodeIndex,
+        data: Nd,
+    ) -> Result<&mut Self, HoliumTreeError> {
+        if self.nodes.get(parent_index as usize).is_none() {
+            return Err(HoliumTreeError::NodeNotFound(parent_index));
+        }
+
+        if self.nodes[parent_index as usize].node_type.is_leaf() {
+            return Err(HoliumTreeError::WrongNodeTypeError(parent_index));
+        }
+
+        // First we add new node to tree
+        let node: HoliumNode<Ld, Nd> = HoliumNode::new(
+            self.nodes_len() as u32,
+            parent_index,
+            HoliumNodeType::Node((data, vec![])),
+        )?;
+        self.nodes.push(node.clone());
+        self.nodes[parent_index as usize].new_child(node.index);
+
+        let event = HoliumTreeEvents::NewChildEvent;
+
+        self.bottom_up_recursive_pathing(parent_index, event);
 
         Ok(self)
+    }
+
+    /// `remove_leaf` will remove a leaf from the `HoliumTree`. Will trigger the trait
+    /// [`HoliumTreeData::on_child_removed()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// for subsequent parent nodes.
+    pub fn remove_leaf(&mut self, leaf_index: NodeIndex) -> Result<&mut Self, HoliumTreeError> {
+        if leaf_index == 0 {
+            return Err(HoliumTreeError::RootNoRemovalError);
+        }
+
+        if self.nodes.get(leaf_index as usize).is_none() {
+            return Err(HoliumTreeError::NodeNotFound(leaf_index));
+        }
+
+        if self.nodes[leaf_index as usize].node_type.is_node() {
+            return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
+        }
+
+        let parent_index = self.nodes[leaf_index as usize].parent.unwrap();
+
+        self.recursive_retain(parent_index, leaf_index);
+        self.sanitize_indexes();
+
+        let event = HoliumTreeEvents::ChildRemovedEvent;
+
+        self.bottom_up_recursive_pathing(parent_index, event);
+
+        Ok(self)
+    }
+
+    /// `remove_node` will remove a node and its children from the `HoliumTree`. Will trigger the trait
+    /// [`HoliumTreeData::on_child_removed()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// for subsequent parent nodes.
+    pub fn remove_node(&mut self, node_index: NodeIndex) -> Result<&mut Self, HoliumTreeError> {
+        if node_index == 0 {
+            return Err(HoliumTreeError::RootNoRemovalError);
+        }
+
+        if self.nodes.get(node_index as usize).is_none() {
+            return Err(HoliumTreeError::NodeNotFound(node_index));
+        }
+
+        if self.nodes[node_index as usize].node_type.is_leaf() {
+            return Err(HoliumTreeError::WrongNodeTypeError(node_index));
+        }
+
+        let parent_index = self.nodes[node_index as usize].parent.unwrap();
+
+        self.recursive_retain(parent_index, node_index);
+
+        let event = HoliumTreeEvents::ChildRemovedEvent;
+
+        self.bottom_up_recursive_pathing(parent_index, event);
+
+        Ok(self)
+    }
+
+    /// `update_leaf_data` will update the data of a leaf in the `HoliumTree`. Will trigger the trait
+    /// [`HoliumTreeData::on_child_updated()`] for its parent and subsequent parent nodes.
+    pub fn update_leaf_data(
+        &mut self,
+        leaf_index: NodeIndex,
+        leaf_data: Ld,
+    ) -> Result<&mut Self, HoliumTreeError> {
+        if self.nodes.get(leaf_index as usize).is_none() {
+            return Err(HoliumTreeError::NodeNotFound(leaf_index));
+        }
+
+        if self.nodes[leaf_index as usize].node_type.is_node() {
+            return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
+        }
+
+        let parent_index = self.nodes[leaf_index as usize].parent.unwrap();
+
+        let current_data = self.nodes[leaf_index as usize].leaf_data_mut().unwrap();
+        *current_data = leaf_data;
+
+        let event = HoliumTreeEvents::ChildUpdatedEvent;
+
+        self.bottom_up_recursive_pathing(parent_index, event);
+
+        Ok(self)
+    }
+
+    /**************************************
+     * Utilities
+     **************************************/
+
+    fn bottom_up_recursive_pathing(
+        &mut self,
+        node_index: NodeIndex,
+        event: HoliumTreeEvents,
+    ) -> &mut Self {
+        let children: Vec<HoliumNode<Ld, Nd>> = match self.children(node_index) {
+            Some(children) => children,
+            None => vec![],
+        };
+
+        self.trigger_node_update(node_index, event, children);
+        // Node is root
+        if node_index == 0 {
+            return self;
+        }
+
+        self.bottom_up_recursive_pathing(
+            self.nodes[node_index as usize].parent.unwrap(),
+            HoliumTreeEvents::ChildUpdatedEvent,
+        )
+    }
+
+    fn trigger_node_update(
+        &mut self,
+        node_index: NodeIndex,
+        event: HoliumTreeEvents,
+        children: Vec<HoliumNode<Ld, Nd>>,
+    ) -> &mut Self {
+        match event {
+            HoliumTreeEvents::NewChildEvent => self.nodes[node_index as usize]
+                .node_data_mut()
+                .unwrap()
+                .on_new_child(children),
+            HoliumTreeEvents::ChildUpdatedEvent => self.nodes[node_index as usize]
+                .node_data_mut()
+                .unwrap()
+                .on_child_updated(children),
+            HoliumTreeEvents::ChildRemovedEvent => self.nodes[node_index as usize]
+                .node_data_mut()
+                .unwrap()
+                .on_child_removed(children),
+        };
+        self
+    }
+
+    fn recursive_retain(&mut self, parent_index: NodeIndex, node_index: NodeIndex) -> &mut Self {
+        if self.nodes[node_index as usize].has_children() {
+            let children = self.children(node_index).unwrap();
+            let children_indexes: Vec<NodeIndex> = children.iter().map(|n| n.index).collect();
+
+            for index in children_indexes {
+                self.recursive_retain(node_index, index);
+            }
+        }
+
+        self.nodes[parent_index as usize].retain_child(node_index);
+        self.nodes.retain(|n| n.index != node_index);
+
+        self
+    }
+
+    fn sanitize_indexes(&mut self) -> &mut Self {
+        let iter = std::iter::IntoIterator::into_iter(&mut self.nodes);
+        iter.enumerate().for_each(|(i, n)| n.index = i as u32);
+
+        self
     }
 }
 
 /*************************************************************
  * Tree Node
  *************************************************************/
-#[derive(Clone, Debug, Eq, PartialEq)]
+/// `HoliumNode` represents all nodes inside an `HoliumTree`. The `node_type` attributes determine if
+/// it is a leaf or node.
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct HoliumNode<Ld, Nd = Ld>
 where
     Ld: Clone,
@@ -119,44 +343,106 @@ where
     node_type: HoliumNodeType<Ld, Nd>, // Type of the node, leaf or node
 }
 
-impl<Ld: Clone, Nd: Clone> HoliumNode<Ld, Nd> {
-    pub fn new(
+impl<Ld, Nd> HoliumNode<Ld, Nd>
+where
+    Ld: Clone,
+    Nd: Clone,
+{
+    /**************************************
+     * Initializer
+     **************************************/
+
+    fn new(
         index: NodeIndex,
         parent_index: NodeIndex,
         node_type: HoliumNodeType<Ld, Nd>,
-    ) -> Self {
-        let mut node = HoliumNode {
+    ) -> Result<Self, HoliumTreeError> {
+        if node_type.is_node() && node_type.has_children() {
+            return Err(HoliumTreeError::NewNodeNoChildrenError);
+        }
+
+        Ok(HoliumNode {
             index,
             parent: Some(parent_index),
             node_type,
-        };
-
-        node
+        })
     }
 
-    pub(crate) fn root(root_type: HoliumNodeType<Ld, Nd>) -> Self {
-        HoliumNode {
+    fn root(root_type: HoliumNodeType<Ld, Nd>) -> Result<Self, HoliumTreeError> {
+        if root_type.is_node() && root_type.has_children() {
+            return Err(HoliumTreeError::NewNodeNoChildrenError);
+        }
+
+        Ok(HoliumNode {
             index: 0,
             parent: None,
             node_type: root_type,
-        }
+        })
     }
 
-    pub fn node_data_mut(&mut self) -> Option<&mut Nd> {
+    /**************************************
+     * Getter
+     **************************************/
+
+    pub fn index(&self) -> NodeIndex {
+        self.index
+    }
+
+    pub fn parent(&self) -> Option<NodeIndex> {
+        self.parent
+    }
+
+    pub fn node_type(&self) -> &HoliumNodeType<Ld, Nd> {
+        &self.node_type
+    }
+
+    fn node_data_mut(&mut self) -> Option<&mut Nd> {
         match &mut self.node_type {
             HoliumNodeType::Node((data, _)) => Some(data),
             _ => None,
         }
     }
+
+    fn leaf_data_mut(&mut self) -> Option<&mut Ld> {
+        match &mut self.node_type {
+            HoliumNodeType::Leaf(data) => Some(data),
+            _ => None,
+        }
+    }
+
+    /**************************************
+     * Setter for nodes
+     **************************************/
+    fn new_child(&mut self, child_index: NodeIndex) -> Option<Vec<NodeIndex>> {
+        self.node_type.new_child(child_index)
+    }
+
+    fn retain_child(&mut self, child_index: NodeIndex) -> Option<Vec<NodeIndex>> {
+        self.node_type.retain_child(child_index)
+    }
+
+    /**************************************
+     * Utilities
+     **************************************/
+    fn has_children(&self) -> bool {
+        self.node_type.has_children()
+    }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum HoliumNodeType<Ld, Nd = Ld> {
+/// `HoliumNodeType` is an enum to identify a node type.
+/// A `Leaf` will only contain some data wile a `Node` will contain its data and an ordered list of
+/// all its children.
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub enum HoliumNodeType<Ld, Nd = Ld>
+where
+    Ld: Clone,
+    Nd: Clone,
+{
     Leaf(Ld),
     Node((Nd, Vec<NodeIndex>)),
 }
 
-impl<Ld, Nd> HoliumNodeType<Ld, Nd> {
+impl<Ld: Clone, Nd: Clone> HoliumNodeType<Ld, Nd> {
     pub fn is_leaf(&self) -> bool {
         match self {
             Self::Leaf(_) => true,
@@ -168,6 +454,37 @@ impl<Ld, Nd> HoliumNodeType<Ld, Nd> {
         match self {
             Self::Node(_) => true,
             _ => false,
+        }
+    }
+
+    pub fn has_children(&self) -> bool {
+        match self {
+            Self::Node((_, children)) => children.len() > 0,
+            _ => false,
+        }
+    }
+
+    pub fn new_child(&mut self, child_index: NodeIndex) -> Option<Vec<NodeIndex>> {
+        match self {
+            Self::Node((_, children)) => {
+                children.push(child_index);
+                Some(children.clone())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn retain_child(&mut self, child_index: NodeIndex) -> Option<Vec<NodeIndex>> {
+        match self {
+            Self::Node((_, children)) => {
+                if !children.contains(&child_index) {
+                    return None;
+                }
+
+                children.retain(|c| *c != child_index);
+                Some(children.clone())
+            }
+            _ => None,
         }
     }
 }
