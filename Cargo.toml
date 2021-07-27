@@ -5,4 +5,8 @@ authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
 
 [workspace]
-members=["crates/utils"]
+members=[
+    "api",
+    "cli",
+    "crates/utils",
+]
