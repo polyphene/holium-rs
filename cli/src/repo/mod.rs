@@ -4,16 +4,12 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use thiserror::Error;
-use std::fs;
+use std::{fs, env};
 use std::io::Write;
 use console::style;
-
-/// The name of the directory where all data related to the Holium Framework in a repository is stored.
-const PROJECT_DIR: &'static str = ".holium";
-const CACHE_DIR: &'static str = "cache";
-const OBJECTS_DIR: &'static str = "objects";
-const CONFIG_FILE: &'static str = "config";
-const LOCAL_CONFIG_FILE: &'static str = "config.local";
+use crate::utils;
+use clap::ArgMatches;
+use crate::config::models::ProjectConfig;
 
 #[derive(Error, Debug)]
 /// Errors for the repo module.
@@ -29,6 +25,19 @@ enum RepoError {
     NotDvcTracked,
 }
 
+/// Parses arguments and handles the command.
+pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
+    // Get configuration
+    let project_config = ProjectConfig::new(None)?;
+    // Get path to current directory
+    let cur_dir = env::current_dir().unwrap();
+    // Initialize a Holium repository in current directory
+    let no_scm = init_matches.is_present("no-scm") || project_config.config.core.no_scm;
+    let no_dvc = init_matches.is_present("no-dvc") || project_config.config.core.no_dvc;
+    let force = init_matches.is_present("force");
+    init(&cur_dir, no_scm, no_dvc, force)
+}
+
 /// Creates a new empty repository on the given directory, basically creating a `.holium` directory.
 ///
 /// It is recommended to track the repository with a SCM and a data version control tool. Otherwise,
@@ -38,7 +47,7 @@ enum RepoError {
 pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
 
     // If root directory is already an initialized repository, force re-initialization or throw an error
-    let local_holium_path = root_dir.join(PROJECT_DIR);
+    let local_holium_path = root_dir.join(utils::PROJECT_DIR);
     if local_holium_path.exists() {
         if force {
             if local_holium_path.is_dir() {
@@ -66,18 +75,18 @@ pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Resu
 
 fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_enabled: bool) -> Result<()> {
     // Create project structure
-    let holium_dir = root_dir.join(PROJECT_DIR);
+    let holium_dir = root_dir.join(utils::PROJECT_DIR);
     fs::create_dir(&holium_dir)?;
-    fs::create_dir(&holium_dir.join(CACHE_DIR))?;
-    fs::create_dir(&holium_dir.join(OBJECTS_DIR))?;
-    fs::File::create(&holium_dir.join(CONFIG_FILE))?;
-    fs::File::create(&holium_dir.join(LOCAL_CONFIG_FILE))?;
+    fs::create_dir(&holium_dir.join(utils::CACHE_DIR))?;
+    fs::create_dir(&holium_dir.join(utils::OBJECTS_DIR))?;
+    fs::File::create(&holium_dir.join(utils::CONFIG_FILE))?;
+    fs::File::create(&holium_dir.join(utils::LOCAL_CONFIG_FILE))?;
 
     // Add a .gitignore file
     if is_scm_enabled {
         let gitignore_file = fs::File::create(&holium_dir.join(".gitignore"))?;
-        writeln!(&gitignore_file, "{}", CACHE_DIR)?;
-        writeln!(&gitignore_file, "{}", LOCAL_CONFIG_FILE)?;
+        writeln!(&gitignore_file, "{}", utils::CACHE_DIR)?;
+        writeln!(&gitignore_file, "{}", utils::LOCAL_CONFIG_FILE)?;
     }
 
     // Advise on running the tracking tool(s) once
@@ -96,10 +105,10 @@ fn advise_to_track(is_scm_enabled: bool, is_dvc_enabled: bool) {
     }
     println!("To track changes in the Holium project, run :\n");
     if is_dvc_enabled {
-        println!("\tdvc add {}/{}", PROJECT_DIR, OBJECTS_DIR);
+        println!("\tdvc add {}/{}", utils::PROJECT_DIR, utils::OBJECTS_DIR);
     }
     if is_scm_enabled {
-        println!("\tgit add {}", PROJECT_DIR);
+        println!("\tgit add {}", utils::PROJECT_DIR);
     }
     println!()
 }

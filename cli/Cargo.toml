@@ -9,7 +9,11 @@ holium = { path = "../api" }
 anyhow = "^1.0.42"
 clap = "^2.33"
 console = "^0.14.1"
+dirs = "^3.0.2"
+serde = "^1.0.126"
+serde_derive = "^1.0.126"
 thiserror = "^1.0.26"
+toml = "^0.5.8"
 
 [dev-dependencies]
 assert_cmd = "^1.0.7"
