@@ -63,34 +63,6 @@ fn can_get_empty_config_without_repo_config_file() {
 }
 
 #[test]
-fn a() {
-    assert!("v = true"
-        .parse::<toml::Value>()
-        .unwrap()
-        .as_table()
-        .unwrap()
-        .get("v")
-        .unwrap()
-        .as_bool()
-        .unwrap());
-    // assert!("[true]".parse::<toml::Value>().unwrap().as_array().unwrap()[0].as_bool().unwrap());
-    assert!("true".parse::<toml::Value>().is_err());
-
-    use serde_derive::{Deserialize, Serialize};
-    #[derive(Serialize, Deserialize)]
-    struct S {
-        k: toml::Value,
-    }
-    let s: S = toml::from_str(
-        r#"
-        k = true
-    "#,
-    )
-    .unwrap();
-    assert!(s.k.as_bool().unwrap())
-}
-
-#[test]
 fn can_get_set_config() {
     // initialize a repository
     let repo = setup_repo();
