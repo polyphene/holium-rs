@@ -58,7 +58,7 @@ fn main() {
                             utils::LOCAL_CONFIG_FILE
                         ))
                         .long("local")
-                        .conflicts_with_all(&["project", "local"]),
+                        .conflicts_with_all(&["project", "global"]),
                     Arg::with_name("unset")
                         .help("Unset option.")
                         .short("u")
