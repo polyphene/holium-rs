@@ -42,6 +42,11 @@ impl SparseConfig {
     pub(crate) fn save_to_config_file(&self, path: &PathBuf) -> Result<()> {
         // Serialize the configuration
         let data = toml::to_string_pretty(self).context(ConfigError::ConfigFileSerialization)?;
+        // Create the parent directory if missing
+        if let Some(parent_dir) = path.parent() {
+            fs::create_dir_all(parent_dir)?
+        };
+        // Write serialized configuration to file
         fs::write(path, data).context(ConfigError::ConfigFileWrite(path.display().to_string()))?;
         Ok(())
     }
