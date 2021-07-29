@@ -34,7 +34,7 @@ enum HoliumTreeEvents {
 /*************************************************************
  * Tree
  *************************************************************/
-/// `HoliumTree` is a generic tree structure that holds generic data type in its nodes and leafs.
+/// `HoliumTree` is a generic tree structure that holds generic data type in its nodes and leaves.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct HoliumTree<Ld, Nd = Ld>
 where
