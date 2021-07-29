@@ -1,5 +1,6 @@
 [workspace]
-members = [
-    "api",
-    "cli",
+members= [
+    "crates/api",
+    "crates/cli",
+    "crates/utils"
 ]

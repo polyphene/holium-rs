@@ -1,0 +1,9 @@
+[package]
+name = "holium-utils"
+version = "1.0.0-alpha"
+authors = ["Polyphene <contact@polyphene.io>"]
+edition = "2018"
+
+[dependencies]
+anyhow = "^1.0.42"
+thiserror = "^1.0.25"
