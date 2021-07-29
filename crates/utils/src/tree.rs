@@ -1,3 +1,5 @@
+//! Define traits and structure necessary to implement a Tree in the Holium Framework
+
 use crate::error::HoliumTreeError;
 
 /*************************************************************
@@ -6,12 +8,15 @@ use crate::error::HoliumTreeError;
 
 /// `HoliumTreeData` is a trait that will determine data behaviour in the tree based on manipulations that
 /// are applied.
+///
+/// `Ld` is the data structure implemented in the tree to be used as a data value for the tree's leaves.
+/// `Nd` is the data structure implemented in the tree to be used as a data value for the tree's nodes.
 pub trait HoliumTreeData<Ld, Nd = Ld>
 where
     Ld: Clone,
     Nd: Clone,
 {
-    /// Function when a node child is added
+    /// Function called when a node child is added
     fn on_new_child(&mut self, children: Vec<HoliumNode<Ld, Nd>>);
     /// Function called when a node child is updated
     fn on_child_updated(&mut self, children: Vec<HoliumNode<Ld, Nd>>);
@@ -40,6 +45,10 @@ pub(crate) type NodeIndex = usize;
 /// `HoliumTree` is a generic tree structure that holds generic data type in its nodes and leaves.
 /// The tree is composed of a flat node list, `nodes`. The nodes point to their children and for
 /// easier computation children to their parent.
+///
+/// `Ld` is a generic structure that will be used as a data value for the leaves in our tree.
+/// `Nd` is a generic structure that will be used as a data value for the nodes in our tree. It has to
+/// implement the [`HoliumTreeData<Ld, Nd>`] trait.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct HoliumTree<Ld, Nd = Ld>
 where
@@ -260,6 +269,8 @@ where
      * Utilities
      **************************************/
 
+    // Internal function, recursively travel in a bottom-up fashioon in the Tree, calling for nodes
+    // updates.
     fn bottom_up_recursive_pathing(
         &mut self,
         node_index: NodeIndex,
@@ -282,6 +293,7 @@ where
         )
     }
 
+    // Internal function, in charge of calling the [`HoliumTreeData`] trait when the tree is updated.
     fn trigger_node_update(
         &mut self,
         node_index: NodeIndex,
@@ -305,6 +317,7 @@ where
         self
     }
 
+    // Internal function, use to recursively delete nodes when a node type is removed from the tree.
     fn recursive_retain(&mut self, parent_index: NodeIndex, node_index: NodeIndex) -> &mut Self {
         if self.nodes[node_index].has_children() {
             let children = self.children(node_index).unwrap();
@@ -321,6 +334,7 @@ where
         self
     }
 
+    // Internal function, making sure the node indexes of the tree are up to date.
     fn sanitize_indexes(&mut self) -> &mut Self {
         let iter = std::iter::IntoIterator::into_iter(&mut self.nodes);
         iter.enumerate().for_each(|(i, n)| n.index = i);
@@ -334,6 +348,9 @@ where
  *************************************************************/
 /// `HoliumNode` represents all nodes inside an `HoliumTree`. The `node_type` attributes determine if
 /// it is a leaf or node.
+///
+/// `Ld` is the data structure implemented in the tree to be used as a data value for the tree's leaves.
+/// `Nd` is the data structure implemented in the tree to be used as a data value for the tree's nodes.
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct HoliumNode<Ld, Nd = Ld>
 where
@@ -370,6 +387,7 @@ where
         })
     }
 
+    /// Internal function used to generate the root of the tree.
     fn root(root_type: HoliumNodeType<Ld, Nd>) -> Result<Self, HoliumTreeError> {
         if root_type.is_node() && root_type.has_children() {
             return Err(HoliumTreeError::NewNodeNoChildrenError);

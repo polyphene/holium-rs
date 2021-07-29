@@ -1,3 +1,5 @@
+//! Define errors for the utilities crate.
+
 use crate::tree::NodeIndex;
 
 /// TreeError represents all errors that might happen around `HoliumTree` handling
