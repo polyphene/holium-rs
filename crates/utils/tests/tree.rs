@@ -181,7 +181,7 @@ fn test_add_new_node() {
     let node_data = Nd { attr: 10 };
 
     let parent_index = 0;
-    let result = tree.add_node(parent_index, node_data);
+    let result = tree.add_non_leaf(parent_index, node_data);
 
     assert!(result.is_err());
 
@@ -200,7 +200,7 @@ fn test_add_new_node() {
     let node_data = Nd { attr: 10 };
 
     let parent_index = 3;
-    let result = tree.add_node(parent_index, node_data);
+    let result = tree.add_non_leaf(parent_index, node_data);
 
     assert!(result.is_err());
 
@@ -210,7 +210,7 @@ fn test_add_new_node() {
     let node_data = Nd { attr: 10 };
 
     let parent_index = 0;
-    let result = tree.add_node(parent_index, node_data.clone());
+    let result = tree.add_non_leaf(parent_index, node_data.clone());
 
     let tree = result.unwrap();
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
@@ -286,7 +286,7 @@ fn test_remove_leaf() {
     let node_data = Nd { attr: 10 };
 
     let parent_index = 0;
-    let _ = tree.add_node(parent_index, node_data.clone());
+    let _ = tree.add_non_leaf(parent_index, node_data.clone());
 
     // Try to remove
     let node_index = 2;
@@ -343,7 +343,7 @@ fn test_remove_node() {
     let node_data = Nd { attr: 10 };
 
     let parent_index = 0;
-    let _ = tree.add_node(parent_index, node_data.clone());
+    let _ = tree.add_non_leaf(parent_index, node_data.clone());
 
     let leaf_data = Ld { attr: 10 };
     let _ = tree.add_leaf(1, leaf_data);

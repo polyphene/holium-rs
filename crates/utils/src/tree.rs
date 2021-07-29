@@ -11,7 +11,7 @@ use crate::error::TreeError;
 /// are applied.
 ///
 /// `Ld` is the data structure implemented in the tree to be used as a data value for the tree's leaves.
-/// `Nd` is the data structure implemented in the tree to be used as a data value for the tree's nodes.
+/// `Nd` is the data structure implemented in the tree to be used as a data value for the tree's non leaves.
 pub trait TreeData<Ld, Nd = Ld>
 where
     Ld: Clone,
@@ -43,12 +43,12 @@ enum TreeEvents {
 /// `NodeIndex` is the index of the node inside the flat node list that is composing our tree.
 pub(crate) type NodeIndex = usize;
 
-/// `Tree` is a generic tree structure that holds generic data type in its nodes and leaves.
+/// `Tree` is a generic tree structure that holds generic data type in its leaves and non leaves.
 /// The tree is composed of a flat node list, `nodes`. The nodes point to their children and for
 /// easier computation children to their parent.
 ///
 /// `Ld` is a generic structure that will be used as a data value for the leaves in our tree.
-/// `Nd` is a generic structure that will be used as a data value for the nodes in our tree. It has to
+/// `Nd` is a generic structure that will be used as a data value for the non leaves in our tree. It has to
 /// implement the [`TreeData<Ld, Nd>`] trait.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Tree<Ld, Nd = Ld>
@@ -125,7 +125,7 @@ where
      **************************************/
     /// `add_leaf` will add a new leaf to the `Tree`. The parent has to be  [`NodeType::Node`].
     /// Will trigger the trait [`TreeData::on_new_child()`] for its parent and [`TreeData::on_child_updated()`]
-    /// for subsequent parent nodes.
+    /// for subsequent non leaf parent.
     pub fn add_leaf(&mut self, parent_index: NodeIndex, data: Ld) -> Result<&mut Self, TreeError> {
         if self.nodes.get(parent_index).is_none() {
             return Err(TreeError::NodeNotFound(parent_index));
@@ -150,7 +150,11 @@ where
     /// `add_node` will add a new node to the `Tree`. The parent has to be  [`NodeType::Node`].
     /// Will trigger the trait [`TreeData::on_new_child()`] for its parent and [`TreeData::on_child_updated()`]
     /// for subsequent parent nodes.
-    pub fn add_node(&mut self, parent_index: NodeIndex, data: Nd) -> Result<&mut Self, TreeError> {
+    pub fn add_non_leaf(
+        &mut self,
+        parent_index: NodeIndex,
+        data: Nd,
+    ) -> Result<&mut Self, TreeError> {
         if self.nodes.get(parent_index).is_none() {
             return Err(TreeError::NodeNotFound(parent_index));
         }
@@ -177,7 +181,7 @@ where
 
     /// `remove_leaf` will remove a leaf from the `Tree`. Will trigger the trait
     /// [`TreeData::on_child_removed()`] for its parent and [`TreeData::on_child_updated()`]
-    /// for subsequent parent nodes.
+    /// for subsequent non leaf parent.
     pub fn remove_leaf(&mut self, leaf_index: NodeIndex) -> Result<&mut Self, TreeError> {
         if leaf_index == 0 {
             return Err(TreeError::RootNoRemovalError);
@@ -205,7 +209,7 @@ where
 
     /// `remove_node` will remove a node and its children from the `Tree`. Will trigger the trait
     /// [`TreeData::on_child_removed()`] for its parent and [`TreeData::on_child_updated()`]
-    /// for subsequent parent nodes.
+    /// for subsequent non leaf parent.
     pub fn remove_node(&mut self, node_index: NodeIndex) -> Result<&mut Self, TreeError> {
         if node_index == 0 {
             return Err(TreeError::RootNoRemovalError);
@@ -231,7 +235,7 @@ where
     }
 
     /// `update_leaf_data` will update the data of a leaf in the `Tree`. Will trigger the trait
-    /// [`TreeData::on_child_updated()`] for its parent and subsequent parent nodes.
+    /// [`TreeData::on_child_updated()`] for its parent and subsequent non leaf parent.
     pub fn update_leaf_data(
         &mut self,
         leaf_index: NodeIndex,
@@ -261,7 +265,7 @@ where
      * Utilities
      **************************************/
 
-    // Internal function, recursively travel in a bottom-up fashioon in the Tree, calling for nodes
+    // Internal function, recursively travel in a bottom-up fashioon in the Tree, calling for non leaf
     // updates.
     fn bottom_up_recursive_pathing(
         &mut self,
@@ -309,7 +313,7 @@ where
         self
     }
 
-    // Internal function, use to recursively delete nodes when a node type is removed from the tree.
+    // Internal function, use to recursively delete non leaf when a node type is removed from the tree.
     fn recursive_retain(&mut self, parent_index: NodeIndex, node_index: NodeIndex) -> &mut Self {
         if self.nodes[node_index].has_children() {
             let children = self.children(node_index).unwrap();
@@ -342,7 +346,7 @@ where
 /// it is a leaf or node.
 ///
 /// `Ld` is the data structure implemented in the tree to be used as a data value for the tree's leaves.
-/// `Nd` is the data structure implemented in the tree to be used as a data value for the tree's nodes.
+/// `Nd` is the data structure implemented in the tree to be used as a data value for the tree's non leaves.
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Node<Ld, Nd = Ld>
 where
@@ -423,7 +427,7 @@ where
     }
 
     /**************************************
-     * Setter for nodes
+     * Setter for non leaves
      **************************************/
     fn new_child(&mut self, child_index: NodeIndex) -> Option<Vec<NodeIndex>> {
         self.node_type.new_child(child_index)
