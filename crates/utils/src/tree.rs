@@ -58,7 +58,7 @@ where
     nodes: Vec<Node<Ld, Nd>>, // Tree's nodes list
 }
 
-impl<Ld: Clone, Nd: Clone> Tree<Ld, Nd>
+impl<Ld, Nd> Tree<Ld, Nd>
 where
     Ld: Clone,
     Nd: Clone + TreeData<Ld, Nd>,
@@ -461,7 +461,11 @@ where
     NonLeaf((Nd, Vec<NodeIndex>)),
 }
 
-impl<Ld: Clone, Nd: Clone> NodeType<Ld, Nd> {
+impl<Ld, Nd> NodeType<Ld, Nd>
+where
+    Ld: Clone,
+    Nd: Clone,
+{
     pub fn is_leaf(&self) -> bool {
         match self {
             Self::Leaf(_) => true,
