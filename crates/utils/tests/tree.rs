@@ -1,5 +1,5 @@
 use holium_utils::error::HoliumTreeError;
-use holium_utils::tree::{HoliumNode, HoliumNodeType, HoliumTree, HoliumTreeData};
+use holium_utils::tree::{Node, NodeType, Tree, TreeData};
 
 /**************************************
  * Init data types for tree
@@ -13,38 +13,38 @@ struct Nd {
     attr: u32,
 }
 
-impl HoliumTreeData<Ld, Nd> for Nd {
-    fn on_new_child(&mut self, children: Vec<HoliumNode<Ld, Nd>>) {
+impl TreeData<Ld, Nd> for Nd {
+    fn on_new_child(&mut self, children: Vec<Node<Ld, Nd>>) {
         let mut value: u32 = 0;
 
         for (_, node) in children.iter().enumerate() {
             value += match node.node_type() {
-                HoliumNodeType::Leaf(data) => data.attr,
-                HoliumNodeType::Node((data, _)) => data.attr,
+                NodeType::Leaf(data) => data.attr,
+                NodeType::NonLeaf((data, _)) => data.attr,
             };
         }
         self.attr = value;
     }
 
-    fn on_child_updated(&mut self, children: Vec<HoliumNode<Ld, Nd>>) {
+    fn on_child_updated(&mut self, children: Vec<Node<Ld, Nd>>) {
         let mut value: u32 = 0;
 
         for (_, node) in children.iter().enumerate() {
             value += match node.node_type() {
-                HoliumNodeType::Leaf(data) => data.attr,
-                HoliumNodeType::Node((data, _)) => data.attr,
+                NodeType::Leaf(data) => data.attr,
+                NodeType::NonLeaf((data, _)) => data.attr,
             };
         }
         self.attr = value;
     }
 
-    fn on_child_removed(&mut self, children: Vec<HoliumNode<Ld, Nd>>) {
+    fn on_child_removed(&mut self, children: Vec<Node<Ld, Nd>>) {
         let mut value: u32 = 0;
 
         for (_, node) in children.iter().enumerate() {
             value += match node.node_type() {
-                HoliumNodeType::Leaf(data) => data.attr,
-                HoliumNodeType::Node((data, _)) => data.attr,
+                NodeType::Leaf(data) => data.attr,
+                NodeType::NonLeaf((data, _)) => data.attr,
             };
         }
         self.attr = value;
@@ -61,16 +61,16 @@ fn test_new_tree() {
      **************************************/
     let leaf_data = Ld { attr: 45 };
 
-    let node_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Leaf(leaf_data);
+    let node_type: NodeType<Ld, Nd> = NodeType::Leaf(leaf_data);
 
-    let result: Result<HoliumTree<Ld, Nd>, HoliumTreeError> = HoliumTree::new(node_type.clone());
+    let result: Result<Tree<Ld, Nd>, HoliumTreeError> = Tree::new(node_type.clone());
 
     assert_eq!(true, result.is_ok());
 
     let tree = result.unwrap();
     assert_eq!(1, tree.nodes().len());
 
-    let root: &HoliumNode<Ld, Nd> = tree.node(0).unwrap();
+    let root: &Node<Ld, Nd> = tree.node(0).unwrap();
     assert_eq!(0, root.index());
     assert_eq!(None, root.parent());
     assert_eq!(&node_type, root.node_type());
@@ -81,9 +81,9 @@ fn test_new_tree() {
     let node_data = Nd { attr: 45 };
 
     // Node type is given children
-    let node_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((node_data.clone(), vec![1]));
+    let node_type: NodeType<Ld, Nd> = NodeType::NonLeaf((node_data.clone(), vec![1]));
 
-    let result: Result<HoliumTree<Ld, Nd>, HoliumTreeError> = HoliumTree::new(node_type.clone());
+    let result: Result<Tree<Ld, Nd>, HoliumTreeError> = Tree::new(node_type.clone());
 
     assert_eq!(true, result.is_err());
     assert_eq!(
@@ -92,16 +92,16 @@ fn test_new_tree() {
     );
 
     // Node type is properly initialized
-    let node_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((node_data, vec![]));
+    let node_type: NodeType<Ld, Nd> = NodeType::NonLeaf((node_data, vec![]));
 
-    let result: Result<HoliumTree<Ld, Nd>, HoliumTreeError> = HoliumTree::new(node_type.clone());
+    let result: Result<Tree<Ld, Nd>, HoliumTreeError> = Tree::new(node_type.clone());
 
     assert_eq!(true, result.is_ok());
 
     let tree = result.unwrap();
     assert_eq!(1, tree.nodes().len());
 
-    let root: &HoliumNode<Ld, Nd> = tree.node(0).unwrap();
+    let root: &Node<Ld, Nd> = tree.node(0).unwrap();
     assert_eq!(0, root.index());
     assert_eq!(None, root.parent());
     assert_eq!(&node_type, root.node_type());
@@ -114,9 +114,9 @@ fn test_add_new_leaf() {
      **************************************/
     let root_data = Ld { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Leaf(root_data);
+    let root_type: NodeType<Ld, Nd> = NodeType::Leaf(root_data);
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let leaf_data = Ld { attr: 10 };
 
@@ -134,9 +134,9 @@ fn test_add_new_leaf() {
      **************************************/
     let root_data = Nd { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((root_data, vec![]));
+    let root_type: NodeType<Ld, Nd> = NodeType::NonLeaf((root_data, vec![]));
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     /**************************************
      * Fails if parent index does not exists
@@ -165,13 +165,13 @@ fn test_add_new_leaf() {
     let tree = result.unwrap();
 
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
-        HoliumNodeType::Node((data, _)) => data,
+        NodeType::NonLeaf((data, _)) => data,
         _ => {
             panic!("root is supposed to be Node here")
         }
     };
 
-    let leaf_type_should_be = HoliumNodeType::Leaf(leaf_data);
+    let leaf_type_should_be = NodeType::Leaf(leaf_data);
 
     // Checking that there has been an addition in nodes
     assert_eq!(2, tree.nodes_len());
@@ -179,7 +179,7 @@ fn test_add_new_leaf() {
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
     assert_eq!(true, result_root_children.is_some());
-    let root_children: Vec<HoliumNode<Ld, Nd>> = result_root_children.unwrap();
+    let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
     // Check that node is properly formed
@@ -200,9 +200,9 @@ fn test_add_new_node() {
      **************************************/
     let root_data = Ld { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Leaf(root_data);
+    let root_type: NodeType<Ld, Nd> = NodeType::Leaf(root_data);
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let node_data = Nd { attr: 10 };
 
@@ -220,9 +220,9 @@ fn test_add_new_node() {
      **************************************/
     let root_data = Nd { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((root_data, vec![]));
+    let root_type: NodeType<Ld, Nd> = NodeType::NonLeaf((root_data, vec![]));
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     /**************************************
      * Fails if parent index does not exists
@@ -250,13 +250,13 @@ fn test_add_new_node() {
 
     let tree = result.unwrap();
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
-        HoliumNodeType::Node((data, _)) => data,
+        NodeType::NonLeaf((data, _)) => data,
         _ => {
             panic!("root is supposed to be Node here")
         }
     };
 
-    let node_type_should_be: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((node_data, vec![]));
+    let node_type_should_be: NodeType<Ld, Nd> = NodeType::NonLeaf((node_data, vec![]));
 
     // Checking that there has been an addition in nodes
     assert_eq!(2, tree.nodes_len());
@@ -264,7 +264,7 @@ fn test_add_new_node() {
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
     assert_eq!(true, result_root_children.is_some());
-    let root_children: Vec<HoliumNode<Ld, Nd>> = result_root_children.unwrap();
+    let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
     // Check that node is properly formed
@@ -285,9 +285,9 @@ fn test_remove_leaf() {
      **************************************/
     let root_data = Ld { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Leaf(root_data);
+    let root_type: NodeType<Ld, Nd> = NodeType::Leaf(root_data);
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let result = tree.remove_leaf(0);
 
@@ -299,9 +299,9 @@ fn test_remove_leaf() {
      **************************************/
     let root_data = Nd { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((root_data, vec![]));
+    let root_type: NodeType<Ld, Nd> = NodeType::NonLeaf((root_data, vec![]));
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let leaf_data = Ld { attr: 10 };
 
@@ -353,7 +353,7 @@ fn test_remove_leaf() {
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
     assert_eq!(true, result_root_children.is_some());
-    let root_children: Vec<HoliumNode<Ld, Nd>> = result_root_children.unwrap();
+    let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
     let child = &root_children[0];
@@ -368,9 +368,9 @@ fn test_remove_node() {
      **************************************/
     let root_data = Nd { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((root_data, vec![]));
+    let root_type: NodeType<Ld, Nd> = NodeType::NonLeaf((root_data, vec![]));
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let result = tree.remove_leaf(0);
 
@@ -382,9 +382,9 @@ fn test_remove_node() {
      **************************************/
     let root_data = Nd { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((root_data, vec![]));
+    let root_type: NodeType<Ld, Nd> = NodeType::NonLeaf((root_data, vec![]));
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let node_data = Nd { attr: 10 };
 
@@ -441,9 +441,9 @@ fn test_update_leaf_data() {
      **************************************/
     let root_data = Nd { attr: 0 };
 
-    let root_type: HoliumNodeType<Ld, Nd> = HoliumNodeType::Node((root_data, vec![]));
+    let root_type: NodeType<Ld, Nd> = NodeType::NonLeaf((root_data, vec![]));
 
-    let mut tree = HoliumTree::new(root_type).unwrap();
+    let mut tree = Tree::new(root_type).unwrap();
 
     let leaf_data = Ld { attr: 10 };
 
@@ -489,18 +489,18 @@ fn test_update_leaf_data() {
     assert_eq!(true, result.is_ok());
 
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
-        HoliumNodeType::Node((data, _)) => data,
+        NodeType::NonLeaf((data, _)) => data,
         _ => {
             panic!("root is supposed to be Node here")
         }
     };
 
-    let node_type_should_be: HoliumNodeType<Ld, Nd> = HoliumNodeType::Leaf(leaf_data);
+    let node_type_should_be: NodeType<Ld, Nd> = NodeType::Leaf(leaf_data);
 
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
     assert_eq!(true, result_root_children.is_some());
-    let root_children: Vec<HoliumNode<Ld, Nd>> = result_root_children.unwrap();
+    let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
     // Check that node is properly formed
