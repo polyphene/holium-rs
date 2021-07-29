@@ -1,6 +1,6 @@
 use crate::tree::NodeIndex;
 
-/// TreeError represents all errors that might happened around `HoliumTree` handling
+/// TreeError represents all errors that might happen around `HoliumTree` handling
 #[derive(Debug, thiserror::Error, Eq, PartialEq)]
 pub enum HoliumTreeError {
     #[error("new node should not have children")]
