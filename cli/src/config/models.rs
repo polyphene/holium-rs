@@ -208,7 +208,6 @@ mod tests {
         assert_eq!(config.fragments.len(), 3);
         assert_eq!(config.config.core.no_scm, false);
         assert_eq!(config.config.core.no_dvc, Config::standard().core.no_dvc);
-        assert!(config.fragments[0].config.core.is_none());
         assert_eq!(config.fragments[1].config.core.as_ref().unwrap().no_scm.unwrap(), true);
         assert_eq!(config.fragments[2].config.core.as_ref().unwrap().no_scm.unwrap(), false);
     }
