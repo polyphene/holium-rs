@@ -104,7 +104,7 @@ where
         Some(
             self.nodes
                 .iter()
-                .filter(|n| n.parent.is_some() && n.parent.unwrap() == node_index)
+                .filter(|n| n.parent_index.is_some() && n.parent_index.unwrap() == node_index)
                 .map(|n| n.clone())
                 .collect(),
         )
@@ -115,7 +115,7 @@ where
     pub fn children_references(&self, node_index: NodeIndex) -> Vec<&Node<Ld, Nd>> {
         self.nodes
             .iter()
-            .filter(|n| n.parent.is_some() && n.parent.unwrap() == node_index)
+            .filter(|n| n.parent_index.is_some() && n.parent_index.unwrap() == node_index)
             .collect()
     }
 
@@ -198,7 +198,7 @@ where
             return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
         }
 
-        let parent_index = self.nodes[leaf_index].parent.unwrap();
+        let parent_index = self.nodes[leaf_index].parent_index.unwrap();
 
         self.recursive_retain(parent_index, leaf_index);
         self.sanitize_indexes();
@@ -226,7 +226,7 @@ where
             return Err(HoliumTreeError::WrongNodeTypeError(node_index));
         }
 
-        let parent_index = self.nodes[node_index].parent.unwrap();
+        let parent_index = self.nodes[node_index].parent_index.unwrap();
 
         self.recursive_retain(parent_index, node_index);
 
@@ -252,7 +252,7 @@ where
             return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
         }
 
-        let parent_index = self.nodes[leaf_index].parent.unwrap();
+        let parent_index = self.nodes[leaf_index].parent_index.unwrap();
 
         let current_data = self.nodes[leaf_index].leaf_data_mut().unwrap();
         *current_data = leaf_data;
@@ -287,7 +287,7 @@ where
         }
 
         self.bottom_up_recursive_pathing(
-            self.nodes[node_index].parent.unwrap(),
+            self.nodes[node_index].parent_index.unwrap(),
             TreeEvents::ChildUpdatedEvent,
         )
     }
@@ -357,8 +357,8 @@ where
     Nd: Clone,
 {
     index: NodeIndex,
-    parent: Option<NodeIndex>,   // Index of parent node, if none is root
-    node_type: NodeType<Ld, Nd>, // Type of the node, leaf or node
+    parent_index: Option<NodeIndex>, // Index of parent node, if none is root
+    node_type: NodeType<Ld, Nd>,     // Type of the node, leaf or node
 }
 
 impl<Ld, Nd> Node<Ld, Nd>
@@ -381,7 +381,7 @@ where
 
         Ok(Node {
             index,
-            parent: Some(parent_index),
+            parent_index: Some(parent_index),
             node_type,
         })
     }
@@ -394,7 +394,7 @@ where
 
         Ok(Node {
             index: 0,
-            parent: None,
+            parent_index: None,
             node_type: root_type,
         })
     }
@@ -408,7 +408,7 @@ where
     }
 
     pub fn parent(&self) -> Option<NodeIndex> {
-        self.parent
+        self.parent_index
     }
 
     pub fn node_type(&self) -> &NodeType<Ld, Nd> {
