@@ -148,8 +148,6 @@ fn test_add_new_leaf() {
     let parent_index = 0;
     let result = tree.add_leaf(parent_index, leaf_data.clone());
 
-    assert_eq!(true, result.is_ok());
-
     let tree = result.unwrap();
 
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
@@ -225,8 +223,6 @@ fn test_add_new_node() {
 
     let parent_index = 0;
     let result = tree.add_node(parent_index, node_data.clone());
-
-    assert_eq!(true, result.is_ok());
 
     let tree = result.unwrap();
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
