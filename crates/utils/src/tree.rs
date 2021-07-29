@@ -122,7 +122,7 @@ where
     /**************************************
      * Setter
      **************************************/
-    /// `add_leaf` will add a new leaf to the `HoliumTree`. The parent as to be  [`HoliumNodeType::Node`].
+    /// `add_leaf` will add a new leaf to the `HoliumTree`. The parent has to be  [`HoliumNodeType::Node`].
     /// Will trigger the trait [`HoliumTreeData::on_new_child()`] for its parent and [`HoliumTreeData::on_child_updated()`]
     /// for subsequent parent nodes.
     pub fn add_leaf(
