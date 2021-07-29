@@ -14,40 +14,29 @@ struct Nd {
 
 impl TreeData<Ld, Nd> for Nd {
     fn on_new_child(&mut self, children: Vec<Node<Ld, Nd>>) {
-        let mut value: u32 = 0;
-
-        for (_, node) in children.iter().enumerate() {
-            value += match node.node_type() {
-                NodeType::Leaf(data) => data.attr,
-                NodeType::NonLeaf((data, _)) => data.attr,
-            };
-        }
-        self.attr = value;
+        self.attr = add_children_values(children);
     }
 
     fn on_child_updated(&mut self, children: Vec<Node<Ld, Nd>>) {
-        let mut value: u32 = 0;
-
-        for (_, node) in children.iter().enumerate() {
-            value += match node.node_type() {
-                NodeType::Leaf(data) => data.attr,
-                NodeType::NonLeaf((data, _)) => data.attr,
-            };
-        }
-        self.attr = value;
+        self.attr = add_children_values(children);
     }
 
     fn on_child_removed(&mut self, children: Vec<Node<Ld, Nd>>) {
-        let mut value: u32 = 0;
-
-        for (_, node) in children.iter().enumerate() {
-            value += match node.node_type() {
-                NodeType::Leaf(data) => data.attr,
-                NodeType::NonLeaf((data, _)) => data.attr,
-            };
-        }
-        self.attr = value;
+        self.attr = add_children_values(children);
     }
+}
+
+fn add_children_values(children: Vec<Node<Ld, Nd>>) -> u32 {
+    let mut value: u32 = 0;
+
+    for (_, node) in children.iter().enumerate() {
+        value += match node.node_type() {
+            NodeType::Leaf(data) => data.attr,
+            NodeType::NonLeaf((data, _)) => data.attr,
+        };
+    }
+
+    value
 }
 
 /**************************************
