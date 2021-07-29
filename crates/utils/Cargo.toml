@@ -5,6 +5,4 @@ authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
 
 [dependencies]
-hex = "0.4.3"
-multihash = "0.14.0"
-thiserror = "1.0.25"
+thiserror = "^1.0.25"
