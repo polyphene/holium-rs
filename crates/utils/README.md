@@ -1,9 +1,6 @@
-<h1 align="center">Welcome to holium-utils 👋</h1>
-<p>
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
-</p>
+# Welcome to Holium utils
 
-> The holium-utils crate contains some utilities for our framework
+> Crate containing all utilities for the Holium Framework
 
 ## Run tests
 
@@ -11,16 +8,12 @@
 cargo test
 ```
 
-## Author
+## 🤝 Contributing
 
-👤 **Polyphene**
+Contributions, issues and feature requests are welcome!
 
-* Website: https://polyphene.io
-* Github: [@polyphene](https://github.com/polyphene)
+Feel free to check [issues page](https://github.com/polyphene/holium-rs/issues). 
 
-## Show your support
-
-Give a ⭐️ if this project helped you!
 
 ***
 _This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
