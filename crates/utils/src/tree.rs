@@ -1,13 +1,13 @@
 //! Define traits and structure necessary to implement a Tree in the Holium Framework
 use anyhow::Result;
 
-use crate::error::HoliumTreeError;
+use crate::error::TreeError;
 
 /*************************************************************
  * Update Trait
  *************************************************************/
 
-/// `HoliumTreeData` is a trait that will determine data behaviour in the tree based on manipulations that
+/// `TreeData` is a trait that will determine data behaviour in the tree based on manipulations that
 /// are applied.
 ///
 /// `Ld` is the data structure implemented in the tree to be used as a data value for the tree's leaves.
@@ -25,8 +25,8 @@ where
     fn on_child_removed(&mut self, children: Vec<Node<Ld, Nd>>);
 }
 
-/// `HoliumTreeEvents` is an internal enum used on recursive bottom up pathing to know which functions
-/// of the `HoliumTreeData` has to be called on the node
+/// `TreeEvents` is an internal enum used on recursive bottom up pathing to know which functions
+/// of the `TreeData` has to be called on the node
 #[derive(Debug, Clone, Eq, PartialEq)]
 enum TreeEvents {
     // Variant used to trigger a new child event on some node data
@@ -43,13 +43,13 @@ enum TreeEvents {
 /// `NodeIndex` is the index of the node inside the flat node list that is composing our tree.
 pub(crate) type NodeIndex = usize;
 
-/// `HoliumTree` is a generic tree structure that holds generic data type in its nodes and leaves.
+/// `Tree` is a generic tree structure that holds generic data type in its nodes and leaves.
 /// The tree is composed of a flat node list, `nodes`. The nodes point to their children and for
 /// easier computation children to their parent.
 ///
 /// `Ld` is a generic structure that will be used as a data value for the leaves in our tree.
 /// `Nd` is a generic structure that will be used as a data value for the nodes in our tree. It has to
-/// implement the [`HoliumTreeData<Ld, Nd>`] trait.
+/// implement the [`TreeData<Ld, Nd>`] trait.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Tree<Ld, Nd = Ld>
 where
@@ -90,7 +90,7 @@ where
         self.nodes.len()
     }
 
-    /// `children` returns the children of a given `HoliumNode`. Will return `None` if either the node
+    /// `children` returns the children of a given `Node`. Will return `None` if either the node
     /// type is a leaf or if the node has no children.
     pub fn children(&self, node_index: NodeIndex) -> Option<Vec<Node<Ld, Nd>>> {
         self.nodes.get(node_index)?;
@@ -111,7 +111,7 @@ where
         )
     }
 
-    /// `children_references` same as [`HoliumTree::children(&self, node_index: NodeIndex)`] but with
+    /// `children_references` same as [`Tree::children(&self, node_index: NodeIndex)`] but with
     /// children as references
     pub fn children_references(&self, node_index: NodeIndex) -> Vec<&Node<Ld, Nd>> {
         self.nodes
@@ -123,20 +123,16 @@ where
     /**************************************
      * Setter
      **************************************/
-    /// `add_leaf` will add a new leaf to the `HoliumTree`. The parent has to be  [`HoliumNodeType::Node`].
-    /// Will trigger the trait [`HoliumTreeData::on_new_child()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// `add_leaf` will add a new leaf to the `Tree`. The parent has to be  [`NodeType::Node`].
+    /// Will trigger the trait [`TreeData::on_new_child()`] for its parent and [`TreeData::on_child_updated()`]
     /// for subsequent parent nodes.
-    pub fn add_leaf(
-        &mut self,
-        parent_index: NodeIndex,
-        data: Ld,
-    ) -> Result<&mut Self, HoliumTreeError> {
+    pub fn add_leaf(&mut self, parent_index: NodeIndex, data: Ld) -> Result<&mut Self, TreeError> {
         if self.nodes.get(parent_index).is_none() {
-            return Err(HoliumTreeError::NodeNotFound(parent_index));
+            return Err(TreeError::NodeNotFound(parent_index));
         }
 
         if self.nodes[parent_index].node_type.is_leaf() {
-            return Err(HoliumTreeError::WrongNodeTypeError(parent_index));
+            return Err(TreeError::WrongNodeTypeError(parent_index));
         }
 
         // First we add new node to tree
@@ -151,20 +147,16 @@ where
         Ok(self)
     }
 
-    /// `add_node` will add a new node to the `HoliumTree`. The parent has to be  [`HoliumNodeType::Node`].
-    /// Will trigger the trait [`HoliumTreeData::on_new_child()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// `add_node` will add a new node to the `Tree`. The parent has to be  [`NodeType::Node`].
+    /// Will trigger the trait [`TreeData::on_new_child()`] for its parent and [`TreeData::on_child_updated()`]
     /// for subsequent parent nodes.
-    pub fn add_node(
-        &mut self,
-        parent_index: NodeIndex,
-        data: Nd,
-    ) -> Result<&mut Self, HoliumTreeError> {
+    pub fn add_node(&mut self, parent_index: NodeIndex, data: Nd) -> Result<&mut Self, TreeError> {
         if self.nodes.get(parent_index).is_none() {
-            return Err(HoliumTreeError::NodeNotFound(parent_index));
+            return Err(TreeError::NodeNotFound(parent_index));
         }
 
         if self.nodes[parent_index].node_type.is_leaf() {
-            return Err(HoliumTreeError::WrongNodeTypeError(parent_index));
+            return Err(TreeError::WrongNodeTypeError(parent_index));
         }
 
         // First we add new node to tree
@@ -183,20 +175,20 @@ where
         Ok(self)
     }
 
-    /// `remove_leaf` will remove a leaf from the `HoliumTree`. Will trigger the trait
-    /// [`HoliumTreeData::on_child_removed()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// `remove_leaf` will remove a leaf from the `Tree`. Will trigger the trait
+    /// [`TreeData::on_child_removed()`] for its parent and [`TreeData::on_child_updated()`]
     /// for subsequent parent nodes.
-    pub fn remove_leaf(&mut self, leaf_index: NodeIndex) -> Result<&mut Self, HoliumTreeError> {
+    pub fn remove_leaf(&mut self, leaf_index: NodeIndex) -> Result<&mut Self, TreeError> {
         if leaf_index == 0 {
-            return Err(HoliumTreeError::RootNoRemovalError);
+            return Err(TreeError::RootNoRemovalError);
         }
 
         if self.nodes.get(leaf_index).is_none() {
-            return Err(HoliumTreeError::NodeNotFound(leaf_index));
+            return Err(TreeError::NodeNotFound(leaf_index));
         }
 
         if self.nodes[leaf_index].node_type.is_node() {
-            return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
+            return Err(TreeError::WrongNodeTypeError(leaf_index));
         }
 
         let parent_index = self.nodes[leaf_index].parent_index.unwrap();
@@ -211,20 +203,20 @@ where
         Ok(self)
     }
 
-    /// `remove_node` will remove a node and its children from the `HoliumTree`. Will trigger the trait
-    /// [`HoliumTreeData::on_child_removed()`] for its parent and [`HoliumTreeData::on_child_updated()`]
+    /// `remove_node` will remove a node and its children from the `Tree`. Will trigger the trait
+    /// [`TreeData::on_child_removed()`] for its parent and [`TreeData::on_child_updated()`]
     /// for subsequent parent nodes.
-    pub fn remove_node(&mut self, node_index: NodeIndex) -> Result<&mut Self, HoliumTreeError> {
+    pub fn remove_node(&mut self, node_index: NodeIndex) -> Result<&mut Self, TreeError> {
         if node_index == 0 {
-            return Err(HoliumTreeError::RootNoRemovalError);
+            return Err(TreeError::RootNoRemovalError);
         }
 
         if self.nodes.get(node_index).is_none() {
-            return Err(HoliumTreeError::NodeNotFound(node_index));
+            return Err(TreeError::NodeNotFound(node_index));
         }
 
         if self.nodes[node_index].node_type.is_leaf() {
-            return Err(HoliumTreeError::WrongNodeTypeError(node_index));
+            return Err(TreeError::WrongNodeTypeError(node_index));
         }
 
         let parent_index = self.nodes[node_index].parent_index.unwrap();
@@ -238,19 +230,19 @@ where
         Ok(self)
     }
 
-    /// `update_leaf_data` will update the data of a leaf in the `HoliumTree`. Will trigger the trait
-    /// [`HoliumTreeData::on_child_updated()`] for its parent and subsequent parent nodes.
+    /// `update_leaf_data` will update the data of a leaf in the `Tree`. Will trigger the trait
+    /// [`TreeData::on_child_updated()`] for its parent and subsequent parent nodes.
     pub fn update_leaf_data(
         &mut self,
         leaf_index: NodeIndex,
         leaf_data: Ld,
-    ) -> Result<&mut Self, HoliumTreeError> {
+    ) -> Result<&mut Self, TreeError> {
         if self.nodes.get(leaf_index).is_none() {
-            return Err(HoliumTreeError::NodeNotFound(leaf_index));
+            return Err(TreeError::NodeNotFound(leaf_index));
         }
 
         if self.nodes[leaf_index].node_type.is_node() {
-            return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
+            return Err(TreeError::WrongNodeTypeError(leaf_index));
         }
 
         let parent_index = self.nodes[leaf_index].parent_index.unwrap();
@@ -293,7 +285,7 @@ where
         )
     }
 
-    // Internal function, in charge of calling the [`HoliumTreeData`] trait when the tree is updated.
+    // Internal function, in charge of calling the [`TreeData`] trait when the tree is updated.
     fn trigger_node_update(
         &mut self,
         node_index: NodeIndex,
@@ -346,7 +338,7 @@ where
 /*************************************************************
  * Tree Node
  *************************************************************/
-/// `HoliumNode` represents all nodes inside an `HoliumTree`. The `node_type` attributes determine if
+/// `Node` represents all nodes inside an `Tree`. The `node_type` attributes determine if
 /// it is a leaf or node.
 ///
 /// `Ld` is the data structure implemented in the tree to be used as a data value for the tree's leaves.
@@ -375,9 +367,9 @@ where
         index: NodeIndex,
         parent_index: NodeIndex,
         node_type: NodeType<Ld, Nd>,
-    ) -> Result<Self, HoliumTreeError> {
+    ) -> Result<Self, TreeError> {
         if node_type.is_node() && node_type.has_children() {
-            return Err(HoliumTreeError::NewNodeNoChildrenError);
+            return Err(TreeError::NewNodeNoChildrenError);
         }
 
         Ok(Node {
@@ -388,9 +380,9 @@ where
     }
 
     /// Internal function used to generate the root of the tree.
-    fn root(root_type: NodeType<Ld, Nd>) -> Result<Self, HoliumTreeError> {
+    fn root(root_type: NodeType<Ld, Nd>) -> Result<Self, TreeError> {
         if root_type.is_node() && root_type.has_children() {
-            return Err(HoliumTreeError::NewNodeNoChildrenError);
+            return Err(TreeError::NewNodeNoChildrenError);
         }
 
         Ok(Node {
@@ -449,7 +441,7 @@ where
     }
 }
 
-/// `HoliumNodeType` is an enum to identify a node type.
+/// `NodeType` is an enum to identify a node type.
 /// A `Leaf` will only contain some data wile a `NonLeaf` will contain its data and an ordered list of
 /// all its children.
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
