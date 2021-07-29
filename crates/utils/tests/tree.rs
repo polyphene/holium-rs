@@ -1,4 +1,3 @@
-use holium_utils::error::HoliumTreeError;
 use holium_utils::tree::{Node, NodeType, Tree, TreeData};
 
 /**************************************
@@ -65,7 +64,7 @@ fn test_new_tree() {
 
     let result: Result<Tree<Ld, Nd>, anyhow::Error> = Tree::new(node_type.clone());
 
-    assert_eq!(true, result.is_ok());
+    assert!(result.is_ok());
 
     let tree = result.unwrap();
     assert_eq!(1, tree.nodes().len());
@@ -85,14 +84,14 @@ fn test_new_tree() {
 
     let result: Result<Tree<Ld, Nd>, anyhow::Error> = Tree::new(node_type.clone());
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     // Node type is properly initialized
     let node_type: NodeType<Ld, Nd> = NodeType::NonLeaf((node_data, vec![]));
 
     let result: Result<Tree<Ld, Nd>, anyhow::Error> = Tree::new(node_type.clone());
 
-    assert_eq!(true, result.is_ok());
+    assert!(result.is_ok());
 
     let tree = result.unwrap();
     assert_eq!(1, tree.nodes().len());
@@ -119,7 +118,7 @@ fn test_add_new_leaf() {
     let parent_index = 0;
     let result = tree.add_leaf(parent_index, leaf_data);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * New tree with correct root
@@ -138,7 +137,7 @@ fn test_add_new_leaf() {
     let parent_index = 3;
     let result = tree.add_leaf(parent_index, leaf_data);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * Success
@@ -164,14 +163,14 @@ fn test_add_new_leaf() {
 
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
-    assert_eq!(true, result_root_children.is_some());
+    assert!(result_root_children.is_some());
     let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
     // Check that node is properly formed
     let root_child = &root_children[0];
     assert_eq!(1, root_child.index());
-    assert_eq!(true, root_child.parent().is_some());
+    assert!(root_child.parent().is_some());
     assert_eq!(0, root_child.parent().unwrap());
     assert_eq!(&leaf_type_should_be, root_child.node_type());
 
@@ -195,7 +194,7 @@ fn test_add_new_node() {
     let parent_index = 0;
     let result = tree.add_node(parent_index, node_data);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * New tree with correct root
@@ -214,7 +213,7 @@ fn test_add_new_node() {
     let parent_index = 3;
     let result = tree.add_node(parent_index, node_data);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * Success
@@ -239,14 +238,14 @@ fn test_add_new_node() {
 
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
-    assert_eq!(true, result_root_children.is_some());
+    assert!(result_root_children.is_some());
     let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
     // Check that node is properly formed
     let root_child = &root_children[0];
     assert_eq!(1, root_child.index());
-    assert_eq!(true, root_child.parent().is_some());
+    assert!(root_child.parent().is_some());
     assert_eq!(0, root_child.parent().unwrap());
     assert_eq!(&node_type_should_be, root_child.node_type());
 
@@ -267,7 +266,7 @@ fn test_remove_leaf() {
 
     let result = tree.remove_leaf(0);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * New tree and new leaf
@@ -289,7 +288,7 @@ fn test_remove_leaf() {
     let leaf_index = 10;
     let result = tree.remove_leaf(leaf_index);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * Fails if node is of node type
@@ -304,7 +303,7 @@ fn test_remove_leaf() {
     let node_index = 2;
     let result = tree.remove_leaf(node_index);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * Success
@@ -312,14 +311,14 @@ fn test_remove_leaf() {
     let leaf_index = 1;
     let result = tree.remove_leaf(leaf_index);
 
-    assert_eq!(true, result.is_ok());
+    assert!(result.is_ok());
 
     // Should have 2 nodes at this point
     assert_eq!(2, tree.nodes().len());
 
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
-    assert_eq!(true, result_root_children.is_some());
+    assert!(result_root_children.is_some());
     let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
@@ -341,7 +340,7 @@ fn test_remove_node() {
 
     let result = tree.remove_leaf(0);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * New tree and new node with leaf child
@@ -366,14 +365,14 @@ fn test_remove_node() {
     let node_index = 10;
     let result = tree.remove_node(node_index);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
     /**************************************
      * Fails if node is of leaf type
      **************************************/
     let node_index = 2;
     let result = tree.remove_node(node_index);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * Success
@@ -381,14 +380,14 @@ fn test_remove_node() {
     let node_index = 1;
     let result = tree.remove_node(node_index);
 
-    assert_eq!(true, result.is_ok());
+    assert!(result.is_ok());
 
     // Should have 1 node at this point, root as leaf is child of the node
     assert_eq!(1, tree.nodes().len());
 
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
-    assert_eq!(true, result_root_children.is_none());
+    assert!(result_root_children.is_none());
 }
 
 #[test]
@@ -415,7 +414,7 @@ fn test_update_leaf_data() {
     let leaf_index = 10;
     let result = tree.update_leaf_data(leaf_index, leaf_data);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
     /**************************************
      * Fails if node is of node type
      **************************************/
@@ -424,7 +423,7 @@ fn test_update_leaf_data() {
     let leaf_index = 0;
     let result = tree.update_leaf_data(leaf_index, leaf_data);
 
-    assert_eq!(true, result.is_err());
+    assert!(result.is_err());
 
     /**************************************
      * Success
@@ -434,7 +433,7 @@ fn test_update_leaf_data() {
     let leaf_index = 1;
     let result = tree.update_leaf_data(leaf_index, leaf_data.clone());
 
-    assert_eq!(true, result.is_ok());
+    assert!(result.is_ok());
 
     let root_data: &Nd = match tree.node(0).unwrap().node_type() {
         NodeType::NonLeaf((data, _)) => data,
@@ -447,7 +446,7 @@ fn test_update_leaf_data() {
 
     // Making sure that root children have been updated
     let result_root_children = tree.children(0);
-    assert_eq!(true, result_root_children.is_some());
+    assert!(result_root_children.is_some());
     let root_children: Vec<Node<Ld, Nd>> = result_root_children.unwrap();
     assert_eq!(1, root_children.len());
 
