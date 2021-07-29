@@ -34,7 +34,12 @@ enum HoliumTreeEvents {
 /*************************************************************
  * Tree
  *************************************************************/
+/// `NodeIndex` is the index of the node inside the flat node list that is composing our tree.
+pub(crate) type NodeIndex = usize;
+
 /// `HoliumTree` is a generic tree structure that holds generic data type in its nodes and leaves.
+/// The tree is composed of a flat node list, `nodes`. The nodes point to their children and for
+/// easier computation children to their parent.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct HoliumTree<Ld, Nd = Ld>
 where
@@ -68,7 +73,7 @@ where
     }
 
     pub fn node(&self, node_index: NodeIndex) -> Option<&HoliumNode<Ld, Nd>> {
-        self.nodes.get(node_index as usize)
+        self.nodes.get(node_index)
     }
 
     pub fn nodes_len(&self) -> usize {
@@ -78,11 +83,11 @@ where
     /// `children` returns the children of a given `HoliumNode`. Will return `None` if either the node
     /// type is a leaf or if the node has no children.
     pub fn children(&self, node_index: NodeIndex) -> Option<Vec<HoliumNode<Ld, Nd>>> {
-        self.nodes.get(node_index as usize)?;
+        self.nodes.get(node_index)?;
 
-        if self.nodes[node_index as usize].node_type.is_leaf()
-            || (self.nodes[node_index as usize].node_type.is_node()
-                && !self.nodes[node_index as usize].node_type.has_children())
+        if self.nodes[node_index].node_type.is_leaf()
+            || (self.nodes[node_index].node_type.is_node()
+                && !self.nodes[node_index].node_type.has_children())
         {
             return None;
         }
@@ -116,22 +121,19 @@ where
         parent_index: NodeIndex,
         data: Ld,
     ) -> Result<&mut Self, HoliumTreeError> {
-        if self.nodes.get(parent_index as usize).is_none() {
+        if self.nodes.get(parent_index).is_none() {
             return Err(HoliumTreeError::NodeNotFound(parent_index));
         }
 
-        if self.nodes[parent_index as usize].node_type.is_leaf() {
+        if self.nodes[parent_index].node_type.is_leaf() {
             return Err(HoliumTreeError::WrongNodeTypeError(parent_index));
         }
 
         // First we add new node to tree
-        let leaf: HoliumNode<Ld, Nd> = HoliumNode::new(
-            self.nodes_len() as u32,
-            parent_index,
-            HoliumNodeType::Leaf(data),
-        )?;
+        let leaf: HoliumNode<Ld, Nd> =
+            HoliumNode::new(self.nodes_len(), parent_index, HoliumNodeType::Leaf(data))?;
         self.nodes.push(leaf.clone());
-        self.nodes[parent_index as usize].new_child(leaf.index);
+        self.nodes[parent_index].new_child(leaf.index);
 
         let event = HoliumTreeEvents::NewChildEvent;
 
@@ -148,22 +150,22 @@ where
         parent_index: NodeIndex,
         data: Nd,
     ) -> Result<&mut Self, HoliumTreeError> {
-        if self.nodes.get(parent_index as usize).is_none() {
+        if self.nodes.get(parent_index).is_none() {
             return Err(HoliumTreeError::NodeNotFound(parent_index));
         }
 
-        if self.nodes[parent_index as usize].node_type.is_leaf() {
+        if self.nodes[parent_index].node_type.is_leaf() {
             return Err(HoliumTreeError::WrongNodeTypeError(parent_index));
         }
 
         // First we add new node to tree
         let node: HoliumNode<Ld, Nd> = HoliumNode::new(
-            self.nodes_len() as u32,
+            self.nodes_len(),
             parent_index,
             HoliumNodeType::Node((data, vec![])),
         )?;
         self.nodes.push(node.clone());
-        self.nodes[parent_index as usize].new_child(node.index);
+        self.nodes[parent_index].new_child(node.index);
 
         let event = HoliumTreeEvents::NewChildEvent;
 
@@ -180,15 +182,15 @@ where
             return Err(HoliumTreeError::RootNoRemovalError);
         }
 
-        if self.nodes.get(leaf_index as usize).is_none() {
+        if self.nodes.get(leaf_index).is_none() {
             return Err(HoliumTreeError::NodeNotFound(leaf_index));
         }
 
-        if self.nodes[leaf_index as usize].node_type.is_node() {
+        if self.nodes[leaf_index].node_type.is_node() {
             return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
         }
 
-        let parent_index = self.nodes[leaf_index as usize].parent.unwrap();
+        let parent_index = self.nodes[leaf_index].parent.unwrap();
 
         self.recursive_retain(parent_index, leaf_index);
         self.sanitize_indexes();
@@ -208,15 +210,15 @@ where
             return Err(HoliumTreeError::RootNoRemovalError);
         }
 
-        if self.nodes.get(node_index as usize).is_none() {
+        if self.nodes.get(node_index).is_none() {
             return Err(HoliumTreeError::NodeNotFound(node_index));
         }
 
-        if self.nodes[node_index as usize].node_type.is_leaf() {
+        if self.nodes[node_index].node_type.is_leaf() {
             return Err(HoliumTreeError::WrongNodeTypeError(node_index));
         }
 
-        let parent_index = self.nodes[node_index as usize].parent.unwrap();
+        let parent_index = self.nodes[node_index].parent.unwrap();
 
         self.recursive_retain(parent_index, node_index);
 
@@ -234,17 +236,17 @@ where
         leaf_index: NodeIndex,
         leaf_data: Ld,
     ) -> Result<&mut Self, HoliumTreeError> {
-        if self.nodes.get(leaf_index as usize).is_none() {
+        if self.nodes.get(leaf_index).is_none() {
             return Err(HoliumTreeError::NodeNotFound(leaf_index));
         }
 
-        if self.nodes[leaf_index as usize].node_type.is_node() {
+        if self.nodes[leaf_index].node_type.is_node() {
             return Err(HoliumTreeError::WrongNodeTypeError(leaf_index));
         }
 
-        let parent_index = self.nodes[leaf_index as usize].parent.unwrap();
+        let parent_index = self.nodes[leaf_index].parent.unwrap();
 
-        let current_data = self.nodes[leaf_index as usize].leaf_data_mut().unwrap();
+        let current_data = self.nodes[leaf_index].leaf_data_mut().unwrap();
         *current_data = leaf_data;
 
         let event = HoliumTreeEvents::ChildUpdatedEvent;
@@ -275,7 +277,7 @@ where
         }
 
         self.bottom_up_recursive_pathing(
-            self.nodes[node_index as usize].parent.unwrap(),
+            self.nodes[node_index].parent.unwrap(),
             HoliumTreeEvents::ChildUpdatedEvent,
         )
     }
@@ -287,15 +289,15 @@ where
         children: Vec<HoliumNode<Ld, Nd>>,
     ) -> &mut Self {
         match event {
-            HoliumTreeEvents::NewChildEvent => self.nodes[node_index as usize]
+            HoliumTreeEvents::NewChildEvent => self.nodes[node_index]
                 .node_data_mut()
                 .unwrap()
                 .on_new_child(children),
-            HoliumTreeEvents::ChildUpdatedEvent => self.nodes[node_index as usize]
+            HoliumTreeEvents::ChildUpdatedEvent => self.nodes[node_index]
                 .node_data_mut()
                 .unwrap()
                 .on_child_updated(children),
-            HoliumTreeEvents::ChildRemovedEvent => self.nodes[node_index as usize]
+            HoliumTreeEvents::ChildRemovedEvent => self.nodes[node_index]
                 .node_data_mut()
                 .unwrap()
                 .on_child_removed(children),
@@ -304,7 +306,7 @@ where
     }
 
     fn recursive_retain(&mut self, parent_index: NodeIndex, node_index: NodeIndex) -> &mut Self {
-        if self.nodes[node_index as usize].has_children() {
+        if self.nodes[node_index].has_children() {
             let children = self.children(node_index).unwrap();
             let children_indexes: Vec<NodeIndex> = children.iter().map(|n| n.index).collect();
 
@@ -313,7 +315,7 @@ where
             }
         }
 
-        self.nodes[parent_index as usize].retain_child(node_index);
+        self.nodes[parent_index].retain_child(node_index);
         self.nodes.retain(|n| n.index != node_index);
 
         self
@@ -321,7 +323,7 @@ where
 
     fn sanitize_indexes(&mut self) -> &mut Self {
         let iter = std::iter::IntoIterator::into_iter(&mut self.nodes);
-        iter.enumerate().for_each(|(i, n)| n.index = i as u32);
+        iter.enumerate().for_each(|(i, n)| n.index = i);
 
         self
     }
@@ -488,5 +490,3 @@ impl<Ld: Clone, Nd: Clone> HoliumNodeType<Ld, Nd> {
         }
     }
 }
-
-pub(crate) type NodeIndex = u32;
