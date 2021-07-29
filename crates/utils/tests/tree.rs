@@ -63,7 +63,7 @@ fn test_new_tree() {
 
     let node_type: NodeType<Ld, Nd> = NodeType::Leaf(leaf_data);
 
-    let result: Result<Tree<Ld, Nd>, HoliumTreeError> = Tree::new(node_type.clone());
+    let result: Result<Tree<Ld, Nd>, anyhow::Error> = Tree::new(node_type.clone());
 
     assert_eq!(true, result.is_ok());
 
@@ -83,18 +83,14 @@ fn test_new_tree() {
     // Node type is given children
     let node_type: NodeType<Ld, Nd> = NodeType::NonLeaf((node_data.clone(), vec![1]));
 
-    let result: Result<Tree<Ld, Nd>, HoliumTreeError> = Tree::new(node_type.clone());
+    let result: Result<Tree<Ld, Nd>, anyhow::Error> = Tree::new(node_type.clone());
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::NewNodeNoChildrenError,
-        result.err().unwrap()
-    );
 
     // Node type is properly initialized
     let node_type: NodeType<Ld, Nd> = NodeType::NonLeaf((node_data, vec![]));
 
-    let result: Result<Tree<Ld, Nd>, HoliumTreeError> = Tree::new(node_type.clone());
+    let result: Result<Tree<Ld, Nd>, anyhow::Error> = Tree::new(node_type.clone());
 
     assert_eq!(true, result.is_ok());
 
@@ -124,10 +120,6 @@ fn test_add_new_leaf() {
     let result = tree.add_leaf(parent_index, leaf_data);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::WrongNodeTypeError(parent_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * New tree with correct root
@@ -147,10 +139,6 @@ fn test_add_new_leaf() {
     let result = tree.add_leaf(parent_index, leaf_data);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::NodeNotFound(parent_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * Success
@@ -210,10 +198,6 @@ fn test_add_new_node() {
     let result = tree.add_node(parent_index, node_data);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::WrongNodeTypeError(parent_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * New tree with correct root
@@ -233,10 +217,6 @@ fn test_add_new_node() {
     let result = tree.add_node(parent_index, node_data);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::NodeNotFound(parent_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * Success
@@ -292,7 +272,6 @@ fn test_remove_leaf() {
     let result = tree.remove_leaf(0);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(HoliumTreeError::RootNoRemovalError, result.err().unwrap());
 
     /**************************************
      * New tree and new leaf
@@ -315,10 +294,6 @@ fn test_remove_leaf() {
     let result = tree.remove_leaf(leaf_index);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::NodeNotFound(leaf_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * Fails if node is of node type
@@ -334,10 +309,6 @@ fn test_remove_leaf() {
     let result = tree.remove_leaf(node_index);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::WrongNodeTypeError(node_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * Success
@@ -375,7 +346,6 @@ fn test_remove_node() {
     let result = tree.remove_leaf(0);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(HoliumTreeError::RootNoRemovalError, result.err().unwrap());
 
     /**************************************
      * New tree and new node with leaf child
@@ -401,11 +371,6 @@ fn test_remove_node() {
     let result = tree.remove_node(node_index);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::NodeNotFound(node_index),
-        result.err().unwrap()
-    );
-
     /**************************************
      * Fails if node is of leaf type
      **************************************/
@@ -413,10 +378,6 @@ fn test_remove_node() {
     let result = tree.remove_node(node_index);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::WrongNodeTypeError(node_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * Success
@@ -459,11 +420,6 @@ fn test_update_leaf_data() {
     let result = tree.update_leaf_data(leaf_index, leaf_data);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::NodeNotFound(leaf_index),
-        result.err().unwrap()
-    );
-
     /**************************************
      * Fails if node is of node type
      **************************************/
@@ -473,10 +429,6 @@ fn test_update_leaf_data() {
     let result = tree.update_leaf_data(leaf_index, leaf_data);
 
     assert_eq!(true, result.is_err());
-    assert_eq!(
-        HoliumTreeError::WrongNodeTypeError(leaf_index),
-        result.err().unwrap()
-    );
 
     /**************************************
      * Success

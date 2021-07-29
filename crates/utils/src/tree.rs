@@ -1,4 +1,5 @@
 //! Define traits and structure necessary to implement a Tree in the Holium Framework
+use anyhow::Result;
 
 use crate::error::HoliumTreeError;
 
@@ -67,7 +68,7 @@ where
      * Initializer
      **************************************/
 
-    pub fn new(root_type: NodeType<Ld, Nd>) -> Result<Self, HoliumTreeError> {
+    pub fn new(root_type: NodeType<Ld, Nd>) -> Result<Self> {
         let root = Node::root(root_type)?;
 
         Ok(Tree { nodes: vec![root] })
