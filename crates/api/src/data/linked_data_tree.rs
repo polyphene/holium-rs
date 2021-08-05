@@ -1,6 +1,6 @@
 //! Linked data trees recursively hold dag-cbor representation of holium data on IPFS / IPLD.
 
-use anyhow::{anyhow, Result, Error};
+use anyhow::{anyhow, Error, Result};
 use cid::Cid;
 use cid::multihash::{Code, MultihashDigest};
 use itertools::Itertools;
