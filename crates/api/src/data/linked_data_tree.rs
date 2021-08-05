@@ -124,4 +124,43 @@ mod tests {
             "bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"
         )
     }
+
+    #[test]
+    fn can_compute_cid_of_recursive_value() {
+        // compute cid
+        let data_tree = data_tree::Node::new(CborValue::Array(vec![CborValue::Null]));
+        let linked_data_tree = Node::from_data_tree(data_tree).unwrap();
+        // test child CID string
+        assert_eq!(
+            linked_data_tree.children.len(),
+            1
+        );
+        assert_eq!(
+            linked_data_tree.children[0].value.cid.to_string(),
+            "bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"
+        );
+
+        // Test parent CID string
+        //
+        // Child's CID :
+        // multibase-prefix :           0x00
+        // cid-version :                0x01
+        // multicodec-content-type :    0x51
+        // multihash-content-address :  0x1e - 0x20 - 0x61a9bf10f0ffedc7dc77589ae2ab4ca80b006c806e6636e41b60410cd8f0bbc4
+        //
+        // Link : encode the child's CID as a CBOR byte-string (major type 2), and associate
+        // it with CBOR tag 42.
+
+        // NB : serde_cbor v0.11.1 suffers from the current limitation :
+        // > Tags are ignored during deserialization and can't be emitted during serialization.
+
+        assert_eq!(
+            linked_data_tree.value.cbor,
+            hex::decode("D82A58250001511E2061A9BF10F0FFEDC7DC77589AE2AB4CA80B006C806E6636E41B60410CD8F0BBC4").unwrap()
+        );
+        assert_eq!(
+            linked_data_tree.value.cid.to_string(),
+            "bafyr4ih2mcq362imx7o6o3cii7npcxxdtc5bzaorpzvdujgcknnw35dmp4"
+        );
+    }
 }
