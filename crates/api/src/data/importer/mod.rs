@@ -2,6 +2,7 @@
 
 mod json;
 mod cbor;
+mod bin;
 
 use serde_cbor::Value as CborValue;
 
