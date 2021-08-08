@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 anyhow = "^1.0.42"
 cid = "^0.7.0"
+csv = "^1.1.6"
 itertools = "^0.10.1"
 lazy_static = "^1.4.0"
 regex = "^1.5.4"
