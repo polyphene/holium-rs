@@ -4,12 +4,15 @@ use anyhow::{anyhow, Error, Result};
 use cid::Cid;
 use cid::multihash::{Code, MultihashDigest};
 use itertools::Itertools;
+use lazy_static::lazy_static;
+use regex::bytes::{Captures, Regex};
 use serde_cbor::to_vec;
 use serde_cbor::Value as CborValue;
 
 use crate::data::data_tree;
 
 const HASHING_ALGO: Code = Code::Blake3_256;
+const IPLD_CBOR_TAG: u64 = 42;
 
 /// Nodes all store their IPLD CBOR representation and related CID.
 struct Value {
@@ -19,21 +22,25 @@ struct Value {
 
 impl Value {
     fn from_children_cids(children_cids: Vec<Cid>) -> Result<Self> {
-        // compute serialized CBOR binary representation
-        let cbor_value = CborValue::Array(
+        // create CBOR array value
+        let cbor_array = CborValue::Array(
             children_cids
                 .into_iter()
                 .map(|cid| {
+                    // get bin digest
                     let digest = cid.to_bytes();
+                    // prefix the digest with multibase identity code
                     const MULTIBASE_IDENTITY_PREFIX: &[u8] = b"\x00";
                     let multibase_digest = [MULTIBASE_IDENTITY_PREFIX, digest.as_ref()].concat();
-                    let cbor_byte_string = CborValue::Bytes(multibase_digest);
-                    let tagged_value = CborValue::Tag(42, Box::from(cbor_byte_string));
-                    return tagged_value;
+                    // create tagged CBOR byte string
+                    let mut cbor_val: CborValue = CborValue::Bytes(multibase_digest);
+                    cbor_val = CborValue::Tag(42, Box::from(cbor_val));
+                    cbor_val
                 })
                 .collect()
         );
-        let cbor = to_vec(&cbor_value)?;
+        // Serialize IPLD CBOR value
+        let cbor = ser_ipld_cbor(&cbor_array)?;
         // compute CID
         const DAG_CBOR_CODE: u64 = 0x71;
         let digest = HASHING_ALGO.digest(&cbor);
@@ -41,6 +48,35 @@ impl Value {
         // return
         Ok(Value { cbor, cid })
     }
+}
+
+/// Serializes an IPLD object in respect to DAG-CBOR specifications.
+fn ser_ipld_cbor(val: &CborValue) -> Result<Vec<u8>> {
+    // First serialize the CBOR value. In principle, this should be enough. Unfortunately it is not
+    // as, because of a limitation of serde, tags do not appear after serialization.
+    let mut bin: Vec<u8> = to_vec(val)?;
+    // Thus, we have here to manually include tags related to IPLD Links in the serialized object.
+    Ok(replace_cids_with_links(&bin))
+}
+
+/// Find CIDs in a CBOR serialized object and replace them with related Links, that is prefix them
+/// with CBOR Tags.
+fn replace_cids_with_links(before: &[u8]) -> Vec<u8> {
+    lazy_static! {
+        // The regular expression is responsible for spotting CIDs byte representations.
+        // \xd8\x2a : tag(42)
+        // \x58\x25 : bytes(37)
+        // \x00 : multibase identity code
+        // \x01 : CID version code
+        // \x51 (CBOR) or \x71 (MerkleDAG CBOR) : multicodec content type
+        // \x1e\x20.{32} : multihash content address
+        static ref RE: Regex = Regex::new(r"(?-u)(?:\xd8\x2a)?(?P<cid_bytes>\x58\x25\x00\x01(?:\x51|\x71)\x1e\x20.{32})").unwrap();
+    }
+    // prefix the CID with a CBOR Tag
+    let replacement_str = &b"\xd8\x2a$cid_bytes"[..];
+    Vec::from(
+        RE.replace_all(before, replacement_str)
+    )
 }
 
 /// Nodes all hold their inner value, made of a CBOR IPLD representation and own CID, and also point
@@ -89,6 +125,50 @@ mod tests {
     use cid::Version;
 
     use super::*;
+
+    mod test_replace_cids_with_links {
+        use super::*;
+
+        const TEST_HASH: &str = "fa60a1bf690cbfdde76c4847daf15ee398ba1c81d17e6a3a24c2535b6df46c7f";
+        const CID_PREFIX: &str = "0001711e20";
+        const BYTES_37_PREFIX: &str = "5825";     // CBOR prefix for 37-byte byte strings
+        const LINK_PREFIX: &str = "d82a";
+
+        #[test]
+        fn can_replace_cids_with_links() {
+            let cid_str = format!("{}{}{}", BYTES_37_PREFIX, CID_PREFIX, TEST_HASH);
+            let cid = hex::decode(&cid_str).unwrap();
+            let link = replace_cids_with_links(cid.as_ref());
+            assert_eq!(
+                hex::encode(link),
+                format!("{}{}", LINK_PREFIX, &cid_str)
+            )
+        }
+
+        #[test]
+        fn can_replace_cids_twice_safely() {
+            let cid_with_link_str = format!("{}{}{}{}", LINK_PREFIX, BYTES_37_PREFIX, CID_PREFIX, TEST_HASH);
+            let cid_with_link = hex::decode(&cid_with_link_str).unwrap();
+            let link = replace_cids_with_links(cid_with_link.as_ref());
+            assert_eq!(
+                hex::encode(cid_with_link),
+                cid_with_link_str
+            )
+        }
+
+        #[test]
+        fn can_check_cid_before_replacing_with_link() {
+            // we here create a wrong CID by shortening the hash
+            let (wrong_hash_str,_) = TEST_HASH.split_at(TEST_HASH.len() - 2);
+            let wrong_cid_str = format!("{}{}{}", BYTES_37_PREFIX, CID_PREFIX, wrong_hash_str);
+            let wrong_cid = hex::decode(&wrong_cid_str).unwrap();
+            let link = replace_cids_with_links(wrong_cid.as_ref());
+            assert_eq!(
+                hex::encode(link),
+                wrong_cid_str
+            )
+        }
+    }
 
     #[test]
     fn can_compute_cid_of_null_value() {
@@ -156,11 +236,11 @@ mod tests {
 
         assert_eq!(
             linked_data_tree.value.cbor,
-            hex::decode("D82A58250001511E2061A9BF10F0FFEDC7DC77589AE2AB4CA80B006C806E6636E41B60410CD8F0BBC4").unwrap()
+            hex::decode("81d82a58250001511e2061a9bf10f0ffedc7dc77589ae2ab4ca80b006c806e6636e41b60410cd8f0bbc4").unwrap()
         );
         assert_eq!(
             linked_data_tree.value.cid.to_string(),
-            "bafyr4ih2mcq362imx7o6o3cii7npcxxdtc5bzaorpzvdujgcknnw35dmp4"
+            "bafyr4iaboxtdci2fq5i65vzoe4jzjeqsafdmh46mz6qzhyfszd4ocealaa"
         );
     }
 }

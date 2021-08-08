@@ -8,6 +8,8 @@ edition = "2018"
 anyhow = "^1.0.42"
 cid = "^0.7.0"
 itertools = "^0.10.1"
+lazy_static = "^1.4.0"
+regex = "^1.5.4"
 serde_cbor = "^0.11.1"
 
 [dev-dependencies]
