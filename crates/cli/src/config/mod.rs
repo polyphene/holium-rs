@@ -17,7 +17,7 @@ mod updatable_field;
 /// Parses arguments and handles the command.
 pub(crate) fn handle_cmd(config_matches: &ArgMatches) -> Result<()> {
     // Get path to current directory
-    let cur_dir = env::current_dir().unwrap();
+    let cur_dir = env::current_dir()?;
     let holium_dir = cur_dir.join(PROJECT_DIR);
     // Get selected level
     let level = if config_matches.is_present("global") {
