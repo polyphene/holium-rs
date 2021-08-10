@@ -32,14 +32,14 @@ impl Value {
 
 #[derive(Debug, PartialEq)]
 /// Recursive structure building simple data trees
-pub(crate) struct Node {
+pub struct Node {
     pub(crate) value: Option<Value>,
     pub(crate) children: Vec<Node>,
 }
 
 impl Node {
     /// Create a data tree from a Cbor value
-    pub(crate) fn new(src_value: CborValue) -> Self {
+    pub fn new(src_value: CborValue) -> Self {
         fn new_leaf(v: Value) -> Node {
             Node { value: Some(v), children: vec![] }
         }

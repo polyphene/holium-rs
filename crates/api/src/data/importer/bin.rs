@@ -1,12 +1,19 @@
+use std::ops::Deref;
+
 use serde_cbor::Value as CborValue;
 
 use crate::data::importer::Importable;
 
-struct BinaryValue(Vec<u8>);
+pub struct BinaryValue(Vec<u8>);
+
+impl BinaryValue {
+    pub fn new(buf: Vec<u8>) -> Self { BinaryValue(buf) }
+}
 
 impl Importable for BinaryValue {
-    fn to_cbor(self) -> CborValue {
-        CborValue::Bytes(Vec::from(self.0))
+    fn to_cbor(&self) -> CborValue {
+        let content = self.0.clone();
+        CborValue::Bytes(content)
     }
 }
 

@@ -1,21 +1,18 @@
 use std::io;
 
-use csv::StringRecordsIter;
+use csv::StringRecord;
 use serde_cbor::Value as CborValue;
 
 use crate::data::importer::Importable;
 
-impl<'r, R: io::Read> Importable for StringRecordsIter<'r, R> {
-    fn to_cbor(self) -> CborValue {
+impl Importable for Vec<StringRecord> {
+    fn to_cbor(&self) -> CborValue {
         let mut vec: Vec<CborValue> = Vec::new();
-        for result in self {
-            // Errors on iteration are ignored
-            if let Ok(record) = result {
-                let cbor_value = CborValue::Array(
-                    record.iter().map(|v| CborValue::Text(String::from(v))).collect()
-                );
-                vec.push(cbor_value);
-            }
+        for record in self {
+            let cbor_value = CborValue::Array(
+                record.iter().map(|v| CborValue::Text(String::from(v))).collect()
+            );
+            vec.push(cbor_value);
         }
         CborValue::Array(vec)
     }
@@ -27,6 +24,7 @@ mod tests {
     use csv::{ReaderBuilder, StringRecord};
 
     use super::*;
+    use itertools::Itertools;
 
     #[test]
     fn can_import_csv() {
@@ -34,7 +32,10 @@ mod tests {
         let mut reader = ReaderBuilder::new()
             .has_headers(false)
             .from_reader("a,b,c\nx,y,z".as_bytes());
-        let records = reader.records();
+        let records: Vec<StringRecord> = reader.records()
+            .into_iter()
+            .filter_map(|record| record.ok())
+            .collect();
         // Test conversion
         assert_eq!(
             records.to_cbor(),

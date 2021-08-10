@@ -6,14 +6,14 @@ use serde_json::Value as JsonValue;
 use crate::data::importer::Importable;
 
 impl Importable for JsonValue {
-    fn to_cbor(self) -> CborValue {
+    fn to_cbor(&self) -> CborValue {
         match self {
             JsonValue::Null => CborValue::Null,
-            JsonValue::Bool(v) => CborValue::Bool(v),
+            JsonValue::Bool(v) => CborValue::Bool(*v),
             JsonValue::Number(v) if { v.is_i64() } => CborValue::Integer(v.as_i64().unwrap() as i128),
             JsonValue::Number(v) if { v.is_u64() } => CborValue::Integer(v.as_u64().unwrap() as i128),
             JsonValue::Number(v) if { v.is_f64() } => CborValue::Float(v.as_f64().unwrap()),
-            JsonValue::String(v) => CborValue::Text(v),
+            JsonValue::String(v) => CborValue::Text(v.to_string()),
             JsonValue::Array(v) => CborValue::Array(v.iter().map(|v| v.to_owned().to_cbor()).collect()),
             JsonValue::Object(v) => {
                 let mut cbor_map: BTreeMap<CborValue, CborValue> = BTreeMap::new();

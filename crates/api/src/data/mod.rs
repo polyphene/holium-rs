@@ -1,3 +1,3 @@
-mod data_tree;
-mod linked_data_tree;
-mod importer;
+pub mod data_tree;
+pub mod linked_data_tree;
+pub mod importer;

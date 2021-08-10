@@ -15,9 +15,9 @@ const HASHING_ALGO: Code = Code::Blake3_256;
 const IPLD_CBOR_TAG: u64 = 42;
 
 /// Nodes all store their IPLD CBOR representation and related CID.
-struct Value {
-    cbor: Vec<u8>,
-    cid: Cid,
+pub struct Value {
+    pub cbor: Vec<u8>,
+    pub cid: Cid,
 }
 
 impl Value {
@@ -81,9 +81,9 @@ fn replace_cids_with_links(before: &[u8]) -> Vec<u8> {
 
 /// Nodes all hold their inner value, made of a CBOR IPLD representation and own CID, and also point
 /// to their children.
-struct Node {
-    value: Value,
-    children: Vec<Node>,
+pub struct Node {
+    pub value: Value,
+    pub children: Vec<Node>,
 }
 
 impl Node {
@@ -100,7 +100,7 @@ impl Node {
     }
 
     /// Create the linked data representation of any holium data
-    pub(crate) fn from_data_tree(n: data_tree::Node) -> Result<Self> {
+    pub fn from_data_tree(n: data_tree::Node) -> Result<Self> {
         if let Some(v) = n.value {
             Node::from_scalar_value(v)
         } else {
