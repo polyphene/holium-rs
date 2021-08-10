@@ -78,7 +78,7 @@ mod tests {
     }
 
     mod test_rec_conversions {
-        use std::iter::Map;
+
 
         use super::*;
 

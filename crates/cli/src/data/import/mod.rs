@@ -1,15 +1,13 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
 use anyhow::{Context, Result};
-use clap::{App, Arg, arg_enum, ArgMatches, SubCommand, value_t, value_t_or_exit};
+use clap::{App, Arg, arg_enum, ArgMatches, SubCommand, value_t};
 
 use holium::data::data_tree::Node as DataTreeNode;
-use holium::data::importer::Importable;
 use holium::data::linked_data_tree::Node as LinkedDataTreeNode;
 
 use crate::data::DataError;
-use crate::data::import::importer::Importer;
 use crate::utils::PROJECT_DIR;
 use crate::utils::storage::RepoStorage;
 

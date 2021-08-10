@@ -1,4 +1,4 @@
-use std::io;
+
 
 use csv::StringRecord;
 use serde_cbor::Value as CborValue;
@@ -24,7 +24,7 @@ mod tests {
     use csv::{ReaderBuilder, StringRecord};
 
     use super::*;
-    use itertools::Itertools;
+
 
     #[test]
     fn can_import_csv() {

@@ -2,7 +2,7 @@
 //! with their stored representations of a file system.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use thiserror::Error;
 
 use anyhow::{Context, Result};

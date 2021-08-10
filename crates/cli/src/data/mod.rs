@@ -1,9 +1,9 @@
 //! CLI command to manage data from, to and inside a Holium repository.
 
-use std::env;
+
 
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, ArgMatches, SubCommand};
 use thiserror::Error;
 
 use crate::data::import::{handle_import_cmd, import_cmd};

@@ -1,7 +1,7 @@
 use std::process::Output;
 
 use assert_cmd::Command;
-use assert_fs::TempDir;
+
 use predicates::prelude::*;
 
 use crate::setup_repo;

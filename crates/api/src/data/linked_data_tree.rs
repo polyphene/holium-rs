@@ -5,7 +5,7 @@ use cid::Cid;
 use cid::multihash::{Code, MultihashDigest};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use regex::bytes::{Captures, Regex};
+use regex::bytes::{Regex};
 use serde_cbor::to_vec;
 use serde_cbor::Value as CborValue;
 
@@ -34,7 +34,7 @@ impl Value {
                     let multibase_digest = [MULTIBASE_IDENTITY_PREFIX, digest.as_ref()].concat();
                     // create tagged CBOR byte string
                     let mut cbor_val: CborValue = CborValue::Bytes(multibase_digest);
-                    cbor_val = CborValue::Tag(42, Box::from(cbor_val));
+                    cbor_val = CborValue::Tag(IPLD_CBOR_TAG, Box::from(cbor_val));
                     cbor_val
                 })
                 .collect()
@@ -54,7 +54,7 @@ impl Value {
 fn ser_ipld_cbor(val: &CborValue) -> Result<Vec<u8>> {
     // First serialize the CBOR value. In principle, this should be enough. Unfortunately it is not
     // as, because of a limitation of serde, tags do not appear after serialization.
-    let mut bin: Vec<u8> = to_vec(val)?;
+    let bin: Vec<u8> = to_vec(val)?;
     // Thus, we have here to manually include tags related to IPLD Links in the serialized object.
     Ok(replace_cids_with_links(&bin))
 }
@@ -149,7 +149,7 @@ mod tests {
         fn can_replace_cids_twice_safely() {
             let cid_with_link_str = format!("{}{}{}{}", LINK_PREFIX, BYTES_37_PREFIX, CID_PREFIX, TEST_HASH);
             let cid_with_link = hex::decode(&cid_with_link_str).unwrap();
-            let link = replace_cids_with_links(cid_with_link.as_ref());
+            let _link = replace_cids_with_links(cid_with_link.as_ref());
             assert_eq!(
                 hex::encode(cid_with_link),
                 cid_with_link_str
