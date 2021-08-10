@@ -81,6 +81,16 @@ fn can_import_cbor_data_file_recursive() {
 }
 
 #[test]
+fn can_import_cbor_data_file_with_tags() {
+    test_import_helper(
+        "import_with_tags.cbor",
+        "cbor",
+        "bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq",
+        vec![]
+    );
+}
+
+#[test]
 fn can_import_json_data_file() {
     test_import_helper(
         "import.json",
