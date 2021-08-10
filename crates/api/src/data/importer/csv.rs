@@ -1,5 +1,3 @@
-
-
 use csv::StringRecord;
 use serde_cbor::Value as CborValue;
 
@@ -24,7 +22,6 @@ mod tests {
     use csv::{ReaderBuilder, StringRecord};
 
     use super::*;
-
 
     #[test]
     fn can_import_csv() {

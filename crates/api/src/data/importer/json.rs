@@ -78,8 +78,6 @@ mod tests {
     }
 
     mod test_rec_conversions {
-
-
         use super::*;
 
         #[test]

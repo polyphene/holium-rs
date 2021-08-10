@@ -1,15 +1,16 @@
 //! Interact with a repository of Holium objects stored on the file system.
 
+use std::{env, fs};
+use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use thiserror::Error;
-use std::{fs, env};
-use std::io::Write;
-use console::style;
-use crate::utils;
 use clap::ArgMatches;
+use console::style;
+use thiserror::Error;
+
 use crate::config::models::ProjectConfig;
+use crate::utils;
 
 #[derive(Error, Debug)]
 /// Errors for the repo module.

@@ -7,8 +7,8 @@ use serde_json;
 
 use holium::data::importer::Importable;
 
-use crate::data::import::importer::Importer;
 use crate::data::DataError;
+use crate::data::import::importer::Importer;
 
 pub(crate) struct Json();
 

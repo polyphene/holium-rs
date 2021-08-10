@@ -2,14 +2,14 @@
 //! with their stored representations of a file system.
 
 use std::fs;
-use std::path::{PathBuf};
-use thiserror::Error;
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
+use thiserror::Error;
 
 use holium::data::linked_data_tree::{
-    Value as LinkedDataTreeValue,
     Node as LinkedDataTreeNode,
+    Value as LinkedDataTreeValue,
 };
 
 use crate::utils::OBJECTS_DIR;

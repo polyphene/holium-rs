@@ -1,7 +1,4 @@
-
-
-
-use std::path::{Path};
+use std::path::Path;
 
 use assert_cmd::Command;
 use predicates::prelude::predicate;

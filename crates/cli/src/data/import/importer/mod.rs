@@ -6,9 +6,9 @@ use anyhow::Result;
 
 pub(crate) use bin::Bin;
 pub(crate) use cbor::Cbor;
-pub(crate) use json::Json;
 pub(crate) use csv_importer::Csv;
 use holium::data::importer::Importable;
+pub(crate) use json::Json;
 
 mod json;
 mod cbor;

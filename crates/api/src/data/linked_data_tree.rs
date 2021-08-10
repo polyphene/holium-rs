@@ -5,7 +5,7 @@ use cid::Cid;
 use cid::multihash::{Code, MultihashDigest};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use regex::bytes::{Regex};
+use regex::bytes::Regex;
 use serde_cbor::to_vec;
 use serde_cbor::Value as CborValue;
 

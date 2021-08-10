@@ -1,15 +1,14 @@
-
-
-use crate::data::import::importer::Importer;
-use std::path::Path;
 use std::fs::File;
+use std::path::Path;
+
 use anyhow::Context;
 use anyhow::Result;
+use csv::StringRecord;
 
 use holium::data::importer::Importable;
-use crate::data::DataError;
 
-use csv::StringRecord;
+use crate::data::DataError;
+use crate::data::import::importer::Importer;
 
 pub(crate) struct Csv();
 

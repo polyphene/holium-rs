@@ -1,6 +1,7 @@
+use std::fs;
+
 use assert_cmd::Command;
 use predicates::prelude::*;
-use std::fs;
 
 #[test]
 fn cli_is_callable() {

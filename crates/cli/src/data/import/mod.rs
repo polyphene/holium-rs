@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path};
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use clap::{App, Arg, arg_enum, ArgMatches, SubCommand, value_t};
