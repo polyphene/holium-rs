@@ -1,10 +1,13 @@
 use std::env;
 
-use clap::{crate_authors, crate_version, App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, crate_authors, crate_version, SubCommand};
+
+use crate::data::data_cmd;
 
 mod config;
 mod repo;
 mod utils;
+mod data;
 
 fn main() {
     // Create CLI matches
@@ -66,12 +69,14 @@ fn main() {
                         .conflicts_with("value"),
                 ]),
         )
+        .subcommand(data_cmd())
         .get_matches();
 
     // Match subcommands
     let exec_res = match matches.subcommand() {
         ("init", Some(init_matches)) => repo::handle_cmd(init_matches),
         ("config", Some(config_matches)) => config::handle_cmd(config_matches),
+        ("data", Some(data_matches)) => data::handle_cmd(data_matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 
