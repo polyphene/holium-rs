@@ -28,7 +28,7 @@ fn object_file_exists(repo_path: &Path, object_cid_str: &str) -> bool {
     expected_path.exists()
 }
 
-fn test_import_helper(file_name: &str, file_type_arg: &str, expected_root_cid_str: &str, other_expected_cid_strs: Vec<&str>) -> PathBuf {
+fn test_import_helper(file_name: &str, file_type_arg: &str, expected_root_cid_str: &str, other_expected_cid_strs: Vec<&str>) {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
@@ -61,8 +61,6 @@ fn test_import_helper(file_name: &str, file_type_arg: &str, expected_root_cid_st
     for cid in &other_expected_cid_strs {
         assert!(object_file_exists(repo_path, cid));
     }
-    // return repository path
-    PathBuf::from(repo_path)
 }
 
 #[test]
@@ -77,13 +75,12 @@ fn can_import_cbor_data_file_scalar() {
 
 #[test]
 fn can_import_cbor_data_file_recursive() {
-    let repo_path = test_import_helper(
+    test_import_helper(
         "import_recursive.cbor",
         "cbor",
         "bafyr4iaboxtdci2fq5i65vzoe4jzjeqsafdmh46mz6qzhyfszd4ocealaa",
         vec!["bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"]
     );
-
 }
 
 #[test]
