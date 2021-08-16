@@ -1,4 +1,4 @@
-//! Methods related to the import of holium data objects fro multiple file formats.
+//! Methods related to the import of holium data objects from multiple file formats.
 
 use serde_cbor::Value as CborValue;
 
