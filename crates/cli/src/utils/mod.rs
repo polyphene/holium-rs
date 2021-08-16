@@ -1,5 +1,7 @@
 //! Shared utilities
 
+pub(crate) mod storage;
+
 /// Name of the global directory where data related to the Holium Framework is stored.
 pub(crate) const GLOBAL_PROJECT_DIR: &'static str = "holium";
 /// Name of the directory where all data related to the Holium Framework in a repository is stored.

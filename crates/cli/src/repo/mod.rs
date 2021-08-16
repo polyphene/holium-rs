@@ -1,15 +1,16 @@
 //! Interact with a repository of Holium objects stored on the file system.
 
+use std::{env, fs};
+use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use thiserror::Error;
-use std::{fs, env};
-use std::io::Write;
-use console::style;
-use crate::utils;
 use clap::ArgMatches;
+use console::style;
+use thiserror::Error;
+
 use crate::config::models::ProjectConfig;
+use crate::utils;
 
 #[derive(Error, Debug)]
 /// Errors for the repo module.
@@ -30,7 +31,7 @@ pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
     // Get configuration
     let project_config = ProjectConfig::new(None)?;
     // Get path to current directory
-    let cur_dir = env::current_dir().unwrap();
+    let cur_dir = env::current_dir()?;
     // Initialize a Holium repository in current directory
     let no_scm = init_matches.is_present("no-scm") || project_config.config.core.no_scm;
     let no_dvc = init_matches.is_present("no-dvc") || project_config.config.core.no_dvc;
