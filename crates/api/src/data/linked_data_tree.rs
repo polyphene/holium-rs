@@ -15,12 +15,22 @@ const HASHING_ALGO: Code = Code::Blake3_256;
 const IPLD_CBOR_TAG: u64 = 42;
 
 /// Nodes all store their IPLD CBOR representation and related CID.
+#[derive(Debug, PartialEq)]
 pub struct Value {
     pub cbor: Vec<u8>,
     pub cid: Cid,
 }
 
 impl Value {
+    pub(crate) fn from_cbor(cbor: Vec<u8>) -> Self {
+        // compute CID
+        const DAG_CBOR_CODE: u64 = 0x71;
+        let digest = HASHING_ALGO.digest(&cbor);
+        let cid = Cid::new_v1(DAG_CBOR_CODE, digest);
+        // return
+        Value { cbor, cid }
+    }
+
     fn from_children_cids(children_cids: Vec<Cid>) -> Result<Self> {
         // create CBOR array value
         let cbor_array = CborValue::Array(
@@ -41,12 +51,8 @@ impl Value {
         );
         // Serialize IPLD CBOR value
         let cbor = ser_ipld_cbor(&cbor_array)?;
-        // compute CID
-        const DAG_CBOR_CODE: u64 = 0x71;
-        let digest = HASHING_ALGO.digest(&cbor);
-        let cid = Cid::new_v1(DAG_CBOR_CODE, digest);
-        // return
-        Ok(Value { cbor, cid })
+        // compute CID and return
+        Ok(Self::from_cbor(cbor))
     }
 }
 
@@ -81,6 +87,7 @@ fn replace_cids_with_links(before: &[u8]) -> Vec<u8> {
 
 /// Nodes all hold their inner value, made of a CBOR IPLD representation and own CID, and also point
 /// to their children.
+#[derive(Debug, PartialEq)]
 pub struct Node {
     pub value: Value,
     pub children: Vec<Node>,
