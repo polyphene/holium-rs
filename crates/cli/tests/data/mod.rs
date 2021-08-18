@@ -1,6 +1,8 @@
 use assert_cmd::Command;
 
 mod import;
+mod list;
+mod remove;
 
 #[test]
 fn help_is_available_for_data_cmd() {
