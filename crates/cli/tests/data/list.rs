@@ -3,9 +3,18 @@ use crate::setup_repo;
 
 #[test]
 fn help_is_available_for_data_list_cmd() {
-    // try to get help for the data list command
+    // try to get help for the data ls command
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd.arg("data").arg("ls").arg("--help").assert();
+    // check success
+    assert.success();
+}
+
+#[test]
+fn help_is_available_for_data_list_alis_cmd() {
+    // try to get help for the data list command
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd.arg("data").arg("list").arg("--help").assert();
     // check success
     assert.success();
 }
