@@ -24,7 +24,7 @@ const CID_SPLIT_POSITION: usize = 9;
 
 #[derive(Error, Debug)]
 /// Errors for the storage utility module.
-enum StorageError {
+pub(crate) enum StorageError {
     /// This error is thrown when a command that should only be run inside a Holium repository is ran
     /// outside of any repository.
     #[error("this command can only be run inside a Holium repository")]
@@ -42,7 +42,7 @@ enum StorageError {
 
 /// Deterministically convert an object CID to a path for storage.
 /// The result path should start with `objects/`.
-fn cid_to_object_path(cid: &Cid) -> PathBuf {
+pub(crate) fn cid_to_object_path(cid: &Cid) -> PathBuf {
     // Base the result path on the CID string representation broken into two parts
     let cid_str = cid.to_string();
     let (cid_prefix, cid_suffix) = cid_str.split_at(CID_SPLIT_POSITION);
@@ -70,7 +70,7 @@ fn object_path_to_cid(path: PathBuf) -> Result<Cid> {
 /// Contextual structure representing a Holium repository on a file system
 pub(crate) struct RepoStorage {
     /// Root path of the holium repository. Basically, it should lead to a `.holium` directory.
-    root: PathBuf,
+    pub(crate) root: PathBuf,
     /// List of data objects' CIDs
     pub(crate) data_cids: Vec<Cid>,
 }
