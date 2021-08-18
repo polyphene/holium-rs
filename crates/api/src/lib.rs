@@ -1,2 +1,2 @@
 pub mod data;
-mod fragment_serialize;
+pub mod fragment_serialize;

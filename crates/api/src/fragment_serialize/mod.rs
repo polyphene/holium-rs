@@ -30,7 +30,7 @@ pub struct FragmentedDataDeserResult<T> {
 
 /// The [HoliumDeserializable] trait should be implemented for types representing fragments of data in
 /// the Holium Framework and that may in that sense be serialized for efficient storage.
-pub(crate) trait HoliumDeserializable {
+pub trait HoliumDeserializable {
     /// [is_of_type] checks if an array of bytes could be deserialized into the given Self type.
     fn is_of_type(data: &[u8]) -> Result<bool>;
     /// [value_from_bytes] deserializes an object of Self type.

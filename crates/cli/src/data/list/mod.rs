@@ -9,7 +9,7 @@ use holium::data::linked_data_tree::Node as LinkedDataTreeNode;
 
 use crate::data::DataError;
 use crate::utils::PROJECT_DIR;
-use crate::utils::repo::current_dir_is_valid_repo;
+use crate::utils::storage::RepoStorage;
 
 /// `data` `list` command
 pub(crate) fn list_cmd<'a, 'b>() -> App<'a, 'b> {
@@ -20,8 +20,12 @@ pub(crate) fn list_cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// `data` `list` command handler
 pub(crate) fn handle_list_cmd(matches: &ArgMatches) -> Result<()> {
-    // check that the command is run inside a Holium repository
-    current_dir_is_valid_repo()?;
+    // build a repository context
+    let repo = RepoStorage::from_cur_dir()?;
+    // print list of objects' CIDs
+    let mut cids: Vec<String> = repo.data_cids.iter().map(|cid|cid.to_string()).collect();
+    cids.sort_unstable();
+    cids.iter().for_each(|cid|println!("{}", cid));
     // return
     Ok(())
 }
