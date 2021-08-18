@@ -1,4 +1,6 @@
 use assert_cmd::Command;
+use predicates::prelude::predicate;
+
 use crate::setup_repo;
 
 #[test]
@@ -17,6 +19,21 @@ fn help_is_available_for_data_list_alis_cmd() {
     let assert = cmd.arg("data").arg("list").arg("--help").assert();
     // check success
     assert.success();
+}
+
+#[test]
+fn cannot_list_data_outside_repo() {
+    // work in an empty directory
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    // try to list data
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(temp_dir.path())
+        .arg("data")
+        .arg("ls")
+        .assert();
+    // check output
+    assert.failure().stderr(predicate::str::contains("inside a Holium repository"));
 }
 
 // TODO specific error when not in repo (specific to the fact that not in repo, but not specific to this command)

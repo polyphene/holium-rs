@@ -1,6 +1,8 @@
 //! Shared utilities
+use thiserror::Error;
 
 pub(crate) mod storage;
+pub(crate) mod repo;
 
 /// Name of the global directory where data related to the Holium Framework is stored.
 pub(crate) const GLOBAL_PROJECT_DIR: &'static str = "holium";
@@ -14,3 +16,12 @@ pub(crate) const OBJECTS_DIR: &'static str = "objects";
 pub(crate) const CONFIG_FILE: &'static str = "config";
 /// Name of the local, untracked, configuration file.
 pub(crate) const LOCAL_CONFIG_FILE: &'static str = "config.local";
+
+/// Errors related to utilities for the CLI
+#[derive(Debug, Error)]
+enum CliUtilsError {
+    /// This error is thrown when a command that can only be run inside a Holium repository is ran
+    /// outside of any repository.
+    #[error("this command can only be run inside a Holium repository")]
+    OutsideHoliumRepo,
+}
