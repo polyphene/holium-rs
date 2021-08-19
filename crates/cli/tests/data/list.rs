@@ -57,7 +57,7 @@ fn help_is_available_for_data_list_cmd() {
 }
 
 #[test]
-fn help_is_available_for_data_list_alis_cmd() {
+fn help_is_available_for_data_list_alias_cmd() {
     // try to get help for the data list command
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd.arg("data").arg("list").arg("--help").assert();
