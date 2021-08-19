@@ -7,8 +7,12 @@ use clap::{App, ArgMatches, SubCommand};
 use thiserror::Error;
 
 use crate::data::import::{handle_import_cmd, import_cmd};
+use crate::data::list::{list_cmd, handle_list_cmd};
+use crate::data::remove::{remove_cmd, handle_remove_cmd};
 
 mod import;
+mod list;
+mod remove;
 
 #[derive(Error, Debug)]
 /// Errors for data operations.
@@ -32,6 +36,8 @@ pub(crate) fn data_cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("data")
         .about("Manipulates data from, to and inside a Holium repository")
         .subcommand(import_cmd())
+        .subcommand(list_cmd())
+        .subcommand(remove_cmd())
 }
 
 /// `data` command handler
@@ -39,6 +45,8 @@ pub(crate) fn handle_cmd(data_matches: &ArgMatches) -> Result<()> {
     // Match sub-subcommands
     match data_matches.subcommand() {
         ("import", Some(matches)) => handle_import_cmd(matches),
+        ("ls", Some(matches)) => handle_list_cmd(matches),
+        ("rm", Some(matches)) => handle_remove_cmd(matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     }
 }

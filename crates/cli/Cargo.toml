@@ -7,10 +7,12 @@ edition = "2018"
 [dependencies]
 holium = { path = "../api" }
 anyhow = "^1.0.42"
+cid = "^0.7.0"
 clap = "^2.33"
 console = "^0.14.1"
 csv = "^1.1.6"
 dirs = "^3.0.2"
+itertools = "^0.10.1"
 serde = "^1.0.126"
 serde_cbor = "^0.11.1"
 serde_derive = "^1.0.126"
