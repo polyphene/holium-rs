@@ -3,6 +3,8 @@ use assert_fs::TempDir;
 use predicates::prelude::*;
 use assert_cmd::assert::Assert;
 use std::path::{PathBuf, Path};
+use std::convert::TryFrom;
+use cid::Cid;
 
 mod repo;
 mod config;
@@ -50,4 +52,19 @@ fn import_data(repo_path: &Path, file_name: &str, file_type: &str) {
         .arg(original_file_path)
         .assert();
     assert.success();
+}
+
+/// Helper method that test the format of an output line, expecting a CID
+fn check_output_cid_line_format(line: &str, valid_codecs: Vec<u64>) {
+    // check that the string is lowercase
+    assert!(line.chars().all(|c|c.is_lowercase() || c.is_numeric()));
+    // check that a CID can be built from the string
+    let cid = Cid::try_from(line).unwrap();
+    // validate the format of the CID
+    assert_eq!(cid.version(), cid::Version::V1);
+    assert_eq!(cid.hash().code(), 0x1e);
+    assert_eq!(cid.hash().size(), 32);
+    let cid_codec = cid.codec();
+    assert!(valid_codecs.iter().any(|&valid_codec| valid_codec==cid_codec));
+    assert!(cid.codec() == 0x51 || cid.codec() == 0x71);
 }
