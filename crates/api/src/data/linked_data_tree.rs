@@ -2,7 +2,6 @@
 
 use anyhow::{anyhow, Error, Result};
 use cid::Cid;
-use cid::multihash::{Code, MultihashDigest};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
@@ -10,8 +9,8 @@ use serde_cbor::to_vec;
 use serde_cbor::Value as CborValue;
 
 use crate::data::data_tree;
+use holium_utils::multihash::blake3_hash_to_multihash;
 
-const HASHING_ALGO: Code = Code::Blake3_256;
 const IPLD_CBOR_TAG: u64 = 42;
 
 /// Nodes all store their IPLD CBOR representation and related CID.
@@ -25,8 +24,9 @@ impl Value {
     pub(crate) fn from_cbor(cbor: Vec<u8>) -> Self {
         // compute CID
         const DAG_CBOR_CODE: u64 = 0x71;
-        let digest = HASHING_ALGO.digest(&cbor);
-        let cid = Cid::new_v1(DAG_CBOR_CODE, digest);
+        let hash = blake3::hash(cbor.as_ref());
+        let multihash = blake3_hash_to_multihash(*hash.as_bytes()).unwrap();
+        let cid = Cid::new_v1(DAG_CBOR_CODE, multihash);
         // return
         Value { cbor, cid }
     }
@@ -100,8 +100,9 @@ impl Node {
         let cbor = v.to_cbor_vec()?;
         // compute CID
         const CBOR_CODE: u64 = 0x51;
-        let digest = HASHING_ALGO.digest(&cbor);
-        let cid = Cid::new_v1(CBOR_CODE, digest);
+        let hash = blake3::hash(cbor.as_ref());
+        let multihash = blake3_hash_to_multihash(*hash.as_bytes()).unwrap();
+        let cid = Cid::new_v1(CBOR_CODE, multihash);
         // return
         Ok(Node { value: Value { cbor, cid }, children: vec![] })
     }
