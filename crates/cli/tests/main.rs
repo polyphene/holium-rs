@@ -1,6 +1,8 @@
 use assert_cmd::Command;
 use assert_fs::TempDir;
 use predicates::prelude::*;
+use assert_cmd::assert::Assert;
+use std::path::{PathBuf, Path};
 
 mod repo;
 mod config;
@@ -28,4 +30,23 @@ fn setup_repo() -> TempDir {
         .stdout(predicate::str::contains("Initialized Holium repository."));
     // return repository directory
     temp_dir
+}
+
+/// Use the `data import` command to import data objects from files
+fn import_data(repo_path: &Path, file_name: &str, file_type: &str) {
+    let original_file_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("data")
+        .join("assets")
+        .join(file_name);
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut assert = cmd
+        .current_dir(repo_path)
+        .arg("data")
+        .arg("import")
+        .arg("--type")
+        .arg(file_type)
+        .arg(original_file_path)
+        .assert();
+    assert.success();
 }

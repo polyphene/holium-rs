@@ -1,4 +1,5 @@
 //! Shared utilities
+use thiserror::Error;
 
 pub(crate) mod storage;
 

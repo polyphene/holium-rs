@@ -46,10 +46,8 @@ pub(crate) fn import_cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// `data` `import` command handler
 pub(crate) fn handle_import_cmd(matches: &ArgMatches) -> Result<()> {
-    // Initialize handler context
-    let cur_dir = env::current_dir()?;
-    let holium_dir = cur_dir.join(PROJECT_DIR);
-    let repo_storage = RepoStorage::new(&holium_dir);
+    // Initialize context handler
+    let repo_storage = RepoStorage::from_cur_dir()?;
     // Get the path of the file to be imported
     let path = Path::new(
         matches
