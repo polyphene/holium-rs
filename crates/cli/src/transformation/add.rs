@@ -10,7 +10,7 @@ use blake3;
 use clap::{App, Arg, arg_enum, ArgMatches, SubCommand, value_t};
 use tempfile::{NamedTempFile, tempdir};
 
-use holium_utils::cbor::create_cbor_byte_string_header;
+use holium_utils::cbor::{create_cbor_byte_string_header, WASM_MAGIC_NUMBER};
 
 use crate::transformation::TransformationError;
 use crate::utils::PROJECT_DIR;
@@ -47,8 +47,6 @@ pub(crate) fn handle_add_cmd(matches: &ArgMatches) -> Result<()> {
     let mut original_file = File::open(original_path)
         .context(TransformationError::FailedToOpenImportFile)?;
     // Read for first bytes to validate the presence of WebAssembly 4-byte magic number
-    // Reference : https://webassembly.github.io/spec/core/bikeshed/#binary-magic
-    const WASM_MAGIC_NUMBER: &[u8; 4] = b"\x00\x61\x73\x6D";
     let mut original_header_buffer = [0u8; 4];
     if original_file.read(&mut original_header_buffer)
         .context(TransformationError::MissingWasmMagicNumber)? < WASM_MAGIC_NUMBER.len()

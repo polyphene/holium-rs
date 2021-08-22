@@ -72,6 +72,30 @@ fn check_output_cid_line_format(line: &str, valid_codecs: Vec<u64>) {
     assert!(cid.codec() == 0x51 || cid.codec() == 0x71);
 }
 
+// reference : https://stackoverflow.com/a/51272639
+fn is_sorted<I>(data: I) -> bool
+    where
+        I: IntoIterator,
+        I::Item: Ord + Clone,
+{
+    data.into_iter().tuple_windows().all(|(a, b)| a <= b)
+}
+
+/// Helper method that checks the format of an output of an object (data, transformation,…) list command.
+/// Return the number of output lines.
+fn check_output_cid_lines_format(lines_str: &str) -> usize {
+    // split into individual lines
+    let lines: Vec<&str> = lines_str.split_whitespace().collect();
+    // check format of individual lines
+    &lines.iter().for_each(|x| check_output_cid_line_format(x, vec![0x51, 0x71]));
+    // check uniqueness of each line
+    assert!(&lines.iter().all_unique());
+    // check that lines are sorted in alphabetical order
+    assert!(is_sorted(&lines));
+    // return
+    lines.len()
+}
+
 // Count the number of object files stored in a Holium repository.
 // All files stored in the objects tree directory are counted, with little to no additional validation.
 fn count_object_files(repo_path: &Path) -> usize {

@@ -2,10 +2,12 @@
 //! Holium framework into formats, often fragmented, suitable for storage.
 
 use anyhow::Result;
-use thiserror::Error;
 use cid::Cid;
+use thiserror::Error;
+use std::io::Read;
 
 mod linked_data_tree;
+mod transformation;
 
 
 #[derive(Debug, Error)]
@@ -32,7 +34,7 @@ pub struct FragmentedDataDeserResult<T> {
 /// the Holium Framework and that may in that sense be serialized for efficient storage.
 pub trait HoliumDeserializable {
     /// [is_of_type] checks if an array of bytes could be deserialized into the given Self type.
-    fn is_of_type(data: &[u8]) -> Result<bool>;
+    fn is_of_type<R: Read>(data_reader: &mut R) -> Result<bool>;
     /// [value_from_bytes] deserializes an object of Self type.
     /// [is_of_type] should always be run before trying to deserialize an object.
     /// If an array of byte can be deserialized into an object of Self type according to the [is_of_type]

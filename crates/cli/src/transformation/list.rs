@@ -17,5 +17,12 @@ pub(crate) fn list_cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// `transformation` `list` command handler
 pub(crate) fn handle_list_cmd(matches: &ArgMatches) -> Result<()> {
+    // build a repository context
+    let repo = RepoStorage::from_cur_dir()?;
+    // print list of transformations' CIDs
+    let mut cids: Vec<String> = repo.transformation_cids.iter().map(|cid| cid.to_string()).collect();
+    cids.sort_unstable();
+    cids.iter().for_each(|cid| println!("{}", cid));
+    // return
     Ok(())
 }

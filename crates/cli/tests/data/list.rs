@@ -5,34 +5,10 @@ use cid::Cid;
 use itertools::Itertools;
 use predicates::prelude::predicate;
 
-use crate::{setup_repo, import_data, check_output_cid_line_format};
+use crate::{setup_repo, import_data, check_output_cid_lines_format};
 use std::path::Path;
 use std::fs;
 use predicates::Predicate;
-
-// reference : https://stackoverflow.com/a/51272639
-fn is_sorted<I>(data: I) -> bool
-    where
-        I: IntoIterator,
-        I::Item: Ord + Clone,
-{
-    data.into_iter().tuple_windows().all(|(a, b)| a <= b)
-}
-
-/// Helper method that checks the format of an output of the data list command.
-/// Return the number of output lines.
-fn check_output_lines_format(lines_str: &str) -> usize {
-    // split into individual lines
-    let lines: Vec<&str> = lines_str.split_whitespace().collect();
-    // check format of individual lines
-    &lines.iter().for_each(|x| check_output_cid_line_format(x, vec![0x51, 0x71]));
-    // check uniqueness of each line
-    assert!(&lines.iter().all_unique());
-    // check that lines are sorted in alphabetical order
-    assert!(is_sorted(&lines));
-    // return
-    lines.len()
-}
 
 #[test]
 fn help_is_available_for_data_list_cmd() {
@@ -83,7 +59,7 @@ fn can_list_data_objects_in_empty_repository() {
     assert = assert.success();
     // check output format
     let stdout_str = String::from_utf8_lossy(&assert.get_output().stdout).to_string();
-    let nb_objects = check_output_lines_format(stdout_str.as_str());
+    let nb_objects = check_output_cid_lines_format(stdout_str.as_str());
     assert_eq!(nb_objects, 0);
 }
 
@@ -105,7 +81,7 @@ fn can_list_data_objects_in_repository_with_one_scalar_object_only() {
     assert = assert.success();
     // check output format
     let stdout_str = String::from_utf8_lossy(&assert.get_output().stdout).to_string();
-    let nb_objects = check_output_lines_format(stdout_str.as_str());
+    let nb_objects = check_output_cid_lines_format(stdout_str.as_str());
     assert_eq!(nb_objects, 1);
 }
 
@@ -127,7 +103,7 @@ fn can_list_data_objects_in_repository_with_recursive_data() {
     assert = assert.success();
     // check output format
     let stdout_str = String::from_utf8_lossy(&assert.get_output().stdout).to_string();
-    let nb_objects = check_output_lines_format(stdout_str.as_str());
+    let nb_objects = check_output_cid_lines_format(stdout_str.as_str());
     assert!(1 < nb_objects);
 }
 

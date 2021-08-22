@@ -1,6 +1,10 @@
 //! This module features some CBOR helper methods, often missing from popular crates and mostly
 //! related to the creation or parsing of major type and count prefixes.
 
+/// WebAssembly 4-byte magic number
+/// Reference : https://webassembly.github.io/spec/core/bikeshed/#binary-magic
+pub const WASM_MAGIC_NUMBER: &[u8; 4] = b"\x00\x61\x73\x6D";
+
 /// Return a valid byte string header given a string length
 pub fn create_cbor_byte_string_header(payload_len: u64) -> Vec<u8> {
     create_cbor_string_header(true, payload_len)

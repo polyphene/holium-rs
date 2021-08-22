@@ -1,4 +1,6 @@
+use std::{fs, io};
 use std::convert::TryFrom;
+use std::io::{BufReader, Read};
 
 use anyhow::{Context, Result};
 use cid::Cid;
@@ -9,9 +11,12 @@ use crate::fragment_serialize::{FragmentedDataDeserResult, HoliumDeserializable}
 use crate::fragment_serialize::FragmentSerializeError::WrongDeserializer;
 
 impl HoliumDeserializable for LinkedDataTreeValue {
-    fn is_of_type(data: &[u8]) -> Result<bool> {
-        // first try to deserialize a CBOR value
-        let deser_res: serde_cbor::error::Result<Value> = serde_cbor::from_slice(data);
+    fn is_of_type<R: Read>(data_reader: &mut R) -> Result<bool> {
+        // read data
+        let mut data = Vec::new();
+        data_reader.read_to_end(&mut data)?;
+        // try to deserialize a CBOR value
+        let deser_res: serde_cbor::error::Result<Value> = serde_cbor::from_slice(data.as_slice());
         if let Ok(cbor_value) = deser_res {
             match cbor_value {
                 // most scalar values are considered valid deserializable objects
@@ -76,37 +81,37 @@ mod tests {
         #[test]
         fn can_recognize_scalar_holium_data() {
             let data = hex::decode("f6").unwrap();  // \xf6 is CBOR null value
-            assert!(LinkedDataTreeValue::is_of_type(&data).unwrap())
+            assert!(LinkedDataTreeValue::is_of_type(&mut data.as_slice()).unwrap())
         }
 
         #[test]
         fn can_recognize_recursive_holium_data() {
             let data = hex::decode("81d82a58250001511e2061a9bf10f0ffedc7dc77589ae2ab4ca80b006c806e6636e41b60410cd8f0bbc4").unwrap();
-            assert!(LinkedDataTreeValue::is_of_type(&data).unwrap())
+            assert!(LinkedDataTreeValue::is_of_type(&mut data.as_slice()).unwrap())
         }
 
         #[test]
         fn can_recognize_cbor_map() {
             let data = hex::decode("a100f6").unwrap();
-            assert!(!LinkedDataTreeValue::is_of_type(&data).unwrap())
+            assert!(!LinkedDataTreeValue::is_of_type(&mut data.as_slice()).unwrap())
         }
 
         #[test]
         fn can_recognize_array_with_empty_bytes() {
             let data = hex::decode("8140").unwrap();
-            assert!(!LinkedDataTreeValue::is_of_type(&data).unwrap())
+            assert!(!LinkedDataTreeValue::is_of_type(&mut data.as_slice()).unwrap())
         }
 
         #[test]
         fn can_recognize_array_with_non_ipld_links() {
             let data = hex::decode("8561496453696E676374686564426F647968456C656374726963").unwrap();
-            assert!(!LinkedDataTreeValue::is_of_type(&data).unwrap())
+            assert!(!LinkedDataTreeValue::is_of_type(&mut data.as_slice()).unwrap())
         }
 
         #[test]
         fn can_recognize_non_cbor() {
             let data = hex::decode("8561").unwrap();
-            assert!(!LinkedDataTreeValue::is_of_type(&data).unwrap())
+            assert!(!LinkedDataTreeValue::is_of_type(&mut data.as_slice()).unwrap())
         }
     }
 

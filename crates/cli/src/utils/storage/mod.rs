@@ -1,7 +1,7 @@
 //! Module responsible for interfacing Rust types representing objects from the Holium Framework
 //! with their stored representations of a file system.
 
-use std::{env, fs};
+use std::{env, fs, io};
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
@@ -18,6 +18,7 @@ use holium::fragment_serialize::HoliumDeserializable;
 
 use crate::utils::{OBJECTS_DIR, PROJECT_DIR};
 use crate::utils::storage::StorageError::{FailedToParseCid, WrongObjectPath};
+use holium::transformation::Transformation;
 
 const CID_SPLIT_POSITION: usize = 9;
 
@@ -73,6 +74,8 @@ pub(crate) struct RepoStorage {
     pub(crate) root: PathBuf,
     /// List of data objects' CIDs
     pub(crate) data_cids: Vec<Cid>,
+    /// List of transformation objects' CIDs
+    pub(crate) transformation_cids: Vec<Cid>,
 }
 
 impl RepoStorage {
@@ -84,16 +87,17 @@ impl RepoStorage {
         }
 
         /*
-         build the `root` field value
+         build the `root` field
          */
 
         let root = root_path.clone();
 
         /*
-         build the `data_cids` field value
+         build the `data_cids` and `transformation_cids` fields
          */
 
         let mut data_cids: Vec<Cid> = Vec::new();
+        let mut transformation_cids: Vec<Cid> = Vec::new();
         let object_dir = root.join(OBJECTS_DIR);
         // if `objects` is a file, warn the user
         if object_dir.exists() && object_dir.is_file() {
@@ -115,22 +119,27 @@ impl RepoStorage {
                         let sub_entry = sub_entry
                             .context(anyhow!("failed to read sub objects directory"))?;
                         let sub_path = sub_entry.path();
-                        // read file
-                        let data = fs::read(&sub_path)
-                            .context(anyhow!("failed to read object file: {}", sub_path.to_string_lossy()))?;
+                        // open file
+                        let mut data_reader = fs::File::open(&sub_path)
+                            .context(anyhow!("failed to open object file: {}", sub_path.to_string_lossy()))?;
                         // check that path leads to a valid CID and build it
                         let cid_res = object_path_to_cid(sub_path);
                         match cid_res {
                             Err(e) => eprintln!("{}", style(e).yellow()),
                             Ok(cid) => {
                                 // try to recognize the type of object and push its CID to the right context field
-                                match data {
-                                    _ if { LinkedDataTreeValue::is_of_type(&data)? } => {
-                                        data_cids.push(cid)
-                                    }
-                                    _ => {
-                                        eprintln!("{}", style(format!("could not detect the type of an object: {}", cid.to_string())).yellow())
-                                    }
+                                fn test_type<T: HoliumDeserializable>(mut f: &fs::File) -> Result<bool> {
+                                    io::Seek::seek(&mut f, io::SeekFrom::Start(0)).context("TODO")?;
+                                    T::is_of_type(&mut f)
+                                }
+                                // if Transformation::is_of_type(&mut data_reader)? {
+                                if test_type::<Transformation>(&data_reader)? {
+                                    transformation_cids.push(cid)
+                                // } else if LinkedDataTreeValue::is_of_type(&mut data_reader)? {
+                                } else if test_type::<LinkedDataTreeValue>(&data_reader)? {
+                                    data_cids.push(cid)
+                                } else {
+                                    eprintln!("{}", style(format!("could not detect the type of an object: {}", cid.to_string())).yellow())
                                 }
                             }
                         }
@@ -139,7 +148,7 @@ impl RepoStorage {
             }
         }
         // return
-        Ok(RepoStorage { root, data_cids })
+        Ok(RepoStorage { root, data_cids, transformation_cids })
     }
 
     /// Create a [ RepoStorage ] from current directory, fetched from environment, that may be up to
