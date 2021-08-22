@@ -5,10 +5,10 @@ use std::{env, fs, io};
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Error, Result};
 use cid::Cid;
 use console::style;
-use thiserror::Error;
+use thiserror;
 
 use holium::data::linked_data_tree::{
     Node as LinkedDataTreeNode,
@@ -18,12 +18,14 @@ use holium::fragment_serialize::HoliumDeserializable;
 
 use crate::utils::{OBJECTS_DIR, PROJECT_DIR};
 use crate::utils::storage::StorageError::{FailedToParseCid, WrongObjectPath};
+use crate::utils::errors::CommonError;
 use holium::transformation::Transformation;
+use std::collections::HashMap;
 
 const CID_SPLIT_POSITION: usize = 9;
 
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 /// Errors for the storage utility module.
 pub(crate) enum StorageError {
     /// This error is thrown when a command that should only be run inside a Holium repository is ran
@@ -189,6 +191,31 @@ impl RepoStorage {
         // Write current node
         let cid_str = self.write_data_tree_value(&n.value)?;
         Ok(cid_str)
+    }
+
+    /// Remove from the present repository a list of objects identified by their CID strings
+    /// if and only they can ALL be found within a mask of available CIDs provided as a HashMap.
+    pub(crate) fn remove_objects_if_available(&self, requested_cids: &Vec<String>, is_available_cid: &HashMap<String, bool>) -> Result<()> {
+        // check if all requested CIDs relate to known objects
+        let mut paths_to_remove: Vec<PathBuf> = Vec::with_capacity(requested_cids.len());
+        for cid_str in requested_cids {
+            if !is_available_cid.contains_key(cid_str.as_str()) {
+                return Err(CommonError::UnknownObjectIdentifier(cid_str.clone()).into());
+            }
+            let cid = Cid::try_from(cid_str.clone())
+                .context(CommonError::UnknownObjectIdentifier(cid_str.clone()))?;
+            let path_to_remove = self.root.join(cid_to_object_path(&cid));
+            if !path_to_remove.exists() {
+                return Err(CommonError::UnknownObjectIdentifier(cid_str.clone()).into());
+            }
+            paths_to_remove.push(path_to_remove)
+        }
+        // remove all requested data objects
+        for path_to_remove in paths_to_remove {
+            fs::remove_file(&path_to_remove)
+                .context(anyhow!("failed to remove file: {}", &path_to_remove.to_string_lossy()))?;
+        };
+        Ok(())
     }
 }
 

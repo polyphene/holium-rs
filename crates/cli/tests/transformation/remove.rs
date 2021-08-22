@@ -28,12 +28,12 @@ fn cannot_remove_unknown_transformation() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to remove unknown data
-    let unknown_cid = "bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"; // TODO change
+    let unknown_cid = "bafir4iftd67e5gmel7ij3ao5ltjdekpckftj6km6nwzddoohgfc46rqkpy";
     let mut assert = rm_transformations(repo_path, vec![unknown_cid]);
     // check failure
     assert = assert.failure();
     // check output
-    assert = assert.stderr(predicate::str::contains("unknown transformation object identifier"));
+    assert = assert.stderr(predicate::str::contains("unknown object identifier"));
     assert.stderr(predicate::str::contains(unknown_cid));
 }
 
