@@ -24,21 +24,6 @@ fn cannot_list_transformations_outside_repo() {
 }
 
 #[test]
-fn cannot_list_data_outside_repo() {
-    // work in an empty directory
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    // try to list data
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .current_dir(temp_dir.path())
-        .arg("data")
-        .arg("ls")
-        .assert();
-    // check output
-    assert.failure().stderr(predicate::str::contains("inside a Holium repository"));
-}
-
-#[test]
 fn can_list_transformations_in_empty_repository() {
     // initialize a repository
     let repo = setup_repo();
