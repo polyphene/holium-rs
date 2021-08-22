@@ -23,8 +23,6 @@ fn cannot_list_transformations_outside_repo() {
     assert.failure().stderr(predicate::str::contains("inside a Holium repository"));
 }
 
-
-
 #[test]
 fn cannot_list_data_outside_repo() {
     // work in an empty directory
