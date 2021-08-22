@@ -1,6 +1,7 @@
-use assert_cmd::Command;
 use std::path::Path;
+
 use assert_cmd::assert::Assert;
+use assert_cmd::Command;
 
 mod add;
 mod list;
@@ -41,4 +42,17 @@ fn ls_transformations(repo_path: &Path) -> Assert {
         .arg("ls")
         .assert();
     assert
+}
+
+/// Helper method using the `transformation rm` command to remove transformations
+fn rm_transformations(repo_path: &Path, cids: Vec<&str>) -> Assert {
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("rm");
+    for cid in cids {
+        cmd = cmd.arg(cid);
+    }
+    cmd.assert()
 }
