@@ -4,8 +4,7 @@ use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use predicates::prelude::predicate;
 
-use crate::{setup_repo, check_output_cid_line_format};
-use walkdir::WalkDir;
+use crate::{setup_repo, check_output_cid_line_format, count_object_files};
 
 fn build_transformation_add_cmd(repo_path: &Path, transformation_filename: &str) -> Assert {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
@@ -77,14 +76,14 @@ fn can_add_transformation() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // count initial number of object files
-    let initial_nb_objects = WalkDir::new(repo_path.join("objects")).into_iter().count();
+    let initial_nb_objects = count_object_files(repo_path);
     // add transformation
     let mut assert = build_transformation_add_cmd(
         repo_path, "import.wasm");
     // check output
     assert = assert.success();
     // check final number of files
-    let final_nb_objects = WalkDir::new(repo_path.join("objects")).into_iter().count();
+    let final_nb_objects = count_object_files(repo_path);
     assert_eq!(initial_nb_objects, final_nb_objects-1);
     // check output CID format
     let stdout_string = String::from_utf8_lossy(&assert.get_output().stdout);
@@ -99,14 +98,14 @@ fn can_add_twice_the_same_transformation() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // count initial number of object files
-    let initial_nb_objects = WalkDir::new(repo_path.join("objects")).into_iter().count();
+    let initial_nb_objects = count_object_files(repo_path);
     // add transformation
     let mut assert = build_transformation_add_cmd(
         repo_path, "import.wasm");
     // check output
     assert = assert.success();
     // check intermediate number of files
-    let intermediate_nb_objects = WalkDir::new(repo_path.join("objects")).into_iter().count();
+    let intermediate_nb_objects = count_object_files(repo_path);
     assert_eq!(initial_nb_objects, intermediate_nb_objects -1);
     // add same transformation again
     let mut assert = build_transformation_add_cmd(
@@ -114,7 +113,7 @@ fn can_add_twice_the_same_transformation() {
     // check output
     assert = assert.success();
     // check final number of files
-    let final_nb_objects = WalkDir::new(repo_path.join("objects")).into_iter().count();
+    let final_nb_objects = count_object_files(repo_path);
     assert_eq!(final_nb_objects, intermediate_nb_objects);
 }
 

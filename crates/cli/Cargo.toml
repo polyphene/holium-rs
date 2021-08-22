@@ -6,7 +6,9 @@ edition = "2018"
 
 [dependencies]
 holium = { path = "../api" }
+holium-utils = { path = "../utils" }
 anyhow = "^1.0.42"
+blake3 = "^1.0.0"
 cid = "^0.7.0"
 clap = "^2.33"
 console = "^0.14.1"
@@ -17,6 +19,7 @@ serde = "^1.0.126"
 serde_cbor = "^0.11.1"
 serde_derive = "^1.0.126"
 serde_json = "^1.0.66"
+tempfile = "^3.2.0"
 thiserror = "^1.0.26"
 toml = "^0.5.8"
 

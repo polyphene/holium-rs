@@ -15,6 +15,21 @@ mod remove;
 #[derive(Error, Debug)]
 /// Errors for transformations operations.
 pub(crate) enum TransformationError {
+    /// Thrown when failing to open a file in order to import it
+    #[error("failed to open file requested for import")]
+    FailedToOpenImportFile,
+    /// Thrown when failing to get a file metadata
+    #[error("failed to read metadata for file request for import")]
+    FailedToGetFileMetadata,
+    /// Thrown when WebAssembly 4-byte magic number could not be found in expected bytecode file
+    #[error("invalid WebAssembly bytecode (4-byte magic number could not be found)")]
+    MissingWasmMagicNumber,
+    /// Thrown when failing to create a file during import
+    #[error("failed to create file for transformation import")]
+    FailedToCreateImportDestFile,
+    /// Thrown when to move imported file to its final destination
+    #[error("failed to move imported file to its final destination")]
+    FailedTMoveImportFinalFile,
 }
 
 /// `transformation` command
