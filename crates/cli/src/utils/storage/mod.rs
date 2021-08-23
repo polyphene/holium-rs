@@ -2,6 +2,7 @@
 //! with their stored representations of a file system.
 
 use std::{env, fs, io};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
@@ -15,12 +16,11 @@ use holium::data::linked_data_tree::{
     Value as LinkedDataTreeValue,
 };
 use holium::fragment_serialize::HoliumDeserializable;
+use holium::transformation::Transformation;
 
 use crate::utils::{OBJECTS_DIR, PROJECT_DIR};
-use crate::utils::storage::StorageError::{FailedToParseCid, WrongObjectPath};
 use crate::utils::errors::CommonError;
-use holium::transformation::Transformation;
-use std::collections::HashMap;
+use crate::utils::storage::StorageError::{FailedToParseCid, WrongObjectPath};
 
 const CID_SPLIT_POSITION: usize = 9;
 
@@ -105,43 +105,40 @@ impl RepoStorage {
         if object_dir.exists() && object_dir.is_file() {
             eprintln!("{}", style("found a file instead of the objects directory").yellow())
         } else {
-            if !object_dir.exists() {
-                // if the objects directory does not exist, create it
-                fs::create_dir(&object_dir)
-                    .context(anyhow!("failed to create objects directory"))?;
-            }
-            for sup_entry in fs::read_dir(&object_dir)
-                .context(anyhow!("failed to read objects directory"))? {
-                let sup_entry = sup_entry
-                    .context(anyhow!("failed to read objects directory"))?;
-                let sup_path = sup_entry.path();
-                if sup_path.is_dir() {
-                    for sub_entry in fs::read_dir(&sup_path)
-                        .context(anyhow!("failed to read sub objects directory"))? {
-                        let sub_entry = sub_entry
-                            .context(anyhow!("failed to read sub objects directory"))?;
-                        let sub_path = sub_entry.path();
-                        // open file
-                        let mut data_reader = fs::File::open(&sub_path)
-                            .context(anyhow!("failed to open object file: {}", sub_path.to_string_lossy()))?;
-                        // check that path leads to a valid CID and build it
-                        let cid_res = object_path_to_cid(sub_path);
-                        match cid_res {
-                            Err(e) => eprintln!("{}", style(e).yellow()),
-                            Ok(cid) => {
-                                // try to recognize the type of object and push its CID to the right context field
-                                fn test_type<T: HoliumDeserializable>(mut f: &fs::File) -> Result<bool> {
-                                    io::Seek::seek(&mut f, io::SeekFrom::Start(0)).context("TODO")?;
-                                    T::is_of_type(&mut f)
-                                }
-                                // if Transformation::is_of_type(&mut data_reader)? {
-                                if test_type::<Transformation>(&data_reader)? {
-                                    transformation_cids.push(cid)
-                                // } else if LinkedDataTreeValue::is_of_type(&mut data_reader)? {
-                                } else if test_type::<LinkedDataTreeValue>(&data_reader)? {
-                                    data_cids.push(cid)
-                                } else {
-                                    eprintln!("{}", style(format!("could not detect the type of an object: {}", cid.to_string())).yellow())
+            if object_dir.exists() {
+                for sup_entry in fs::read_dir(&object_dir)
+                    .context(anyhow!("failed to read objects directory"))? {
+                    let sup_entry = sup_entry
+                        .context(anyhow!("failed to read objects directory"))?;
+                    let sup_path = sup_entry.path();
+                    if sup_path.is_dir() {
+                        for sub_entry in fs::read_dir(&sup_path)
+                            .context(anyhow!("failed to read sub objects directory"))? {
+                            let sub_entry = sub_entry
+                                .context(anyhow!("failed to read sub objects directory"))?;
+                            let sub_path = sub_entry.path();
+                            // open file
+                            let mut data_reader = fs::File::open(&sub_path)
+                                .context(anyhow!("failed to open object file: {}", sub_path.to_string_lossy()))?;
+                            // check that path leads to a valid CID and build it
+                            let cid_res = object_path_to_cid(sub_path);
+                            match cid_res {
+                                Err(e) => eprintln!("{}", style(e).yellow()),
+                                Ok(cid) => {
+                                    // try to recognize the type of object and push its CID to the right context field
+                                    fn test_type<T: HoliumDeserializable>(mut f: &fs::File) -> Result<bool> {
+                                        io::Seek::seek(&mut f, io::SeekFrom::Start(0)).context("TODO")?;
+                                        T::is_of_type(&mut f)
+                                    }
+                                    // if Transformation::is_of_type(&mut data_reader)? {
+                                    if test_type::<Transformation>(&data_reader)? {
+                                        transformation_cids.push(cid)
+                                        // } else if LinkedDataTreeValue::is_of_type(&mut data_reader)? {
+                                    } else if test_type::<LinkedDataTreeValue>(&data_reader)? {
+                                        data_cids.push(cid)
+                                    } else {
+                                        eprintln!("{}", style(format!("could not detect the type of an object: {}", cid.to_string())).yellow())
+                                    }
                                 }
                             }
                         }
