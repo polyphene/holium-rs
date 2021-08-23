@@ -20,7 +20,7 @@ impl HoliumDeserializable for Transformation {
         data_reader.read(&mut first_bytes)
             .context("failed to read transformation file")?;
         // Check for the presence of a valid CBOR header
-        let todo_name: &[u8] = match first_bytes[0] {
+        let expected_magic_number: &[u8] = match first_bytes[0] {
             0b010_00000..=0b010_10111 => &first_bytes[1..5],
             0b010_11000 => &first_bytes[2..6],
             0b010_11001 => &first_bytes[3..7],
@@ -28,7 +28,7 @@ impl HoliumDeserializable for Transformation {
             0b010_11011 => &first_bytes[9..13],
             _ => {return Ok(false)},
         };
-        Ok(todo_name == WASM_MAGIC_NUMBER)
+        Ok(expected_magic_number == WASM_MAGIC_NUMBER)
     }
 
     fn value_from_bytes(data: &[u8]) -> FragmentedDataDeserResult<Box<Self>> {
