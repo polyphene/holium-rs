@@ -84,7 +84,7 @@ fn cannot_remove_data_without_providing_a_cid() {
     // check failure
     assert = assert.failure();
     // check output
-    assert.stderr(predicate::str::contains("unknown data object identifier"));
+    assert.stderr(predicate::str::contains("unknown object identifier"));
 }
 
 #[test]
@@ -104,7 +104,7 @@ fn cannot_remove_unknown_data() {
     // check failure
     assert = assert.failure();
     // check output
-    assert = assert.stderr(predicate::str::contains("unknown data object identifier"));
+    assert = assert.stderr(predicate::str::contains("unknown object identifier"));
     assert.stderr(predicate::str::contains(unknown_cid));
 }
 

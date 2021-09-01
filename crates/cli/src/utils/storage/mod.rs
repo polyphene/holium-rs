@@ -1,28 +1,31 @@
 //! Module responsible for interfacing Rust types representing objects from the Holium Framework
 //! with their stored representations of a file system.
 
-use std::{env, fs};
+use std::{env, fs, io};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Error, Result};
 use cid::Cid;
 use console::style;
-use thiserror::Error;
+use thiserror;
 
 use holium::data::linked_data_tree::{
     Node as LinkedDataTreeNode,
     Value as LinkedDataTreeValue,
 };
 use holium::fragment_serialize::HoliumDeserializable;
+use holium::transformation::Transformation;
 
 use crate::utils::{OBJECTS_DIR, PROJECT_DIR};
+use crate::utils::errors::CommonError;
 use crate::utils::storage::StorageError::{FailedToParseCid, WrongObjectPath};
 
 const CID_SPLIT_POSITION: usize = 9;
 
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 /// Errors for the storage utility module.
 pub(crate) enum StorageError {
     /// This error is thrown when a command that should only be run inside a Holium repository is ran
@@ -73,6 +76,8 @@ pub(crate) struct RepoStorage {
     pub(crate) root: PathBuf,
     /// List of data objects' CIDs
     pub(crate) data_cids: Vec<Cid>,
+    /// List of transformation objects' CIDs
+    pub(crate) transformation_cids: Vec<Cid>,
 }
 
 impl RepoStorage {
@@ -84,51 +89,54 @@ impl RepoStorage {
         }
 
         /*
-         build the `root` field value
+         build the `root` field
          */
 
         let root = root_path.clone();
 
         /*
-         build the `data_cids` field value
+         build the `data_cids` and `transformation_cids` fields
          */
 
         let mut data_cids: Vec<Cid> = Vec::new();
+        let mut transformation_cids: Vec<Cid> = Vec::new();
         let object_dir = root.join(OBJECTS_DIR);
         // if `objects` is a file, warn the user
         if object_dir.exists() && object_dir.is_file() {
             eprintln!("{}", style("found a file instead of the objects directory").yellow())
         } else {
-            if !object_dir.exists() {
-                // if the objects directory does not exist, create it
-                fs::create_dir(&object_dir)
-                    .context(anyhow!("failed to create objects directory"))?;
-            }
-            for sup_entry in fs::read_dir(&object_dir)
-                .context(anyhow!("failed to read objects directory"))? {
-                let sup_entry = sup_entry
-                    .context(anyhow!("failed to read objects directory"))?;
-                let sup_path = sup_entry.path();
-                if sup_path.is_dir() {
-                    for sub_entry in fs::read_dir(&sup_path)
-                        .context(anyhow!("failed to read sub objects directory"))? {
-                        let sub_entry = sub_entry
-                            .context(anyhow!("failed to read sub objects directory"))?;
-                        let sub_path = sub_entry.path();
-                        // read file
-                        let data = fs::read(&sub_path)
-                            .context(anyhow!("failed to read object file: {}", sub_path.to_string_lossy()))?;
-                        // check that path leads to a valid CID and build it
-                        let cid_res = object_path_to_cid(sub_path);
-                        match cid_res {
-                            Err(e) => eprintln!("{}", style(e).yellow()),
-                            Ok(cid) => {
-                                // try to recognize the type of object and push its CID to the right context field
-                                match data {
-                                    _ if { LinkedDataTreeValue::is_of_type(&data)? } => {
-                                        data_cids.push(cid)
+            if object_dir.exists() {
+                for sup_entry in fs::read_dir(&object_dir)
+                    .context(anyhow!("failed to read objects directory"))? {
+                    let sup_entry = sup_entry
+                        .context(anyhow!("failed to read objects directory"))?;
+                    let sup_path = sup_entry.path();
+                    if sup_path.is_dir() {
+                        for sub_entry in fs::read_dir(&sup_path)
+                            .context(anyhow!("failed to read sub objects directory"))? {
+                            let sub_entry = sub_entry
+                                .context(anyhow!("failed to read sub objects directory"))?;
+                            let sub_path = sub_entry.path();
+                            // open file
+                            let mut data_reader = fs::File::open(&sub_path)
+                                .context(anyhow!("failed to open object file: {}", sub_path.to_string_lossy()))?;
+                            // check that path leads to a valid CID and build it
+                            let cid_res = object_path_to_cid(sub_path);
+                            match cid_res {
+                                Err(e) => eprintln!("{}", style(e).yellow()),
+                                Ok(cid) => {
+                                    // try to recognize the type of object and push its CID to the right context field
+                                    fn test_type<T: HoliumDeserializable>(mut f: &fs::File) -> Result<bool> {
+                                        io::Seek::seek(&mut f, io::SeekFrom::Start(0)).context("TODO")?;
+                                        T::is_of_type(&mut f)
                                     }
-                                    _ => {
+                                    // if Transformation::is_of_type(&mut data_reader)? {
+                                    if test_type::<Transformation>(&data_reader)? {
+                                        transformation_cids.push(cid)
+                                        // } else if LinkedDataTreeValue::is_of_type(&mut data_reader)? {
+                                    } else if test_type::<LinkedDataTreeValue>(&data_reader)? {
+                                        data_cids.push(cid)
+                                    } else {
                                         eprintln!("{}", style(format!("could not detect the type of an object: {}", cid.to_string())).yellow())
                                     }
                                 }
@@ -139,7 +147,7 @@ impl RepoStorage {
             }
         }
         // return
-        Ok(RepoStorage { root, data_cids })
+        Ok(RepoStorage { root, data_cids, transformation_cids })
     }
 
     /// Create a [ RepoStorage ] from current directory, fetched from environment, that may be up to
@@ -180,6 +188,31 @@ impl RepoStorage {
         // Write current node
         let cid_str = self.write_data_tree_value(&n.value)?;
         Ok(cid_str)
+    }
+
+    /// Remove from the present repository a list of objects identified by their CID strings
+    /// if and only they can ALL be found within a mask of available CIDs provided as a HashMap.
+    pub(crate) fn remove_objects_if_available(&self, requested_cids: &Vec<String>, is_available_cid: &HashMap<String, bool>) -> Result<()> {
+        // check if all requested CIDs relate to known objects
+        let mut paths_to_remove: Vec<PathBuf> = Vec::with_capacity(requested_cids.len());
+        for cid_str in requested_cids {
+            if !is_available_cid.contains_key(cid_str.as_str()) {
+                return Err(CommonError::UnknownObjectIdentifier(cid_str.clone()).into());
+            }
+            let cid = Cid::try_from(cid_str.clone())
+                .context(CommonError::UnknownObjectIdentifier(cid_str.clone()))?;
+            let path_to_remove = self.root.join(cid_to_object_path(&cid));
+            if !path_to_remove.exists() {
+                return Err(CommonError::UnknownObjectIdentifier(cid_str.clone()).into());
+            }
+            paths_to_remove.push(path_to_remove)
+        }
+        // remove all requested data objects
+        for path_to_remove in paths_to_remove {
+            fs::remove_file(&path_to_remove)
+                .context(anyhow!("failed to remove file: {}", &path_to_remove.to_string_lossy()))?;
+        };
+        Ok(())
     }
 }
 

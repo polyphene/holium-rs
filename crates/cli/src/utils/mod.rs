@@ -2,6 +2,7 @@
 use thiserror::Error;
 
 pub(crate) mod storage;
+pub(crate) mod errors;
 
 /// Name of the global directory where data related to the Holium Framework is stored.
 pub(crate) const GLOBAL_PROJECT_DIR: &'static str = "holium";

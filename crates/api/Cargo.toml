@@ -5,7 +5,9 @@ authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
 
 [dependencies]
+holium-utils = { path = "../utils" }
 anyhow = "^1.0.42"
+blake3 = "^1.0.0"
 cid = "^0.7.0"
 csv = "^1.1.6"
 itertools = "^0.10.1"
