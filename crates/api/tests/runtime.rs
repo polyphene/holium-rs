@@ -27,7 +27,7 @@ fn can_run_wasm_module() {
     runtime.instantiate(&wasm_bytes).unwrap();
 
     // Prepare payload data
-    let cbor_value = serde_cbor::value::to_value(vec![2, 2]).unwrap();
+    let cbor_value = serde_cbor::value::to_value(vec![2, 3]).unwrap();
     let data_tree = Node::new(cbor_value);
     let payload_cbor: Vec<u8> = serde_cbor::to_vec(&data_tree).unwrap();
 
@@ -35,7 +35,7 @@ fn can_run_wasm_module() {
     let res_bytes = runtime.run("main", &payload_cbor).unwrap();
 
     // Awaited res
-    let cbor_value = serde_cbor::value::to_value([4]).unwrap();
+    let cbor_value = serde_cbor::value::to_value([5]).unwrap();
     let data_tree = Node::new(cbor_value);
     let awaited_res: Vec<u8> = serde_cbor::to_vec(&data_tree).unwrap();
 
