@@ -34,7 +34,7 @@ const MEMORY: &'static str = "memory";
 /// of [Slice], 8
 const RET_SIZE: usize = 8;
 
-/// [Slice] is the structure that Holium generated functions will return
+/// [Slice] is the structure that Holium transformations will return
 #[derive(Clone, Debug)]
 struct Slice {
     ptr: u32,
