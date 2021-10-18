@@ -17,7 +17,7 @@ enum RuntimeError {
 }
 
 /// The [MemoryManipulation] trait is to be implemented on wasm linear memory types to allow read
-/// and write on them
+/// and write operations on them
 trait MemoryManipulation {
     /// [write] will write a u8 slice to the guest module linear memory
     fn write(&self, mem_offset: u32, value_slice: &[u8]) -> Result<()>;
