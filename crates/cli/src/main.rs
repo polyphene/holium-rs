@@ -9,7 +9,6 @@ use crate::transformation::transformation_cmd;
 mod config;
 mod data;
 mod repo;
-mod run;
 mod transformation;
 mod utils;
 
@@ -75,7 +74,6 @@ fn main() {
         )
         .subcommand(data_cmd())
         .subcommand(transformation_cmd())
-        .subcommand(run_cmd())
         .get_matches();
 
     // Match subcommands
@@ -86,7 +84,6 @@ fn main() {
         ("transformation", Some(transformation_matches)) => {
             transformation::handle_cmd(transformation_matches)
         }
-        ("run", Some(run_matches)) => run::handle_cmd(run_matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 
