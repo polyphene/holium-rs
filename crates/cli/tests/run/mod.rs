@@ -70,7 +70,7 @@ fn can_run_and_store_data() {
 }
 
 #[test]
-fn cannot_run_on_non_existant_transformation() {
+fn cannot_run_on_non_existent_transformation() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
