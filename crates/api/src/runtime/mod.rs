@@ -25,7 +25,7 @@ trait MemoryManipulation {
     fn read(&self, mem_offset: u32, value_len: usize) -> Option<&[u8]>;
 }
 
-/// [WASM_MEM_ALLOC] is the function name in our wasm  module that allows us to allocate some memory
+/// [WASM_MEM_ALLOC] is the function name in our wasm module that allows us to allocate some memory
 /// to retrieve host data and send guest data
 const WASM_MEM_ALLOC: &'static str = "__hbindgen_mem_alloc";
 /// [MEMORY] is the name of the wasm linear memory of our guest module
