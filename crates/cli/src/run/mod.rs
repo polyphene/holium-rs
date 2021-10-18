@@ -10,7 +10,7 @@ use thiserror::Error;
 
 use holium::runtime::*;
 
-use crate::data::import::{file_to_data_tree, matches_to_import_ty, store_data_tree, ImportType};
+use crate::data::import::{file_to_data_tree, matches_to_import_type, store_data_tree, ImportType};
 use holium::data::data_tree::Node as DataTreeNode;
 use holium_utils::cbor::WASM_MAGIC_NUMBER;
 
@@ -75,7 +75,7 @@ pub(crate) fn handle_cmd(run_matches: &ArgMatches) -> Result<()> {
             .context(RunError::FailedToOpenImportFile)?,
     );
     // Get the type of the file from CLI argument
-    let t = matches_to_import_ty(run_matches)?;
+    let t = matches_to_import_type(run_matches)?;
     let data_tree = file_to_data_tree(path, t)?;
     // Data tree to bytes
     let serialized_data_tree = serde_cbor::to_vec(&data_tree).context(RunError::DeserError)?;

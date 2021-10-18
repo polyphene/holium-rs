@@ -53,7 +53,7 @@ pub(crate) fn handle_import_cmd(matches: &ArgMatches) -> Result<()> {
             .context(DataError::FailedToOpenImportFile)?,
     );
     // Get the type of the file from CLI argument
-    let t = matches_to_import_ty(matches)?;
+    let t = matches_to_import_type(matches)?;
     // Generate data node
     let data_tree = file_to_data_tree(path, t)?;
     // Build & store linked data tree
@@ -64,7 +64,8 @@ pub(crate) fn handle_import_cmd(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn matches_to_import_ty(matches: &ArgMatches) -> Result<ImportType> {
+/// `matches_to_import_type` tries to match on a clap [`ArgMatches`] to return an [`ImportType`]
+pub(crate) fn matches_to_import_type(matches: &ArgMatches) -> Result<ImportType> {
     Ok(value_t!(matches.value_of("type"), ImportType).context(
         DataError::InvalidImportFileTypeOptionValue(
             matches.value_of("type").unwrap_or("").to_string(),
@@ -72,6 +73,7 @@ pub(crate) fn matches_to_import_ty(matches: &ArgMatches) -> Result<ImportType> {
     )?)
 }
 
+/// `file_to_data_tree` takes a path in the Holium objects to generate a new [`DataTreeNode`]
 pub(crate) fn file_to_data_tree(file_path: &Path, import_type: ImportType) -> Result<DataTreeNode> {
     // Parse the file content into a data tree
     let importer: Box<dyn importer::Importer> = match import_type {
