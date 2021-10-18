@@ -64,7 +64,7 @@ pub(crate) fn handle_import_cmd(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-/// `matches_to_import_type` tries to match on a clap [`ArgMatches`] to return an [`ImportType`]
+/// [matches_to_import_type] tries to match on a clap [ArgMatches] to return an [ImportType]
 pub(crate) fn matches_to_import_type(matches: &ArgMatches) -> Result<ImportType> {
     Ok(value_t!(matches.value_of("type"), ImportType).context(
         DataError::InvalidImportFileTypeOptionValue(
@@ -73,7 +73,7 @@ pub(crate) fn matches_to_import_type(matches: &ArgMatches) -> Result<ImportType>
     )?)
 }
 
-/// `file_to_data_tree` takes a path in the Holium objects to generate a new [`DataTreeNode`]
+/// [file_to_data_tree] takes a path in the Holium objects to generate a new [DataTreeNode]
 pub(crate) fn file_to_data_tree(file_path: &Path, import_type: ImportType) -> Result<DataTreeNode> {
     // Parse the file content into a data tree
     let importer: Box<dyn importer::Importer> = match import_type {
