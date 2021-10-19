@@ -3,7 +3,6 @@ use std::env;
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, SubCommand};
 
 use crate::data::data_cmd;
-use crate::run::run_cmd;
 use crate::transformation::transformation_cmd;
 
 mod config;
