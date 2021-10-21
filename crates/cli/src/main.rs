@@ -5,6 +5,7 @@ use clap::{App, AppSettings, Arg, crate_authors, crate_version, SubCommand};
 use crate::data::data_cmd;
 use crate::transformation::transformation_cmd;
 use crate::init::init_cmd;
+use crate::config::config_cmd;
 
 mod config;
 mod init;
@@ -21,42 +22,7 @@ fn main() {
         .about("Enjoy the power of the Holium Framework.")
         .setting(AppSettings::ArgRequiredElseHelp)
         .subcommand(init_cmd())
-        .subcommand(
-            SubCommand::with_name("config")
-                .about("Manages the persistent configuration of Holium repositories")
-                .args(&[
-                    Arg::with_name("name")
-                        .help("Option name.")
-                        .index(1)
-                        .required(true),
-                    Arg::with_name("value").help("Option new value.").index(2),
-                    Arg::with_name("global")
-                        .help("Use global configuration.")
-                        .long("global")
-                        .conflicts_with_all(&["project", "local"]),
-                    Arg::with_name("project")
-                        .help(&*format!(
-                            "Use project configuration ({}/{}).",
-                            utils::PROJECT_DIR,
-                            utils::CONFIG_FILE
-                        ))
-                        .long("project")
-                        .conflicts_with_all(&["global", "local"]),
-                    Arg::with_name("local")
-                        .help(&*format!(
-                            "Use local configuration ({}/{}).",
-                            utils::PROJECT_DIR,
-                            utils::LOCAL_CONFIG_FILE
-                        ))
-                        .long("local")
-                        .conflicts_with_all(&["project", "global"]),
-                    Arg::with_name("unset")
-                        .help("Unset option.")
-                        .short("u")
-                        .long("unset")
-                        .conflicts_with("value"),
-                ]),
-        )
+        .subcommand(config_cmd())
         .subcommand(data_cmd())
         .subcommand(transformation_cmd())
         .get_matches();

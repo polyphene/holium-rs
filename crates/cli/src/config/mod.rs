@@ -3,7 +3,7 @@
 use std::env;
 
 use anyhow::{Context, Result};
-use clap::ArgMatches;
+use clap::{ArgMatches, App, SubCommand, Arg};
 
 use crate::config::models::{ConfigLevel, ProjectConfigFragment};
 use crate::utils::PROJECT_DIR;
@@ -13,6 +13,36 @@ pub(crate) mod models;
 mod shadow_merge;
 mod sparse_config;
 mod updatable_field;
+
+/// `config` command
+pub(crate) fn config_cmd<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("config")
+        .about("Manages the persistent configuration of Holium repositories")
+        .args(&[
+            Arg::with_name("name")
+                .help("Option name.")
+                .index(1)
+                .required(true),
+            Arg::with_name("value").help("Option new value.").index(2),
+            Arg::with_name("global")
+                .help("Use global configuration.")
+                .long("global")
+                .conflicts_with_all(&["project", "local"]),
+            Arg::with_name("project")
+                .help("Use project configuration.")
+                .long("project")
+                .conflicts_with_all(&["global", "local"]),
+            Arg::with_name("local")
+                .help("Use local configuration.")
+                .long("local")
+                .conflicts_with_all(&["project", "global"]),
+            Arg::with_name("unset")
+                .help("Unset option.")
+                .short("u")
+                .long("unset")
+                .conflicts_with("value"),
+        ])
+}
 
 /// Parses arguments and handles the command.
 pub(crate) fn handle_cmd(config_matches: &ArgMatches) -> Result<()> {
