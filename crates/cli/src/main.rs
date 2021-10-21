@@ -4,6 +4,7 @@ use clap::{App, AppSettings, Arg, crate_authors, crate_version, SubCommand};
 
 use crate::data::data_cmd;
 use crate::transformation::transformation_cmd;
+use crate::init::init_cmd;
 
 mod config;
 mod init;
@@ -19,22 +20,7 @@ fn main() {
         .author(crate_authors!("\n"))
         .about("Enjoy the power of the Holium Framework.")
         .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommand(
-            SubCommand::with_name("init")
-                .about("Initializes a repository of Holium objects")
-                .args(&[
-                    Arg::with_name("no-scm")
-                        .help("Initiate Holium in directory that is not tracked by any SCM tool.")
-                        .long("no-scm"),
-                    Arg::with_name("no-dvc")
-                        .help("Initiate Holium in directory that is not tracked by any DVC tool.")
-                        .long("no-dvc"),
-                    Arg::with_name("force")
-                        .help("Overwrites existing Holium project")
-                        .short("f")
-                        .long("force"),
-                ]),
-        )
+        .subcommand(init_cmd())
         .subcommand(
             SubCommand::with_name("config")
                 .about("Manages the persistent configuration of Holium repositories")

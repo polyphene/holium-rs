@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::ArgMatches;
+use clap::{ArgMatches, App, SubCommand, Arg};
 use console::style;
 use thiserror::Error;
 
@@ -24,6 +24,24 @@ enum RepoError {
     /// Thrown when trying to initialize a repository that is not tracked by any supported DVC tool, without the dedicated option.
     #[error("failed to initiate as current repository is not tracked by any DVC tool. Use `--no-dvc` to initialize anyway.")]
     NotDvcTracked,
+}
+
+/// `init` command
+pub(crate) fn init_cmd<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("init")
+        .about("Initializes a repository of Holium objects")
+        .args(&[
+            Arg::with_name("no-scm")
+                .help("Initiate Holium in directory that is not tracked by any SCM tool.")
+                .long("no-scm"),
+            Arg::with_name("no-dvc")
+                .help("Initiate Holium in directory that is not tracked by any DVC tool.")
+                .long("no-dvc"),
+            Arg::with_name("force")
+                .help("Overwrites existing Holium project")
+                .short("f")
+                .long("force"),
+        ])
 }
 
 /// Parses arguments and handles the command.
