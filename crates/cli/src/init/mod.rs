@@ -13,7 +13,7 @@ use crate::config::models::ProjectConfig;
 use crate::utils;
 
 #[derive(Error, Debug)]
-/// Errors for the repo module.
+/// Errors for the init module.
 enum RepoError {
     /// Thrown when trying to initialize a repository twice, without the force option.
     #[error("failed to initiate as '.holium' already exists. Use `-f` to force.")]

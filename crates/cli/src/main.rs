@@ -6,7 +6,7 @@ use crate::data::data_cmd;
 use crate::transformation::transformation_cmd;
 
 mod config;
-mod repo;
+mod init;
 mod utils;
 mod data;
 mod transformation;
@@ -77,7 +77,7 @@ fn main() {
 
     // Match subcommands
     let exec_res = match matches.subcommand() {
-        ("init", Some(init_matches)) => repo::handle_cmd(init_matches),
+        ("init", Some(init_matches)) => init::handle_cmd(init_matches),
         ("config", Some(config_matches)) => config::handle_cmd(config_matches),
         ("data", Some(data_matches)) => data::handle_cmd(data_matches),
         ("transformation", Some(transformation_matches)) => transformation::handle_cmd(transformation_matches),
