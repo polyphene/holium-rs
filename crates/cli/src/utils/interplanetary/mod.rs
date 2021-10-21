@@ -18,15 +18,14 @@ use holium::data::linked_data_tree::{
 use holium::fragment_serialize::HoliumDeserializable;
 use holium::transformation::Transformation;
 
-use crate::utils::{OBJECTS_DIR, PROJECT_DIR};
-use crate::utils::errors::CommonError;
-use crate::utils::storage::StorageError::{FailedToParseCid, WrongObjectPath};
+use crate::utils::repo::constants::{INTERPLANETARY_DIR, PROJECT_DIR};
+use crate::utils::interplanetary::StorageError::{FailedToParseCid, WrongObjectPath};
 
 const CID_SPLIT_POSITION: usize = 9;
 
 
 #[derive(thiserror::Error, Debug)]
-/// Errors for the storage utility module.
+/// Errors for the interplanetary utility module.
 pub(crate) enum StorageError {
     /// This error is thrown when a command that should only be run inside a Holium repository is ran
     /// outside of any repository.
@@ -41,16 +40,19 @@ pub(crate) enum StorageError {
     /// Thrown when failing to make a valid CID from a string
     #[error("failed to parse CID string : {0}")]
     FailedToParseCid(String),
+    /// Thrown when a provided identifier cannot be linked to a known Holium object
+    #[error("unknown object identifier: {0}")]
+    UnknownObjectIdentifier(String),
 }
 
-/// Deterministically convert an object CID to a path for storage.
+/// Deterministically convert an object CID to a path for interplanetary.
 /// The result path should start with `objects/`.
 pub(crate) fn cid_to_object_path(cid: &Cid) -> PathBuf {
     // Base the result path on the CID string representation broken into two parts
     let cid_str = cid.to_string();
     let (cid_prefix, cid_suffix) = cid_str.split_at(CID_SPLIT_POSITION);
     PathBuf::new()
-        .join(OBJECTS_DIR)
+        .join(INTERPLANETARY_DIR)
         .join(cid_prefix)
         .join(cid_suffix)
 }
@@ -100,7 +102,7 @@ impl RepoStorage {
 
         let mut data_cids: Vec<Cid> = Vec::new();
         let mut transformation_cids: Vec<Cid> = Vec::new();
-        let object_dir = root.join(OBJECTS_DIR);
+        let object_dir = root.join(INTERPLANETARY_DIR);
         // if `objects` is a file, warn the user
         if object_dir.exists() && object_dir.is_file() {
             eprintln!("{}", style("found a file instead of the objects directory").yellow())
@@ -197,13 +199,13 @@ impl RepoStorage {
         let mut paths_to_remove: Vec<PathBuf> = Vec::with_capacity(requested_cids.len());
         for cid_str in requested_cids {
             if !is_available_cid.contains_key(cid_str.as_str()) {
-                return Err(CommonError::UnknownObjectIdentifier(cid_str.clone()).into());
+                return Err(StorageError::UnknownObjectIdentifier(cid_str.clone()).into());
             }
             let cid = Cid::try_from(cid_str.clone())
-                .context(CommonError::UnknownObjectIdentifier(cid_str.clone()))?;
+                .context(StorageError::UnknownObjectIdentifier(cid_str.clone()))?;
             let path_to_remove = self.root.join(cid_to_object_path(&cid));
             if !path_to_remove.exists() {
-                return Err(CommonError::UnknownObjectIdentifier(cid_str.clone()).into());
+                return Err(StorageError::UnknownObjectIdentifier(cid_str.clone()).into());
             }
             paths_to_remove.push(path_to_remove)
         }
@@ -225,7 +227,7 @@ mod tests {
     fn test_cid_to_object_path() {
         let cid = Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap();
         let path = cid_to_object_path(&cid);
-        assert_eq!(path, PathBuf::new().join("objects").join("bafir4idb").join("vg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"))
+        assert_eq!(path, PathBuf::new().join("interplanetary").join("bafir4idb").join("vg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"))
     }
 
     #[test]

@@ -265,7 +265,7 @@ where
      * Utilities
      **************************************/
 
-    // Internal function, recursively travel in a bottom-up fashioon in the Tree, calling for non leaf
+    // Internal function, recursively travel in a bottom-up fashion in the Tree, calling for non leaf
     // updates.
     fn bottom_up_recursive_pathing(
         &mut self,

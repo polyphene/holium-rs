@@ -5,18 +5,18 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::{ArgMatches, App, SubCommand, Arg};
+use clap::{App, Arg, ArgMatches, SubCommand};
 use console::style;
 use thiserror::Error;
 
-use crate::utils;
+use crate::utils::repo::constants::{PROJECT_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
 
 #[derive(Error, Debug)]
 /// Errors for the init module.
-enum RepoError {
+enum CmdError {
     /// Thrown when trying to initialize a repository twice, without the force option.
     #[error("failed to initiate as '.holium' already exists. Use `-f` to force.")]
-    AlreadyInitialized,
+    AlreadyInitializedRepo,
     /// Thrown when trying to initialize a repository that is not tracked by any supported SCM tool, without the dedicated option.
     #[error("failed to initiate as current repository is not tracked by any SCM tool. Use `--no-scm` to initialize anyway.")]
     NotScmTracked,
@@ -26,7 +26,7 @@ enum RepoError {
 }
 
 /// `init` command
-pub(crate) fn init_cmd<'a, 'b>() -> App<'a, 'b> {
+pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("init")
         .about("Initializes a repository of Holium objects")
         .args(&[
@@ -60,10 +60,10 @@ pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
 /// the options `--no-scm` and/or `--no-dvc` should be used.
 ///
 /// In case the directory is not empty, the `--force` option must be used in order to override it.
-pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
+fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
 
     // If root directory is already an initialized repository, force re-initialization or throw an error
-    let local_holium_path = root_dir.join(utils::PROJECT_DIR);
+    let local_holium_path = root_dir.join(PROJECT_DIR);
     if local_holium_path.exists() {
         if force {
             if local_holium_path.is_dir() {
@@ -72,7 +72,7 @@ pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Resu
                 fs::remove_file(local_holium_path)?;
             }
         } else {
-            return Err(RepoError::AlreadyInitialized.into());
+            return Err(CmdError::AlreadyInitializedRepo.into());
         }
     }
 
@@ -91,18 +91,16 @@ pub fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Resu
 
 fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_enabled: bool) -> Result<()> {
     // Create project structure
-    let holium_dir = root_dir.join(utils::PROJECT_DIR);
+    let holium_dir = root_dir.join(PROJECT_DIR);
     fs::create_dir(&holium_dir)?;
-    fs::create_dir(&holium_dir.join(utils::CACHE_DIR))?;
-    fs::create_dir(&holium_dir.join(utils::OBJECTS_DIR))?;
-    fs::File::create(&holium_dir.join(utils::CONFIG_FILE))?;
-    fs::File::create(&holium_dir.join(utils::LOCAL_CONFIG_FILE))?;
+    fs::create_dir(&holium_dir.join(INTERPLANETARY_DIR))?;
+    fs::create_dir(&holium_dir.join(LOCAL_DIR))?;
+    fs::File::create(&holium_dir.join(PORTATIONS_FILE))?;
 
     // Add a .gitignore file
     if is_scm_enabled {
         let gitignore_file = fs::File::create(&holium_dir.join(".gitignore"))?;
-        writeln!(&gitignore_file, "{}", utils::CACHE_DIR)?;
-        writeln!(&gitignore_file, "{}", utils::LOCAL_CONFIG_FILE)?;
+        writeln!(&gitignore_file, "{}", LOCAL_DIR)?;
     }
 
     // Advise on running the tracking tool(s) once
@@ -121,20 +119,20 @@ fn advise_to_track(is_scm_enabled: bool, is_dvc_enabled: bool) {
     }
     println!("To track changes in the Holium project, run :\n");
     if is_dvc_enabled {
-        println!("\tdvc add {}/{}", utils::PROJECT_DIR, utils::OBJECTS_DIR);
+        println!("\tdvc add {}/{}", PROJECT_DIR, INTERPLANETARY_DIR);
     }
     if is_scm_enabled {
-        println!("\tgit add {}", utils::PROJECT_DIR);
+        println!("\tgit add {}", PROJECT_DIR);
     }
     println!()
 }
 
 fn verify_scm_and_dvc_usage(is_scm_enabled: bool, is_dvc_enabled: bool, no_scm: bool, no_dvc: bool) -> Result<()> {
     if !is_scm_enabled && !no_scm {
-        return Err(RepoError::NotScmTracked.into());
+        return Err(CmdError::NotScmTracked.into());
     }
     if !is_dvc_enabled && !no_dvc {
-        return Err(RepoError::NotDvcTracked.into());
+        return Err(CmdError::NotDvcTracked.into());
     }
     if is_scm_enabled && !is_dvc_enabled {
         // Warn against the use of SCM with no DVC tool

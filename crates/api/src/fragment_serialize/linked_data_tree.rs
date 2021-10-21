@@ -1,6 +1,5 @@
-use std::{fs, io};
 use std::convert::TryFrom;
-use std::io::{BufReader, Read};
+use std::io::Read;
 
 use anyhow::{Context, Result};
 use cid::Cid;

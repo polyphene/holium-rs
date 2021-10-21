@@ -1,5 +1,5 @@
 //! This module defines a trait and implementations helping serializing different objects of the
-//! Holium framework into formats, often fragmented, suitable for storage.
+//! Holium framework into formats, often fragmented, suitable for interplanetary.
 
 use anyhow::Result;
 use cid::Cid;
@@ -31,7 +31,7 @@ pub struct FragmentedDataDeserResult<T> {
 }
 
 /// The [HoliumDeserializable] trait should be implemented for types representing fragments of data in
-/// the Holium Framework and that may in that sense be serialized for efficient storage.
+/// the Holium Framework and that may in that sense be serialized for efficient interplanetary.
 pub trait HoliumDeserializable {
     /// [is_of_type] checks if an array of bytes could be deserialized into the given Self type.
     fn is_of_type<R: Read>(data_reader: &mut R) -> Result<bool>;

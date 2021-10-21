@@ -1,11 +1,9 @@
 use std::env;
 
-use clap::{App, AppSettings, Arg, crate_authors, crate_version, SubCommand};
+use clap::{App, AppSettings, crate_authors, crate_version};
 
-use crate::init::init_cmd;
-
-mod init;
 mod utils;
+mod commands;
 
 fn main() {
     // Create CLI matches
@@ -15,12 +13,12 @@ fn main() {
         .author(crate_authors!("\n"))
         .about("Enjoy the power of the Holium Framework.")
         .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommand(init_cmd())
+        .subcommand(commands::init::cmd())
         .get_matches();
 
     // Match subcommands
     let exec_res = match matches.subcommand() {
-        ("init", Some(init_matches)) => init::handle_cmd(init_matches),
+        ("init", Some(init_matches)) => commands::init::handle_cmd(init_matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 
