@@ -9,7 +9,7 @@ use predicates::prelude::*;
 use walkdir::WalkDir;
 use itertools::Itertools;
 
-mod repo;
+mod init;
 mod config;
 mod data;
 mod transformation;
