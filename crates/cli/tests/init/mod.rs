@@ -120,8 +120,7 @@ fn init_cmd_creates_project_structure() {
     // check that the project structure has been created
     let local_holium_path = temp_dir.join(".holium");
     assert!(local_holium_path.join("cache").exists());
-    assert!(local_holium_path.join("cache").join("rocksdb").exists());
-    assert!(local_holium_path.join("config").join("wasm-modules").exists());
+    assert!(local_holium_path.join("config").exists());
     assert!(local_holium_path.join("config.local").exists());
     assert!(local_holium_path.join("objects").exists());
 }
