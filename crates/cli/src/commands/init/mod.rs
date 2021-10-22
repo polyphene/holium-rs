@@ -1,18 +1,18 @@
-//! Interact with a repository of Holium objects stored on the file system.
+//! Initialize a repository of Holium objects stored on the file system.
 
 use std::{env, fs};
 use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches, SubCommand, AppSettings};
 use console::style;
 use thiserror::Error;
 
-use crate::utils::repo::constants::{PROJECT_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
+use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
 
 #[derive(Error, Debug)]
-/// Errors for the init module.
+/// errors
 enum CmdError {
     /// Thrown when trying to initialize a repository twice, without the force option.
     #[error("failed to initiate as '.holium' already exists. Use `-f` to force.")]
@@ -25,16 +25,16 @@ enum CmdError {
     NotDvcTracked,
 }
 
-/// `init` command
+/// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("init")
         .about("Initializes a repository of Holium objects")
         .args(&[
             Arg::with_name("no-scm")
-                .help("Initiate Holium in directory that is not tracked by any SCM tool.")
+                .help("Initiate Holium in directory that is not tracked by any SCM tool")
                 .long("no-scm"),
             Arg::with_name("no-dvc")
-                .help("Initiate Holium in directory that is not tracked by any DVC tool.")
+                .help("Initiate Holium in directory that is not tracked by any DVC tool")
                 .long("no-dvc"),
             Arg::with_name("force")
                 .help("Overwrites existing Holium project")
@@ -43,14 +43,14 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
         ])
 }
 
-/// Parses arguments and handles the command.
-pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
+/// handler
+pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // Get path to current directory
     let cur_dir = env::current_dir()?;
     // Initialize a Holium repository in current directory
-    let no_scm = init_matches.is_present("no-scm");
-    let no_dvc = init_matches.is_present("no-dvc");
-    let force = init_matches.is_present("force");
+    let no_scm = matches.is_present("no-scm");
+    let no_dvc = matches.is_present("no-dvc");
+    let force = matches.is_present("force");
     init(&cur_dir, no_scm, no_dvc, force)
 }
 
@@ -63,7 +63,7 @@ pub(crate) fn handle_cmd(init_matches: &ArgMatches) -> Result<()> {
 fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
 
     // If root directory is already an initialized repository, force re-initialization or throw an error
-    let local_holium_path = root_dir.join(PROJECT_DIR);
+    let local_holium_path = root_dir.join(HOLIUM_DIR);
     if local_holium_path.exists() {
         if force {
             if local_holium_path.is_dir() {
@@ -91,7 +91,7 @@ fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<(
 
 fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_enabled: bool) -> Result<()> {
     // Create project structure
-    let holium_dir = root_dir.join(PROJECT_DIR);
+    let holium_dir = root_dir.join(HOLIUM_DIR);
     fs::create_dir(&holium_dir)?;
     fs::create_dir(&holium_dir.join(INTERPLANETARY_DIR))?;
     fs::create_dir(&holium_dir.join(LOCAL_DIR))?;
@@ -119,10 +119,10 @@ fn advise_to_track(is_scm_enabled: bool, is_dvc_enabled: bool) {
     }
     println!("To track changes in the Holium project, run :\n");
     if is_dvc_enabled {
-        println!("\tdvc add {}/{}", PROJECT_DIR, INTERPLANETARY_DIR);
+        println!("\tdvc add {}/{}", HOLIUM_DIR, INTERPLANETARY_DIR);
     }
     if is_scm_enabled {
-        println!("\tgit add {}", PROJECT_DIR);
+        println!("\tgit add {}", HOLIUM_DIR);
     }
     println!()
 }
