@@ -3,7 +3,7 @@ use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{MissingRequiredArgument, BinCodeSerializeFailed, DbOperationFailed, ObjectAlreadyExistsForGivenKey};
 use crate::utils::local::models::transformation::Transformation;
-use crate::utils::local::helpers::prints::{print_create_success, print_duplicate_key_warning};
+use crate::utils::local::helpers::prints::{print_create_success};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
