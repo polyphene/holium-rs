@@ -8,8 +8,7 @@ pub(crate) enum Error {
     /// does not exist.
     #[error("missing object for key: {0}")]
     NoObjectForGivenKey(String),
-    /// This error is thrown when an object was expected to be found in store with a given key, but
-    /// does not exist.
+    /// This error is thrown when a key was expected to be free in store.
     #[error("object already exists with key: {0}")]
     ObjectAlreadyExistsForGivenKey(String),
     /// This error is thrown when an object fails to be deserialized after being stored.
