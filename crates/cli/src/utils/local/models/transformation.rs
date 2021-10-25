@@ -1,9 +1,11 @@
-use serde::{Serialize, Deserialize};
-use optional_struct::OptionalStruct;
-use crate::utils::errors::Error::BinCodeSerializeFailed;
 use anyhow::Context;
+use humansize::{FileSize, file_size_opts};
+use optional_struct::OptionalStruct;
+use prettytable::{cell, row, Row, Table};
+use serde::{Deserialize, Serialize};
+
+use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
-use prettytable::{Row, Table};
 
 pub const TREE_NAME: &[u8] = b"transformation";
 
@@ -12,6 +14,7 @@ pub const TREE_NAME: &[u8] = b"transformation";
 pub struct Transformation {
     #[serde(skip)]
     pub name: String,
+    pub bytecode: Vec<u8>,
     pub handle: String,
 }
 
@@ -27,6 +30,7 @@ pub fn merge(
             let merged_decoded: OptionalTransformation = bincode::deserialize(&merged_bytes[..]).unwrap();
             let new_decoded = Transformation {
                 name: merged_decoded.name.unwrap_or_else(|| old_decoded.name.clone()),
+                bytecode: merged_decoded.bytecode.unwrap_or_else(|| old_decoded.bytecode.clone()),
                 handle: merged_decoded.handle.unwrap_or_else(|| old_decoded.handle.clone()),
             };
             let new_encoded = bincode::serialize(&new_decoded)
@@ -38,10 +42,18 @@ pub fn merge(
 
 impl PrintableModel for Transformation {
     fn title_row() -> Row {
-        row![b->"NAME", "HANDLE"]
+        row![
+            b->"NAME",
+            "HANDLE",
+            "BYTECODE (size)",
+        ]
     }
 
     fn object_to_row(&self) -> Row {
-        row![b->self.name, self.handle]
+        row![
+            b->self.name,
+            self.handle,
+            self.bytecode.len().file_size(file_size_opts::CONVENTIONAL).unwrap_or("".to_string()),
+        ]
     }
 }

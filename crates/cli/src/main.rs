@@ -1,4 +1,5 @@
 #[macro_use]
+extern crate humansize;
 extern crate prettytable;
 
 use std::env;
