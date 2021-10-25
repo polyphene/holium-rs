@@ -1,8 +1,9 @@
-use anyhow::{anyhow, Result, Context};
+use anyhow::{Result, Context, Error};
 use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
-use crate::utils::errors::Error::{MissingRequiredArgument, DbOperationFailed, BinCodeDeserializeFailed};
-use crate::utils::local::trees::transformation::Transformation;
+use crate::utils::errors::Error::{MissingRequiredArgument, DbOperationFailed, BinCodeDeserializeFailed, NoObjectForGivenKey};
+use crate::utils::local::models::transformation::Transformation;
+use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -27,11 +28,12 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let encoded = local_context.transformations
         .get(name)
         .context(DbOperationFailed)?
-        .ok_or(anyhow!("cannot find transformation with name: {}", name))?;
-    let decoded: Transformation = bincode::deserialize(&encoded[..])
+        .ok_or(NoObjectForGivenKey(name.to_string()))?;
+    let mut decoded: Transformation = bincode::deserialize(&encoded[..])
         .ok()
         .context(BinCodeDeserializeFailed)?;
+    decoded.name = name.to_string();
     // print
-    println!("ok TODO");
+    Transformation::table_print(vec![decoded]);
     Ok(())
 }

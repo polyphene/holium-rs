@@ -2,7 +2,8 @@ use anyhow::{Result, Context};
 use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{MissingRequiredArgument, BinCodeSerializeFailed, DbOperationFailed, NoObjectForGivenKey};
-use crate::utils::local::trees::transformation::{Transformation, OptionalTransformation};
+use crate::utils::local::models::transformation::{Transformation, OptionalTransformation};
+use crate::utils::local::helpers::prints::print_update_success;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -35,10 +36,14 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // merge object
-    let merge_transformation = OptionalTransformation { handle: handle.map(|s| s.to_string()) };
+    let merge_transformation = OptionalTransformation {
+        name: None,
+        handle: handle.map(|s| s.to_string()),
+    };
     let merge_transformation_encoded = bincode::serialize(&merge_transformation)
         .context(BinCodeSerializeFailed)?;
     local_context.transformations.merge(name, merge_transformation_encoded)
         .context(DbOperationFailed)?;
+    print_update_success(name);
     Ok(())
 }

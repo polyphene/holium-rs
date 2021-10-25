@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate prettytable;
+
 use std::env;
 
 use clap::{App, AppSettings, crate_authors, crate_version};
@@ -14,7 +17,7 @@ fn main() {
         .author(crate_authors!("\n"))
         .about("Enjoy the power of the Holium Framework")
         .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommands( vec![
+        .subcommands(vec![
             commands::init::cmd(),
             commands::transformation::cmd(),
         ])

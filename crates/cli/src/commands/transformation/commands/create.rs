@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result, Context};
 use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
-use crate::utils::errors::Error::{MissingRequiredArgument, BinCodeSerializeFailed, DbOperationFailed};
-use crate::utils::local::trees::transformation::Transformation;
+use crate::utils::errors::Error::{MissingRequiredArgument, BinCodeSerializeFailed, DbOperationFailed, ObjectAlreadyExistsForGivenKey};
+use crate::utils::local::models::transformation::Transformation;
+use crate::utils::local::helpers::prints::{print_create_success, print_duplicate_key_warning};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -31,17 +32,24 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let name = matches.value_of("name")
         .context(MissingRequiredArgument("name".to_string()))?;
     let handle = matches.value_of("handle")
-        .context(MissingRequiredArgument("handle".to_string()))?
-        .to_string();
+        .context(MissingRequiredArgument("handle".to_string()))?;
+    // check that the object does not already exist
+    if local_context.transformations.contains_key(name).context(DbOperationFailed)? {
+        return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
+    }
     // create new object
-    let object = Transformation { handle };
+    let object = Transformation {
+        name: name.to_string(),
+        handle: handle.to_string(),
+    };
     // store new object
     let encoded: Vec<u8> = bincode::serialize(&object)
         .context(BinCodeSerializeFailed)?;
     local_context.transformations
-        .compare_and_swap(name, None as Option<&[u8]>, Some(encoded))
+        .compare_and_swap(object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
         .context(anyhow!("cannot create transformation with name: {}", name))?;
+    print_create_success(name);
     Ok(())
 }

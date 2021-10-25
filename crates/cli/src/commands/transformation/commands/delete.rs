@@ -1,8 +1,9 @@
 use anyhow::{Result, Context};
 use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
-use crate::utils::errors::Error::{MissingRequiredArgument, DbOperationFailed};
+use crate::utils::errors::Error::{MissingRequiredArgument, DbOperationFailed, NoObjectForGivenKey};
 use console::style;
+use crate::utils::local::helpers::prints::print_delete_success;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -27,9 +28,9 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let old_value = local_context.transformations.remove(name)
         .context(DbOperationFailed)?;
     if old_value.is_none() {
-        println!("{}", style(format!("No object found with name: {}", name)).yellow())
+        return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // print
-    println!("ok TODO");
+    print_delete_success(name);
     Ok(())
 }
