@@ -47,13 +47,10 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // validate the bytecode file path, if any
-    let bytecode = match bytecode_path_os_string {
-        Some(path_os_string) => {
-            let bytecode_path = PathBuf::from(path_os_string);
-            Some(read_all_wasm_module(&bytecode_path)?)
-        }
-        None => None,
-    };
+    let bytecode = bytecode_path_os_string.map(|path_os_string| {
+        let bytecode_path = PathBuf::from(path_os_string);
+        read_all_wasm_module(&bytecode_path)
+    }).transpose()?;
     // merge object
     let merge_transformation = OptionalTransformation {
         name: None,
