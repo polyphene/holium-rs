@@ -10,6 +10,7 @@ use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::helpers::prints::print_create_success;
 use crate::utils::local::models::transformation::Transformation;
+use crate::utils::local::helpers::jsonschema::validate_json_schema;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -34,6 +35,13 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .value_name("HANDLE")
                 .short("h")
                 .long("handle"),
+            Arg::with_name("json-schema-in")
+                .help("JSON Schema of the input parameter")
+                .required(true)
+                .takes_value(true)
+                .value_name("JSON-SCHEMA-IN")
+                .short("i")
+                .long("json-schema-in"),
         ])
 }
 
@@ -48,6 +56,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(MissingRequiredArgument("bytecode".to_string()))?;
     let handle = matches.value_of("handle")
         .context(MissingRequiredArgument("handle".to_string()))?;
+    let json_schema_in = matches.value_of("json-schema-in")
+        .context(MissingRequiredArgument("json-schema-in".to_string()))?;
     // check that the object does not already exist
     if local_context.transformations.contains_key(name).context(DbOperationFailed)? {
         return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
@@ -55,11 +65,14 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // validate the bytecode file path
     let bytecode_path = PathBuf::from(bytecode_path_os_string);
     let bytecode = read_all_wasm_module(&bytecode_path)?;
+    // validate JSON schemata
+    validate_json_schema(json_schema_in)?;
     // create new object
     let object = Transformation {
         name: name.to_string(),
         bytecode,
         handle: handle.to_string(),
+        json_schema_in: json_schema_in.to_string(),
     };
     // store new object
     let encoded: Vec<u8> = bincode::serialize(&object)
