@@ -42,6 +42,13 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .value_name("JSON-SCHEMA-IN")
                 .short("i")
                 .long("json-schema-in"),
+            Arg::with_name("json-schema-out")
+                .help("JSON Schema of the output parameter")
+                .required(true)
+                .takes_value(true)
+                .value_name("JSON-SCHEMA-OUT")
+                .short("o")
+                .long("json-schema-out"),
         ])
 }
 
@@ -58,6 +65,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(MissingRequiredArgument("handle".to_string()))?;
     let json_schema_in = matches.value_of("json-schema-in")
         .context(MissingRequiredArgument("json-schema-in".to_string()))?;
+    let json_schema_out = matches.value_of("json-schema-out")
+        .context(MissingRequiredArgument("json-schema-out".to_string()))?;
     // check that the object does not already exist
     if local_context.transformations.contains_key(name).context(DbOperationFailed)? {
         return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
@@ -67,12 +76,14 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let bytecode = read_all_wasm_module(&bytecode_path)?;
     // validate JSON schemata
     validate_json_schema(json_schema_in)?;
+    validate_json_schema(json_schema_out)?;
     // create new object
     let object = Transformation {
         name: name.to_string(),
         bytecode,
         handle: handle.to_string(),
         json_schema_in: json_schema_in.to_string(),
+        json_schema_out: json_schema_out.to_string(),
     };
     // store new object
     let encoded: Vec<u8> = bincode::serialize(&object)

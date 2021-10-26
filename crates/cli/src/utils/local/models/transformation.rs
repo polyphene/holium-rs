@@ -19,6 +19,7 @@ pub struct Transformation {
     pub bytecode: Vec<u8>,
     pub handle: String,
     pub json_schema_in: String,
+    pub json_schema_out: String,
 }
 
 pub fn merge(
@@ -36,6 +37,7 @@ pub fn merge(
                 bytecode: merged_decoded.bytecode.unwrap_or_else(|| old_decoded.bytecode.clone()),
                 handle: merged_decoded.handle.unwrap_or_else(|| old_decoded.handle.clone()),
                 json_schema_in: merged_decoded.json_schema_in.unwrap_or_else(|| old_decoded.json_schema_in.clone()),
+                json_schema_out: merged_decoded.json_schema_out.unwrap_or_else(|| old_decoded.json_schema_out.clone()),
             };
             let new_encoded = bincode::serialize(&new_decoded)
                 .context(BinCodeSerializeFailed).ok()?;
@@ -51,6 +53,7 @@ impl PrintableModel for Transformation {
             "HANDLE",
             "BYTECODE (size)",
             "IN (JSON Schema)",
+            "OUT (JSON Schema)",
         ]
     }
 
@@ -60,6 +63,7 @@ impl PrintableModel for Transformation {
             self.handle,
             self.bytecode.len().file_size(file_size_opts::CONVENTIONAL).unwrap_or("".to_string()),
             json_schema_string_to_short_string(&self.json_schema_in),
+            json_schema_string_to_short_string(&self.json_schema_out),
         ]
     }
 }
