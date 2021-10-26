@@ -1,16 +1,14 @@
 //! CLI command to manage data from, to and inside a Holium repository.
 
-
-
 use anyhow::Result;
 use clap::{App, ArgMatches, SubCommand};
 use thiserror::Error;
 
 use crate::data::import::{handle_import_cmd, import_cmd};
-use crate::data::list::{list_cmd, handle_list_cmd};
-use crate::data::remove::{remove_cmd, handle_remove_cmd};
+use crate::data::list::{handle_list_cmd, list_cmd};
+use crate::data::remove::{handle_remove_cmd, remove_cmd};
 
-mod import;
+pub(crate) mod import;
 mod list;
 mod remove;
 

@@ -1,15 +1,15 @@
 use std::env;
 
-use clap::{App, AppSettings, Arg, crate_authors, crate_version, SubCommand};
+use clap::{crate_authors, crate_version, App, AppSettings, Arg, SubCommand};
 
 use crate::data::data_cmd;
 use crate::transformation::transformation_cmd;
 
 mod config;
-mod repo;
-mod utils;
 mod data;
+mod repo;
 mod transformation;
+mod utils;
 
 fn main() {
     // Create CLI matches
@@ -80,7 +80,9 @@ fn main() {
         ("init", Some(init_matches)) => repo::handle_cmd(init_matches),
         ("config", Some(config_matches)) => config::handle_cmd(config_matches),
         ("data", Some(data_matches)) => data::handle_cmd(data_matches),
-        ("transformation", Some(transformation_matches)) => transformation::handle_cmd(transformation_matches),
+        ("transformation", Some(transformation_matches)) => {
+            transformation::handle_cmd(transformation_matches)
+        }
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 

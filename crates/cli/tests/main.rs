@@ -5,15 +5,14 @@ use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::TempDir;
 use cid::Cid;
+use itertools::Itertools;
 use predicates::prelude::*;
 use walkdir::WalkDir;
-use itertools::Itertools;
 
-mod repo;
 mod config;
 mod data;
+mod repo;
 mod transformation;
-
 
 /************************
 Test helper functions
@@ -68,15 +67,17 @@ fn check_output_cid_line_format(line: &str, valid_codecs: Vec<u64>) {
     assert_eq!(cid.hash().code(), 0x1e);
     assert_eq!(cid.hash().size(), 32);
     let cid_codec = cid.codec();
-    assert!(valid_codecs.iter().any(|&valid_codec| valid_codec == cid_codec));
+    assert!(valid_codecs
+        .iter()
+        .any(|&valid_codec| valid_codec == cid_codec));
     assert!(cid.codec() == 0x51 || cid.codec() == 0x71);
 }
 
 // reference : https://stackoverflow.com/a/51272639
 fn is_sorted<I>(data: I) -> bool
-    where
-        I: IntoIterator,
-        I::Item: Ord + Clone,
+where
+    I: IntoIterator,
+    I::Item: Ord + Clone,
 {
     data.into_iter().tuple_windows().all(|(a, b)| a <= b)
 }
@@ -87,7 +88,9 @@ fn check_output_cid_lines_format(lines_str: &str) -> usize {
     // split into individual lines
     let lines: Vec<&str> = lines_str.split_whitespace().collect();
     // check format of individual lines
-    &lines.iter().for_each(|x| check_output_cid_line_format(x, vec![0x51, 0x71]));
+    &lines
+        .iter()
+        .for_each(|x| check_output_cid_line_format(x, vec![0x51, 0x71]));
     // check uniqueness of each line
     assert!(&lines.iter().all_unique());
     // check that lines are sorted in alphabetical order
