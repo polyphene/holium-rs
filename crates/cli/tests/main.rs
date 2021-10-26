@@ -12,7 +12,6 @@ use walkdir::WalkDir;
 mod config;
 mod data;
 mod repo;
-mod run;
 mod transformation;
 
 /************************
