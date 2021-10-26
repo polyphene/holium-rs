@@ -46,6 +46,8 @@ pub(crate) fn import_cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// `data` `import` command handler
 pub(crate) fn handle_import_cmd(matches: &ArgMatches) -> Result<()> {
+    // Initialize context handler
+    let repo_storage = RepoStorage::from_cur_dir()?;
     // Get the path of the file to be imported
     let path = Path::new(
         matches
@@ -57,7 +59,7 @@ pub(crate) fn handle_import_cmd(matches: &ArgMatches) -> Result<()> {
     // Generate data node
     let data_tree = file_to_data_tree(path, t)?;
     // Build & store linked data tree
-    let root_object_cid = store_data_tree(data_tree)?;
+    let root_object_cid = store_data_tree(&repo_storage, data_tree)?;
     // Print object cid
     println!("{}", &root_object_cid);
     // return
@@ -87,9 +89,10 @@ pub(crate) fn file_to_data_tree(file_path: &Path, import_type: ImportType) -> Re
     Ok(DataTreeNode::new(cbor_value))
 }
 
-pub(crate) fn store_data_tree(data_tree: DataTreeNode) -> Result<String> {
-    // Initialize context handler
-    let repo_storage = RepoStorage::from_cur_dir()?;
+pub(crate) fn store_data_tree(
+    repo_storage: &RepoStorage,
+    data_tree: DataTreeNode,
+) -> Result<String> {
     // Build linked data tree
     let linked_data_tree = LinkedDataTreeNode::from_data_tree(data_tree)?;
     // Store linked data tree
