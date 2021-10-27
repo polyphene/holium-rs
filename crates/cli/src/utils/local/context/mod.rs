@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use crate::utils::repo::helpers::get_root_path;
 use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR};
 
+/// Context structure helping accessing the local store in a consistent way throughout the CLI
+/// commands.
 pub struct LocalContext {
     pub transformations: sled::Tree,
 }
