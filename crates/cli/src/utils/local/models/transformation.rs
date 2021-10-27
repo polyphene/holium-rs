@@ -1,3 +1,5 @@
+//! Model related to Transformation nodes in a pipeline DAG, stored in the local Holium area.
+
 use anyhow::Context;
 use ellipse::Ellipse;
 use humansize::{FileSize, file_size_opts};
