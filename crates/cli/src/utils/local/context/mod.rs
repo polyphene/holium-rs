@@ -6,6 +6,7 @@ use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR};
 
 pub struct LocalContext {
     pub sources: sled::Tree,
+    pub shapers: sled::Tree,
     pub transformations: sled::Tree,
 }
 
@@ -26,8 +27,10 @@ impl LocalContext {
     fn from_db(db: sled::Db) -> Result<Self> {
         let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
         sources.set_merge_operator(models::source::merge);
+        let shapers: sled::Tree = db.open_tree(models::shaper::TREE_NAME)?;
+        shapers.set_merge_operator(models::shaper::merge);
         let transformations: sled::Tree = db.open_tree(models::transformation::TREE_NAME)?;
         transformations.set_merge_operator(models::transformation::merge);
-        Ok(LocalContext{ sources, transformations })
+        Ok(LocalContext{ sources, shapers, transformations })
     }
 }
