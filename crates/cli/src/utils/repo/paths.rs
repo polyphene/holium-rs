@@ -1,5 +1,5 @@
 /// Name of the directory where all data related to the Holium Framework in a repository is stored.
-pub(crate) const PROJECT_DIR: &'static str = ".holium";
+pub(crate) const HOLIUM_DIR: &'static str = ".holium";
 
 /// Name of the interplanetary Holium area directory.
 pub(crate) const INTERPLANETARY_DIR: &'static str = "interplanetary";

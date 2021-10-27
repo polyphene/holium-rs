@@ -1,6 +1,12 @@
+#[macro_use]
+extern crate humansize;
+extern crate lazy_static;
+extern crate prettytable;
+
 use std::env;
 
 use clap::{App, AppSettings, crate_authors, crate_version};
+use console::style;
 
 mod utils;
 mod commands;
@@ -11,14 +17,18 @@ fn main() {
         .bin_name("holium")
         .version(crate_version!())
         .author(crate_authors!("\n"))
-        .about("Enjoy the power of the Holium Framework.")
+        .about("Enjoy the power of the Holium Framework")
         .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommand(commands::init::cmd())
+        .subcommands(vec![
+            commands::init::cmd(),
+            commands::transformation::cmd(),
+        ])
         .get_matches();
 
     // Match subcommands
     let exec_res = match matches.subcommand() {
-        ("init", Some(init_matches)) => commands::init::handle_cmd(init_matches),
+        ("init", Some(matches)) => commands::init::handle_cmd(matches),
+        ("transformation", Some(matches)) => commands::transformation::handle_cmd(matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 
@@ -26,7 +36,7 @@ fn main() {
     std::process::exit(match exec_res {
         Ok(_) => 0,
         Err(err) => {
-            eprintln!("error: {:?}", err);
+            eprintln!("{}", style(err).red());
             1
         }
     })

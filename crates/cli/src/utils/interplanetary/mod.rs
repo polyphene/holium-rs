@@ -18,8 +18,9 @@ use holium::data::linked_data_tree::{
 use holium::fragment_serialize::HoliumDeserializable;
 use holium::transformation::Transformation;
 
-use crate::utils::repo::constants::{INTERPLANETARY_DIR, PROJECT_DIR};
+use crate::utils::repo::paths::{INTERPLANETARY_DIR, HOLIUM_DIR};
 use crate::utils::interplanetary::StorageError::{FailedToParseCid, WrongObjectPath};
+use crate::utils::repo::errors::Error::OutsideHoliumRepo;
 
 const CID_SPLIT_POSITION: usize = 9;
 
@@ -27,10 +28,6 @@ const CID_SPLIT_POSITION: usize = 9;
 #[derive(thiserror::Error, Debug)]
 /// Errors for the interplanetary utility module.
 pub(crate) enum StorageError {
-    /// This error is thrown when a command that should only be run inside a Holium repository is ran
-    /// outside of any repository.
-    #[error("this command can only be run inside a Holium repository")]
-    OutsideHoliumRepo,
     /// Thrown when failing to write data object in the repository
     #[error("failed to write holium data object : {0}")]
     FailedToWriteObject(String),
@@ -87,7 +84,7 @@ impl RepoStorage {
     fn new(root_path: &PathBuf) -> Result<Self> {
         // check that root path is indeed inside a valid repository
         if !root_path.exists() || !root_path.is_dir() {
-            return Err(StorageError::OutsideHoliumRepo.into());
+            return Err(OutsideHoliumRepo.into());
         }
 
         /*
@@ -156,7 +153,7 @@ impl RepoStorage {
     /// the parent directory of a `.holium` directory.
     pub(crate) fn from_cur_dir() -> Result<Self> {
         let cur_dir = env::current_dir()?;
-        let holium_dir = cur_dir.join(PROJECT_DIR);
+        let holium_dir = cur_dir.join(HOLIUM_DIR);
         Self::new(&holium_dir)
     }
 
