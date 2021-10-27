@@ -3,7 +3,7 @@ use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{MissingRequiredArgument, DbOperationFailed, NoObjectForGivenKey};
 use console::style;
-use crate::utils::local::helpers::prints::print_delete_success;
+use crate::utils::local::helpers::prints::commands_outputs::print_delete_success;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

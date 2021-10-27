@@ -6,9 +6,9 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::helpers::prints::print_update_success;
 use crate::utils::local::models::transformation::{OptionalTransformation, Transformation};
 use crate::utils::local::helpers::jsonschema::validate_json_schema;
+use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
