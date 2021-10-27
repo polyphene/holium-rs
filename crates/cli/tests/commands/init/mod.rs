@@ -119,8 +119,7 @@ fn init_cmd_creates_project_structure() {
         .stdout(predicate::str::contains("Initialized Holium repository."));
     // check that the project structure has been created
     let local_holium_path = temp_dir.join(".holium");
-    assert!(local_holium_path.join("cache").exists());
-    assert!(local_holium_path.join("config").exists());
-    assert!(local_holium_path.join("config.local").exists());
-    assert!(local_holium_path.join("objects").exists());
+    assert!(local_holium_path.join("interplanetary").exists());
+    assert!(local_holium_path.join("local").exists());
+    assert!(local_holium_path.join("portations").exists());
 }

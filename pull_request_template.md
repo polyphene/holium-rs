@@ -6,7 +6,7 @@
 
 ### How To Test ✔️
 <!--
-Example: steps to acces new features:
+Example: steps to access new features:
 1. In this context...
 2. Run '...'
 4. See behavior...
