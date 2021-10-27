@@ -11,6 +11,7 @@ use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::helpers::prints::print_create_success;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::local::helpers::jsonschema::validate_json_schema;
+use crate::utils::local::helpers::keys::validate_node_name;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -69,6 +70,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     if local_context.transformations.contains_key(name).context(DbOperationFailed)? {
         return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
     }
+    // validate the node name
+    validate_node_name(name)?;
     // validate the bytecode file path
     let bytecode_path = PathBuf::from(bytecode_path_os_string);
     let bytecode = read_all_wasm_module(&bytecode_path)?;
