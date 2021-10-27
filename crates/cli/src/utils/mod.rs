@@ -1,3 +1,4 @@
 mod interplanetary;
 pub mod repo;
-mod local;
+pub mod local;
+pub mod errors;
