@@ -1,3 +1,5 @@
+//! Model related to Transformation nodes in a pipeline DAG, stored in the local Holium area.
+
 use anyhow::Context;
 use humansize::{FileSize, file_size_opts};
 use optional_struct::OptionalStruct;
@@ -11,7 +13,6 @@ pub const TREE_NAME: &[u8] = b"transformation";
 
 #[derive(Serialize, Deserialize, OptionalStruct)]
 #[optional_derive(Serialize, Deserialize)]
-/// Structure related to Transformation nodes in a pipeline DAG, stored in the local Holium area.
 pub struct Transformation {
     #[serde(skip)]
     pub name: String,
