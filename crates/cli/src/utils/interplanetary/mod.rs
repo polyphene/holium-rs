@@ -42,7 +42,7 @@ pub(crate) enum StorageError {
     UnknownObjectIdentifier(String),
 }
 
-/// Deterministically convert an object CID to a path for interplanetary.
+/// Deterministically convert an object CID to a path for storage.
 /// The result path should start with `objects/`.
 pub(crate) fn cid_to_object_path(cid: &Cid) -> PathBuf {
     // Base the result path on the CID string representation broken into two parts
