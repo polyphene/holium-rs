@@ -35,13 +35,11 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .help("JSON Schema of the input parameter")
                 .takes_value(true)
                 .value_name("JSON-SCHEMA-IN")
-                .short("i")
                 .long("json-schema-in"),
             Arg::with_name("json-schema-out")
                 .help("JSON Schema of the output parameter")
                 .takes_value(true)
                 .value_name("JSON-SCHEMA-OUT")
-                .short("o")
                 .long("json-schema-out"),
         ])
 }
