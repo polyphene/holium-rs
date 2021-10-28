@@ -34,7 +34,7 @@ pub trait PrintableModel: Sized {
             return
         }
         let mut table = Table::new();
-        table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+        table.set_format(*format::consts::FORMAT_BOX_CHARS);
         table.set_titles(Self::title_row());
         for o in objects {
             table.add_row(o.object_to_row());

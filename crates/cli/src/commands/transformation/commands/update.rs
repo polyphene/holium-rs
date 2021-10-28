@@ -8,6 +8,7 @@ use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::helpers::prints::print_update_success;
 use crate::utils::local::models::transformation::{OptionalTransformation, Transformation};
+use crate::utils::local::helpers::jsonschema::validate_json_schema;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -30,6 +31,18 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .value_name("HANDLE")
                 .short("h")
                 .long("handle"),
+            Arg::with_name("json-schema-in")
+                .help("JSON Schema of the input parameter")
+                .takes_value(true)
+                .value_name("JSON-SCHEMA-IN")
+                .short("i")
+                .long("json-schema-in"),
+            Arg::with_name("json-schema-out")
+                .help("JSON Schema of the output parameter")
+                .takes_value(true)
+                .value_name("JSON-SCHEMA-OUT")
+                .short("o")
+                .long("json-schema-out"),
         ])
 }
 
@@ -42,23 +55,31 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(MissingRequiredArgument("name".to_string()))?;
     let bytecode_path_os_string = matches.value_of("bytecode");
     let handle = matches.value_of("handle");
+    let json_schema_in = matches.value_of("json-schema-in");
+    let json_schema_out = matches.value_of("json-schema-out");
     // check that the object exists
     if !local_context.transformations.contains_key(name).context(DbOperationFailed)? {
         return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // validate the bytecode file path, if any
-    let bytecode = match bytecode_path_os_string {
-        Some(path_os_string) => {
-            let bytecode_path = PathBuf::from(path_os_string);
-            Some(read_all_wasm_module(&bytecode_path)?)
-        }
-        None => None,
-    };
+    let bytecode = bytecode_path_os_string.map(|path_os_string| {
+        let bytecode_path = PathBuf::from(path_os_string);
+        read_all_wasm_module(&bytecode_path)
+    }).transpose()?;
+    // validate JSON schemata, if any
+    if let Some(json_schema_in) = json_schema_in {
+        validate_json_schema(json_schema_in)?;
+    }
+    if let Some(json_schema_out) = json_schema_out {
+        validate_json_schema(json_schema_out)?;
+    }
     // merge object
     let merge_transformation = OptionalTransformation {
         name: None,
         bytecode,
         handle: handle.map(|s| s.to_string()),
+        json_schema_in: json_schema_in.map(|s| s.to_string()),
+        json_schema_out: json_schema_out.map(|s| s.to_string()),
     };
     let merge_transformation_encoded = bincode::serialize(&merge_transformation)
         .context(BinCodeSerializeFailed)?;
