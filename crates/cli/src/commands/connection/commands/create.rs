@@ -13,6 +13,7 @@ use crate::utils::local::helpers::keys::validate_node_name;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 use crate::utils::local::models::connection::Connection;
 use crate::utils::local::context::helpers::{validate_pipeline_node_existence, NodeType};
+use crate::utils::local::helpers::selector::validate_selector;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -35,9 +36,16 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .takes_value(true)
                 .value_name("NAME")
                 .long("tail-name"),
+            Arg::with_name("tail-selector")
+                .help("Selector at the tail of the connection")
+                .display_order(3)
+                .required(true)
+                .takes_value(true)
+                .value_name("JSON-SCHEMA")
+                .long("tail-selector"),
             Arg::with_name("head-type")
                 .help("Type of the node at the head of the connection")
-                .display_order(3)
+                .display_order(4)
                 .required(true)
                 .takes_value(true)
                 .possible_values(&NodeType::variants())
@@ -46,11 +54,18 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .long("head-type"),
             Arg::with_name("head-name")
                 .help("Name of the node at the head of the connection")
-                .display_order(4)
+                .display_order(5)
                 .required(true)
                 .takes_value(true)
                 .value_name("NAME")
                 .long("head-name"),
+            Arg::with_name("head-selector")
+                .help("Selector at the head of the connection")
+                .display_order(6)
+                .required(true)
+                .takes_value(true)
+                .value_name("JSON-SCHEMA")
+                .long("head-selector"),
         ])
 }
 
@@ -63,10 +78,14 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(MissingRequiredArgument("tail-type".to_string()))?;
     let tail_name = matches.value_of("tail-name")
         .context(MissingRequiredArgument("tail-name".to_string()))?;
+    let tail_selector = matches.value_of("tail-selector")
+        .context(MissingRequiredArgument("tail-selector".to_string()))?;
     let head_type = matches.value_of("head-type")
         .context(MissingRequiredArgument("head-type".to_string()))?;
     let head_name = matches.value_of("head-name")
         .context(MissingRequiredArgument("head-name".to_string()))?;
+    let head_selector = matches.value_of("head-selector")
+        .context(MissingRequiredArgument("head-selector".to_string()))?;
     // validate the existence of tail and head nodes
     let tail_full_name = validate_pipeline_node_existence(&local_context, tail_type, tail_name)?;
     let head_full_name = validate_pipeline_node_existence(&local_context, head_type, head_name)?;
@@ -77,9 +96,14 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     if local_context.connections.contains_key(id).context(DbOperationFailed)? {
         return Err(ObjectAlreadyExistsForGivenKey(id.to_string()).into());
     }
+    // validate selectors
+    validate_selector(tail_selector)?;
+    validate_selector(head_selector)?;
     // create new object
     let object = Connection {
         id: id.to_string(),
+        tail_selector: tail_selector.to_string(),
+        head_selector: head_selector.to_string(),
     };
     // store new object
     let encoded: Vec<u8> = bincode::serialize(&object)
