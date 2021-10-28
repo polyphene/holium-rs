@@ -11,7 +11,7 @@ use clap::{App, Arg, ArgMatches, SubCommand, AppSettings};
 use console::style;
 use thiserror::Error;
 
-use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
+use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

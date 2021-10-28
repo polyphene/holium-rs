@@ -3,7 +3,7 @@ use std::path::{PathBuf, Path};
 use std::env;
 use thiserror;
 use path_clean::PathClean;
-use crate::utils::repo::paths::HOLIUM_DIR;
+use crate::utils::repo::constants::HOLIUM_DIR;
 use crate::utils::repo::errors::Error::OutsideHoliumRepo;
 
 #[derive(thiserror::Error, Debug)]

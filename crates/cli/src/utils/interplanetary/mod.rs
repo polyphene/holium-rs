@@ -18,7 +18,7 @@ use holium::data::linked_data_tree::{
 use holium::fragment_serialize::HoliumDeserializable;
 use holium::transformation::Transformation;
 
-use crate::utils::repo::paths::{INTERPLANETARY_DIR, HOLIUM_DIR};
+use crate::utils::repo::constants::{INTERPLANETARY_DIR, HOLIUM_DIR};
 use crate::utils::interplanetary::StorageError::{FailedToParseCid, WrongObjectPath};
 use crate::utils::repo::errors::Error::OutsideHoliumRepo;
 

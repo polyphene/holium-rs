@@ -4,7 +4,7 @@ use anyhow::{anyhow, Result, Context};
 use crate::utils::local::models;
 use std::path::PathBuf;
 use crate::utils::repo::helpers::get_root_path;
-use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
+use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
 use crate::utils::repo::models::portation::Portations;
 use sled::Db;
 use std::fs::File;
