@@ -25,7 +25,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let name = matches.value_of("name")
         .context(MissingRequiredArgument("name".to_string()))?;
     // delete object from local database
-    let old_value = local_context.transformations.remove(name)
+    let old_value = local_context.shapers.remove(name)
         .context(DbOperationFailed)?;
     if old_value.is_none() {
         return Err(NoObjectForGivenKey(name.to_string()).into());
