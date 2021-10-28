@@ -44,7 +44,7 @@ enum Error {
 pub fn validate_json_schema(literal: &str) -> Result<()> {
     // parse the string of data into serde_json::Value
     let schema: Value = serde_json::from_str(literal)?;
-    // validate it against JSON schema meta schema, wy trying to compile it
+    // validate it against JSON schema meta schema
     META_SCHEMA.validate(&schema)
         .ok()
         .context(Error::InvalidJsonSchema)?;
