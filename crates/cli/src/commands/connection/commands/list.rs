@@ -31,7 +31,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         })
         .collect();
     let objects = objects_result?;
+    let references: Vec<&Connection> = objects.iter().collect();
     // print
-    Connection::table_print(objects);
+    Connection::table_print(references);
     Ok(())
 }

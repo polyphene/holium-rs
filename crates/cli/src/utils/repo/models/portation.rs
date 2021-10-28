@@ -90,16 +90,16 @@ impl PrintableModel for Portation {
     fn title_row() -> Row {
         row![
             b->"ID",
-            "FILE PATH",
             "FILE FORMAT",
+            "FILE PATH",
         ]
     }
 
     fn object_to_row(&self) -> Row {
         row![
             b->self.id,
-            self.file_path,
             self.file_format,
+            self.file_path,
         ]
     }
 }

@@ -31,7 +31,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         })
         .collect();
     let objects = objects_result?;
+    let references: Vec<&Shaper> = objects.iter().collect();
     // print
-    Shaper::table_print(objects);
+    Shaper::table_print(references);
     Ok(())
 }

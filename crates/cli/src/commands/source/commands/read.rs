@@ -34,6 +34,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(BinCodeDeserializeFailed)?;
     decoded.name = name.to_string();
     // print
-    Source::table_print(vec![decoded]);
+    Source::table_print(vec![&decoded]);
     Ok(())
 }

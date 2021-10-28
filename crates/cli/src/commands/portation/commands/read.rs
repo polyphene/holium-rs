@@ -29,6 +29,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .get(&id.to_string())
         .ok_or(NoObjectForGivenKey(id.to_string()))?;
     // print
-    // Portation::table_print(vec![object]); // TODO
+    Portation::table_print(vec![object]);
     Ok(())
 }

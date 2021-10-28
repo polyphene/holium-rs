@@ -22,6 +22,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .values()
         .collect();
     // print
-    // Portation::table_print(objects); // TODO
+    Portation::table_print(objects);
     Ok(())
 }
