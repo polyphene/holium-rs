@@ -3,17 +3,17 @@ use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{MissingRequiredArgument, DbOperationFailed, BinCodeDeserializeFailed, NoObjectForGivenKey};
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
-use crate::utils::local::models::source::Source;
+use crate::utils::repo::models::portation::Portation;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("read")
-        .about("Read a node")
+        .about("Read a portation")
         .args(&[
-            Arg::with_name("name")
-                .help("Name of the node")
+            Arg::with_name("id")
+                .help("ID of the portation")
                 .required(true)
-                .value_name("NAME"),
+                .value_name("ID"),
         ])
 }
 
@@ -22,18 +22,13 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // get argument values
-    let name = matches.value_of("name")
-        .context(MissingRequiredArgument("name".to_string()))?;
-    // get object from local database
-    let encoded = local_context.sources
-        .get(name)
-        .context(DbOperationFailed)?
-        .ok_or(NoObjectForGivenKey(name.to_string()))?;
-    let mut decoded: Source = bincode::deserialize(&encoded[..])
-        .ok()
-        .context(BinCodeDeserializeFailed)?;
-    decoded.name = name.to_string();
+    let id = matches.value_of("id")
+        .context(MissingRequiredArgument("id".to_string()))?;
+    // get object
+    let object = local_context.portations
+        .get(&id.to_string())
+        .ok_or(NoObjectForGivenKey(id.to_string()))?;
     // print
-    Source::table_print(vec![&decoded]);
+    Portation::table_print(vec![object]);
     Ok(())
 }

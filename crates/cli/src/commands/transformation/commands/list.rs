@@ -31,7 +31,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         })
         .collect();
     let objects = objects_result?;
+    let references: Vec<&Transformation> = objects.iter().collect();
     // print
-    Transformation::table_print(objects);
+    Transformation::table_print(references);
     Ok(())
 }

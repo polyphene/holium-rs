@@ -3,14 +3,14 @@ use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
 use std::str::from_utf8;
-use crate::utils::local::models::shaper::Shaper;
+use crate::utils::local::models::connection::Connection;
 use prettytable::{Table, format};
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("list")
-        .about("List all nodes of this type")
+        .about("List all connections")
 }
 
 /// handler
@@ -18,21 +18,21 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // iterate through stored objects
-    let objects_result: Result<Vec<Shaper>> = local_context.shapers
+    let objects_result: Result<Vec<Connection>> = local_context.connections
         .iter()
-        .map(|o| -> Result<Shaper> {
-            let (name_vec, encoded) = o.context(DbOperationFailed)?;
-            let name = from_utf8(name_vec.as_ref())?;
-            let mut decoded: Shaper = bincode::deserialize(&encoded[..])
+        .map(|o| -> Result<Connection> {
+            let (id_vec, encoded) = o.context(DbOperationFailed)?;
+            let id = from_utf8(id_vec.as_ref())?;
+            let mut decoded: Connection = bincode::deserialize(&encoded[..])
                 .ok()
                 .context(BinCodeDeserializeFailed)?;
-            decoded.name = name.to_string();
+            decoded.id = id.to_string();
             Ok(decoded)
         })
         .collect();
     let objects = objects_result?;
-    let references: Vec<&Shaper> = objects.iter().collect();
+    let references: Vec<&Connection> = objects.iter().collect();
     // print
-    Shaper::table_print(references);
+    Connection::table_print(references);
     Ok(())
 }
