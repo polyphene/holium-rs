@@ -21,6 +21,8 @@ fn main() {
         .setting(AppSettings::ArgRequiredElseHelp)
         .subcommands(vec![
             commands::init::cmd(),
+            commands::source::cmd(),
+            commands::shaper::cmd(),
             commands::transformation::cmd(),
         ])
         .get_matches();
@@ -28,6 +30,8 @@ fn main() {
     // Match subcommands
     let exec_res = match matches.subcommand() {
         ("init", Some(matches)) => commands::init::handle_cmd(matches),
+        ("source", Some(matches)) => commands::source::handle_cmd(matches),
+        ("shaper", Some(matches)) => commands::shaper::handle_cmd(matches),
         ("transformation", Some(matches)) => commands::transformation::handle_cmd(matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };

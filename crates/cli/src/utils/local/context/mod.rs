@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crate::utils::local::models::transformation;
+use crate::utils::local::models;
 use std::path::PathBuf;
 use crate::utils::repo::helpers::get_root_path;
 use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR};
@@ -7,6 +7,8 @@ use crate::utils::repo::paths::{HOLIUM_DIR, LOCAL_DIR};
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
 pub struct LocalContext {
+    pub sources: sled::Tree,
+    pub shapers: sled::Tree,
     pub transformations: sled::Tree,
 }
 
@@ -30,8 +32,12 @@ impl LocalContext {
 
     /// Initialize a [ LocalContext ] object from a [ sled::Db ] object.
     fn from_db(db: sled::Db) -> Result<Self> {
-        let transformations: sled::Tree = db.open_tree(transformation::TREE_NAME)?;
-        transformations.set_merge_operator(transformation::merge);
-        Ok(LocalContext{ transformations })
+        let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
+        sources.set_merge_operator(models::source::merge);
+        let shapers: sled::Tree = db.open_tree(models::shaper::TREE_NAME)?;
+        shapers.set_merge_operator(models::shaper::merge);
+        let transformations: sled::Tree = db.open_tree(models::transformation::TREE_NAME)?;
+        transformations.set_merge_operator(models::transformation::merge);
+        Ok(LocalContext{ sources, shapers, transformations })
     }
 }

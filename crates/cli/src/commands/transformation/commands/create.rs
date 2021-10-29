@@ -8,9 +8,10 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, ObjectAlreadyExistsForGivenKey};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::helpers::prints::print_create_success;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::local::helpers::jsonschema::validate_json_schema;
+use crate::utils::local::helpers::keys::validate_node_name;
+use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -40,14 +41,12 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
                 .required(true)
                 .takes_value(true)
                 .value_name("JSON-SCHEMA-IN")
-                .short("i")
                 .long("json-schema-in"),
             Arg::with_name("json-schema-out")
                 .help("JSON Schema of the output parameter")
                 .required(true)
                 .takes_value(true)
                 .value_name("JSON-SCHEMA-OUT")
-                .short("o")
                 .long("json-schema-out"),
         ])
 }
@@ -71,6 +70,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     if local_context.transformations.contains_key(name).context(DbOperationFailed)? {
         return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
     }
+    // validate the node name
+    validate_node_name(name)?;
     // validate the bytecode file path
     let bytecode_path = PathBuf::from(bytecode_path_os_string);
     let bytecode = read_all_wasm_module(&bytecode_path)?;
