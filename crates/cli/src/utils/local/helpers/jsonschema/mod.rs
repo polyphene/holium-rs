@@ -7,7 +7,7 @@ use serde_json::{json, Map};
 
 lazy_static::lazy_static! {
     static ref META_SCHEMA: JSONSchema = {
-        let json_meta_schema: Value = serde_json::from_str(include_str!("./assets/meta_schema_draft7.json"))
+        let json_meta_schema: Value = serde_json::from_str(include_str!("./assets/core-2020-12.schema.json"))
             .expect("invalid core JSON meta schema");
         JSONSchema::compile(&json_meta_schema)
             .expect("invalid core JSON meta schema")
