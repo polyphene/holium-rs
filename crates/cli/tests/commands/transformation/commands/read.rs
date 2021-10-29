@@ -10,6 +10,8 @@ const TRANSFORMATION_HANDLE: &'static str = "helloWorld";
 
 const SOUND_BYTECODE: &'static str = "import.wasm";
 
+const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
+
 fn bytecode_path(transformation_filename: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -105,8 +107,8 @@ fn can_read_transformation() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert.success();

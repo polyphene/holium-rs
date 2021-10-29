@@ -10,6 +10,8 @@ const TRANSFORMATION_HANDLE: &'static str = "helloWorld";
 
 const SOUND_BYTECODE: &'static str = "import.wasm";
 
+const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
+
 fn bytecode_path(transformation_filename: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -83,8 +85,8 @@ fn can_list_with_transformation() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert.success();
@@ -96,7 +98,23 @@ fn can_list_with_transformation() {
         .arg("transformation")
         .arg("list")
         .assert();
+
     assert
         .success()
         .stdout(predicate::str::contains(TRANSFORMATION_NAME));
+
+    //Read to verify elements
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("read")
+        .arg(TRANSFORMATION_NAME)
+        .assert();
+
+    assert
+        .success()
+        .stdout(predicate::str::contains(TRANSFORMATION_HANDLE))
+        .stdout(predicate::str::contains("141 B"))
+        .stdout(predicate::str::contains("\"type\": \"string\""));
 }

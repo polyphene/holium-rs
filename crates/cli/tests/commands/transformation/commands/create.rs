@@ -12,6 +12,8 @@ const TRANSFORMATION_HANDLE: &'static str = "helloWorld";
 const SOUND_BYTECODE: &'static str = "import.wasm";
 const CORRUPTED_BYTECODE: &'static str = "import_corrupted.wasm";
 
+const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
+
 fn bytecode_path(transformation_filename: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -70,8 +72,8 @@ fn cannot_create_transformation_outside_repo() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert
@@ -94,7 +96,7 @@ fn cannot_create_transformation_without_any_positional_arg() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("bytecode"));
+        .stderr(predicate::str::contains("--bytecode"));
 }
 
 #[test]
@@ -112,9 +114,9 @@ fn cannot_create_transformation_without_bytecode() {
         .arg("--handle")
         .arg(TRANSFORMATION_HANDLE)
         .arg("--json-schema-in")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .arg("--json-schema-out")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .assert();
     // check output
     assert
@@ -140,9 +142,9 @@ fn cannot_create_transformation_without_name() {
         .arg("--bytecode")
         .arg(bytecode_path)
         .arg("--json-schema-in")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .arg("--json-schema-out")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .assert();
     // check output
     assert.failure().stderr(predicate::str::contains("<NAME>"));
@@ -165,9 +167,9 @@ fn cannot_create_transformation_without_handle() {
         .arg("--bytecode")
         .arg(bytecode_path)
         .arg("--json-schema-in")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .arg("--json-schema-out")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .assert();
     // check output
     assert
@@ -194,7 +196,7 @@ fn cannot_create_transformation_without_json_schema_in() {
         .arg("--bytecode")
         .arg(bytecode_path)
         .arg("--json-schema-out")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .assert();
     // check output
     assert.failure().stderr(predicate::str::contains(
@@ -221,7 +223,7 @@ fn cannot_create_transformation_without_json_schema_out() {
         .arg("--bytecode")
         .arg(bytecode_path)
         .arg("--json-schema-in")
-        .arg("{\"type\": \"string\"}")
+        .arg(JSON_SCHEMA)
         .assert();
     // check output
     assert.failure().stderr(predicate::str::contains(
@@ -240,8 +242,8 @@ fn cannot_create_transformation_which_bytecode_lacks_wasm_magic_number() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         CORRUPTED_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert
@@ -261,7 +263,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_in() {
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
         "{\"type\": \"integer\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
     );
     // check output
     assert
@@ -280,7 +282,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_out() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
         "{\"type\": \"integer\"}",
     );
     // check output
@@ -300,11 +302,26 @@ fn can_create_transformation() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert.success();
+
+    //Read to verify elements
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("read")
+        .arg(TRANSFORMATION_NAME)
+        .assert();
+
+    assert
+        .success()
+        .stdout(predicate::str::contains(TRANSFORMATION_HANDLE))
+        .stdout(predicate::str::contains("141 B"))
+        .stdout(predicate::str::contains("\"type\": \"string\""));
 }
 
 #[test]
@@ -318,8 +335,8 @@ fn can_create_transformation_with_same_options_but_different_name() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert.success();
@@ -330,8 +347,8 @@ fn can_create_transformation_with_same_options_but_different_name() {
         TRANSFORMATION_ALTERNATIVE_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"string\"}",
-        "{\"type\": \"string\"}",
+        JSON_SCHEMA,
+        JSON_SCHEMA,
     );
     // check output
     assert.success();
