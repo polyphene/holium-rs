@@ -9,14 +9,15 @@ use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 
-pub const TREE_NAME: &[u8] = b"source";
+pub const TREE_NAME: &[u8] = b"connection";
 
 #[derive(Serialize, Deserialize, OptionalStruct)]
 #[optional_derive(Serialize, Deserialize)]
-pub struct Source {
+pub struct Connection {
     #[serde(skip)]
-    pub name: String,
-    pub json_schema: String,
+    pub id: String,
+    pub tail_selector: String,
+    pub head_selector: String,
 }
 
 pub fn merge(
@@ -27,11 +28,12 @@ pub fn merge(
     match old_value {
         None => Some(Vec::from(merged_bytes)),
         Some(old_bytes) => {
-            let old_decoded: Source = bincode::deserialize(&old_bytes[..]).unwrap();
-            let merged_decoded: OptionalSource = bincode::deserialize(&merged_bytes[..]).unwrap();
-            let new_decoded = Source {
-                name: merged_decoded.name.unwrap_or_else(|| old_decoded.name.clone()),
-                json_schema: merged_decoded.json_schema.unwrap_or_else(|| old_decoded.json_schema.clone()),
+            let old_decoded: Connection = bincode::deserialize(&old_bytes[..]).unwrap();
+            let merged_decoded: OptionalConnection = bincode::deserialize(&merged_bytes[..]).unwrap();
+            let new_decoded = Connection {
+                id: merged_decoded.id.unwrap_or_else(|| old_decoded.id.clone()),
+                tail_selector: merged_decoded.tail_selector.unwrap_or_else(|| old_decoded.tail_selector.clone()),
+                head_selector: merged_decoded.head_selector.unwrap_or_else(|| old_decoded.head_selector.clone()),
             };
             let new_encoded = bincode::serialize(&new_decoded)
                 .context(BinCodeSerializeFailed).ok()?;
@@ -40,18 +42,20 @@ pub fn merge(
     }
 }
 
-impl PrintableModel for Source {
+impl PrintableModel for Connection {
     fn title_row() -> Row {
         row![
-            b->"NAME",
-            "JSON Schema",
+            b->"ID",
+            "TAIL SELECTOR (JSON Schema)",
+            "HEAD SELECTOR (JSON Schema)",
         ]
     }
 
     fn object_to_row(&self) -> Row {
         row![
-            b->self.name,
-            shorten_prettify_json_literal(&self.json_schema),
+            b->self.id,
+            shorten_prettify_json_literal(&self.tail_selector),
+            shorten_prettify_json_literal(&self.head_selector),
         ]
     }
 }

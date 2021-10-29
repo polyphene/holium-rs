@@ -1,3 +1,5 @@
+pub mod helpers;
+
 use anyhow::Result;
 use crate::utils::local::models;
 use std::path::PathBuf;
@@ -10,6 +12,7 @@ pub struct LocalContext {
     pub sources: sled::Tree,
     pub shapers: sled::Tree,
     pub transformations: sled::Tree,
+    pub connections: sled::Tree,
 }
 
 impl LocalContext {
@@ -38,6 +41,8 @@ impl LocalContext {
         shapers.set_merge_operator(models::shaper::merge);
         let transformations: sled::Tree = db.open_tree(models::transformation::TREE_NAME)?;
         transformations.set_merge_operator(models::transformation::merge);
-        Ok(LocalContext{ sources, shapers, transformations })
+        let connections: sled::Tree = db.open_tree(models::connection::TREE_NAME)?;
+        connections.set_merge_operator(models::connection::merge);
+        Ok(LocalContext{ sources, shapers, transformations, connections })
     }
 }
