@@ -81,6 +81,22 @@ fn help_available() {
 }
 
 #[test]
+fn cannot_delete_transformation_without_name() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to delete transformation without name
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("delete")
+        .assert();
+    // check output
+    assert.failure().stderr(predicate::str::contains("<NAME>"));
+}
+
+#[test]
 fn cannot_delete_non_existent_transformation() {
     // initialize a repository
     let repo = setup_repo();
