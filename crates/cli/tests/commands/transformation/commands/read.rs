@@ -6,7 +6,6 @@ use assert_cmd::Command;
 use predicates::prelude::predicate;
 
 const TRANSFORMATION_NAME: &'static str = "import_transformation";
-const TRANSFORMATION_ALTERNATIVE_NAME: &'static str = "alternative_transformation";
 const TRANSFORMATION_HANDLE: &'static str = "helloWorld";
 
 const SOUND_BYTECODE: &'static str = "import.wasm";
