@@ -58,6 +58,16 @@ fn build_transformation_delete_cmd(repo_path: &Path, transformation_name: &str) 
     assert
 }
 
+fn build_transformation_list_cmd(repo_path: &Path) -> Assert {
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("list")
+        .assert();
+    assert
+}
+
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
@@ -104,4 +114,11 @@ fn can_delete_transformation() {
     let assert = build_transformation_delete_cmd(repo_path, TRANSFORMATION_NAME);
     // check output
     assert.success();
+
+    //list to check delete worked
+    let assert = build_transformation_list_cmd(repo_path);
+    // check output
+    assert
+        .success()
+        .stdout(predicate::str::contains("no object in the list"));
 }
