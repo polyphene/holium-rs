@@ -1,10 +1,10 @@
 //! Helper methods related to JSON schema fields of local Holium objects.
 
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
+use ellipse::Ellipse;
 use jsonschema::JSONSchema;
 use serde_json::value::Value;
 use serde_json::{json, Map};
-use ellipse::Ellipse;
 
 lazy_static::lazy_static! {
     static ref META_SCHEMA: JSONSchema = {
@@ -43,9 +43,10 @@ enum Error {
 /// Holium objects.
 pub fn validate_json_schema(literal: &str) -> Result<()> {
     // parse the string of data into serde_json::Value
-    let schema: Value = serde_json::from_str(literal)?;
+    let schema: Value = serde_json::from_str(literal).context(Error::SchemaShouldBeJsonObject)?;
     // validate it against JSON schema meta schema
-    META_SCHEMA.validate(&schema)
+    META_SCHEMA
+        .validate(&schema)
         .ok()
         .context(Error::InvalidJsonSchema)?;
     // recursively check that all expected fields are present in the schema for it to be used in the
@@ -60,18 +61,13 @@ fn check_expected_fields(schema: &Value) -> Result<()> {
     // check that the value is an object
     let schema_map = match schema {
         Value::Object(schema_map) => schema_map,
-        _ => {
-            return Err(Error::SchemaShouldBeJsonObject.into())
-        }
+        _ => return Err(Error::SchemaShouldBeJsonObject.into()),
     };
     // check for the presence of a `type` field
-    let type_value = schema_map.get("type")
-        .ok_or(Error::MissingTypeField)?;
+    let type_value = schema_map.get("type").ok_or(Error::MissingTypeField)?;
     let type_name = match type_value {
-        Value::String( type_name) => type_name,
-        _ => {
-            return Err(Error::TypeFieldShouldHoldStringValue.into())
-        }
+        Value::String(type_name) => type_name,
+        _ => return Err(Error::TypeFieldShouldHoldStringValue.into()),
     };
     // match scalar and recursive types
     match type_name.as_str() {
@@ -84,17 +80,17 @@ fn check_expected_fields(schema: &Value) -> Result<()> {
 
 fn check_expected_fields_in_object_typed_value(schema_map: &Map<String, Value>) -> Result<()> {
     // check for the presence of a `properties` field
-    let properties_value = schema_map.get("properties")
+    let properties_value = schema_map
+        .get("properties")
         .ok_or(Error::MissingPropertiesField)?;
     let properties_map = match properties_value {
-        Value::Object( properties_map) => properties_map,
-        _ => {
-            return Err(Error::PropertiesFieldShouldHoldObjectValue.into())
-        }
+        Value::Object(properties_map) => properties_map,
+        _ => return Err(Error::PropertiesFieldShouldHoldObjectValue.into()),
     };
     // recursively check properties' schemata
     let properties: Vec<&Value> = properties_map.values().collect();
-    properties.into_iter()
+    properties
+        .into_iter()
         .map(|v| check_expected_fields(v))
         .collect()
 }
@@ -103,23 +99,23 @@ fn check_expected_fields_in_array_typed_value(schema_map: &Map<String, Value>) -
     // check for the presence of an `items` or `prefixItems` field
     if let Some(items_value) = schema_map.get("items") {
         // recursively check the items' schema
-        if !items_value.is_object() {   // this test may run twice (here and in the recursive call)
-            return Err(Error::ItemsFieldShouldHoldObjectValue.into())
+        if !items_value.is_object() {
+            // this test may run twice (here and in the recursive call)
+            return Err(Error::ItemsFieldShouldHoldObjectValue.into());
         }
         check_expected_fields(items_value)
     } else if let Some(prefix_items_value) = schema_map.get("prefixItems") {
         // recursively check the items' schemata
         let prefix_items = match prefix_items_value {
-            Value::Array( prefix_items) => prefix_items,
-            _ => {
-                return Err(Error::PrefixItemsFieldShouldHoldArrayValue.into())
-            }
+            Value::Array(prefix_items) => prefix_items,
+            _ => return Err(Error::PrefixItemsFieldShouldHoldArrayValue.into()),
         };
-        prefix_items.into_iter()
+        prefix_items
+            .into_iter()
             .map(|v| check_expected_fields(v))
             .collect()
     } else {
-        return Err(Error::MissingItemsField.into())
+        return Err(Error::MissingItemsField.into());
     }
 }
 
