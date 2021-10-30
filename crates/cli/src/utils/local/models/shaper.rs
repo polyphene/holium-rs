@@ -7,7 +7,7 @@ use serde_json;
 
 use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
-use crate::utils::local::helpers::jsonschema::json_schema_string_to_short_string;
+use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 
 pub const TREE_NAME: &[u8] = b"shaper";
 
@@ -51,7 +51,7 @@ impl PrintableModel for Shaper {
     fn object_to_row(&self) -> Row {
         row![
             b->self.name,
-            json_schema_string_to_short_string(&self.json_schema),
+            shorten_prettify_json_literal(&self.json_schema),
         ]
     }
 }

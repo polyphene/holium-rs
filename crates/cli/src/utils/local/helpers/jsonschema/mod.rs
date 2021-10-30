@@ -118,18 +118,3 @@ fn check_expected_fields_in_array_typed_value(schema_map: &Map<String, Value>) -
         return Err(Error::MissingItemsField.into());
     }
 }
-
-/// Shorten a JSON Schema string representation
-pub fn json_schema_string_to_short_string(json_schema_string: &str) -> String {
-    // prettify using serde_json
-    let json_value_result: Result<serde_json::Value, _> = serde_json::from_str(json_schema_string);
-    match json_value_result {
-        Err(_) => "".to_string(),
-        Ok(json_value) => {
-            let prettified_string = serde_json::to_string_pretty(&json_value).unwrap_or_default();
-            let prettified = prettified_string.as_str();
-            // truncate string
-            prettified.truncate_ellipse(256).to_string()
-        }
-    }
-}

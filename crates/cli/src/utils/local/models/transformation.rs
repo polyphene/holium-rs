@@ -9,7 +9,7 @@ use serde_json;
 
 use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
-use crate::utils::local::helpers::jsonschema::json_schema_string_to_short_string;
+use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 
 pub const TREE_NAME: &[u8] = b"transformation";
 
@@ -64,8 +64,8 @@ impl PrintableModel for Transformation {
             b->self.name,
             self.handle,
             self.bytecode.len().file_size(file_size_opts::CONVENTIONAL).unwrap_or("".to_string()),
-            json_schema_string_to_short_string(&self.json_schema_in),
-            json_schema_string_to_short_string(&self.json_schema_out),
+            shorten_prettify_json_literal(&self.json_schema_in),
+            shorten_prettify_json_literal(&self.json_schema_out),
         ]
     }
 }

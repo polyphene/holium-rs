@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Holium selector schema",
+  "description": "Holium selectors are expressions that describe a traversal over indexes of Holium data objects. The Holium selector schema effectively is a sub-schema of IPLD selectors. Reference: https://ipld.io/specs/selectors/",
+  "definitions": {
+    "matcher": {
+      "type": "object",
+      "description": "Matcher marks a node to be included in the \"result\" set.",
+      "properties": {
+        ".": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "description": "labels can be used to match multiple different structures in one selection.",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "."
+      ],
+      "additionalProperties": false
+    },
+    "exploreIndex": {
+      "type": "object",
+      "description": "ExploreIndex traverses a specific index in a list, and applies a next selector to the reached node.",
+      "properties": {
+        "i": {
+          "type": "object",
+          "properties": {
+            "i": {
+              "title": "index",
+              "type": "number"
+            },
+            ">": {
+              "title": "next",
+              "$ref": "#"
+            }
+          },
+          "required": [
+            "i",
+            ">"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "i"
+      ],
+      "additionalProperties": false
+    },
+    "exploreRange": {
+      "type": "object",
+      "description": "ExploreRange traverses a list, and for each element in the range specified, will apply a next selector to those reached nodes.",
+      "properties": {
+        "r": {
+          "type": "object",
+          "properties": {
+            "^": {
+              "title": "start",
+              "type": "number"
+            },
+            "$": {
+              "title": "end",
+              "type": "number"
+            },
+            ">": {
+              "title": "next",
+              "$ref": "#"
+            }
+          },
+          "required": [
+            "^",
+            "$",
+            ">"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "r"
+      ],
+      "additionalProperties": false
+    },
+    "exploreUnion": {
+      "type": "object",
+      "description": "ExploreUnion allows selection to continue with two or more distinct selectors while exploring the same tree of data.",
+      "properties": {
+        "|": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": [
+        "|"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/definitions/matcher"
+    },
+    {
+      "$ref": "#/definitions/exploreIndex"
+    },
+    {
+      "$ref": "#/definitions/exploreRange"
+    },
+    {
+      "$ref": "#/definitions/exploreUnion"
+    }
+  ]
+}
