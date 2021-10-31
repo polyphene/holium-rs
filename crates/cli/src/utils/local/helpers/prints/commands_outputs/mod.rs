@@ -61,9 +61,9 @@ mod test {
         let awaited_msg = format!("object updated: {}\n", &key);
 
         // pass fake stdout when calling when testing
-        print_create_success(&mut stdout, key).unwrap();
-        println!("{:?}", String::from_utf8(stdout));
-        //assert_eq!(awaited_msg.as_bytes(), stdout);
+        print_update_success(&mut stdout, key).unwrap();
+
+        assert_eq!(awaited_msg.as_bytes(), stdout);
     }
 
     #[test]
@@ -73,8 +73,8 @@ mod test {
         let awaited_msg = format!("object deleted: {}\n", &key);
 
         // pass fake stdout when calling when testing
-        print_create_success(&mut stdout, key).unwrap();
-        println!("{:?}", String::from_utf8(stdout));
-        //assert_eq!(awaited_msg.as_bytes(), stdout);
+        print_delete_success(&mut stdout, key).unwrap();
+        
+        assert_eq!(awaited_msg.as_bytes(), stdout);
     }
 }
