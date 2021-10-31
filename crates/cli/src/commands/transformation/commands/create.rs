@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
@@ -94,6 +95,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(DbOperationFailed)?
         .ok()
         .context(anyhow!("cannot create transformation with name: {}", name))?;
-    print_create_success(name);
+    print_create_success(&mut std::io::stdout(), name)?;
     Ok(())
 }

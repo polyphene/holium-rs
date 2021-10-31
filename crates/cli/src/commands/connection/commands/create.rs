@@ -113,6 +113,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(DbOperationFailed)?
         .ok()
         .context(anyhow!("cannot create connection: {}", id))?;
-    print_create_success(id);
+    print_create_success(&mut std::io::stdout(),id)?;
     Ok(())
 }

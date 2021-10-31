@@ -64,6 +64,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(BinCodeSerializeFailed)?;
     local_context.connections.merge(id, merge_connection_encoded)
         .context(DbOperationFailed)?;
-    print_update_success(id);
+    print_update_success(&mut std::io::stdout(),id)?;
     Ok(())
 }

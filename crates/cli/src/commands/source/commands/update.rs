@@ -52,6 +52,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(BinCodeSerializeFailed)?;
     local_context.sources.merge(name, merge_source_encoded)
         .context(DbOperationFailed)?;
-    print_update_success(name);
+    print_update_success(&mut std::io::stdout(), name);
     Ok(())
 }

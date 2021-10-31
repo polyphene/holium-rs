@@ -31,6 +31,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // print
-    print_delete_success(name);
+    print_delete_success(&mut std::io::stdout(), name)?;
     Ok(())
 }
