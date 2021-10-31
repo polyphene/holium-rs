@@ -16,6 +16,8 @@ lazy_static::lazy_static! {
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
+    #[error("invalid string can not be passed to json")]
+    StringNotParsableToJSON,
     #[error("invalid json schema")]
     InvalidJsonSchema,
     #[error("a json schema should be a json object")]
@@ -42,7 +44,7 @@ enum Error {
 /// Holium objects.
 pub fn validate_json_schema(literal: &str) -> Result<()> {
     // parse the string of data into serde_json::Value
-    let schema: Value = serde_json::from_str(literal)?;
+    let schema: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
     // validate it against JSON schema meta schema
     META_SCHEMA.validate(&schema)
         .ok()
@@ -119,5 +121,207 @@ fn check_expected_fields_in_array_typed_value(schema_map: &Map<String, Value>) -
             .collect()
     } else {
         return Err(Error::MissingItemsField.into())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    /*******************************************
+     * Validate expected fields
+     *******************************************/
+
+    #[test]
+    fn cannot_validate_if_not_object() {
+        let no_type_json = json!("only string");
+
+        let res = check_expected_fields(&no_type_json);
+
+        assert!(res.is_err());
+        assert!(res.err().unwrap().to_string().contains("a json schema should be a json object"));
+    }
+
+    #[test]
+    fn cannot_validate_if_type_is_not_string() {
+        let no_type_json = json!({ "type": 0 });
+
+        let res = check_expected_fields(&no_type_json);
+
+        assert!(res.is_err());
+        assert!(res.err().unwrap().to_string().contains("type field value should be a string in a json schema"));
+    }
+
+    #[test]
+    fn cannot_validate_if_type_bad_value() {
+        let non_valid_type = "non_valid";
+        let no_type_json = json!({ "type": non_valid_type });
+
+        let res = check_expected_fields(&no_type_json);
+
+        assert!(res.is_err());
+        assert!(
+            res.err().unwrap()
+                .to_string()
+                .contains(format!("invalid json schema type field value: {}", non_valid_type).as_str())
+        );
+    }
+
+    #[test]
+    fn can_validate_with_type_non_recursive() {
+        let valid_types = vec!["null", "boolean", "number", "string"];
+
+        for valid_type in valid_types {
+            let json = json!({ "type": valid_type });
+
+            check_expected_fields(&json).unwrap();
+        }
+    }
+
+    #[test]
+    fn can_validate_with_type_recursive() {
+        // Validate on object
+        let object_json = json!({ "type": "object", "properties": { "id": { "type": "string" }}});
+
+        check_expected_fields(&object_json).unwrap();
+
+        // Validate on array
+        let object_json = json!({ "type": "array", "prefixItems": [{ "type": "string" }]});
+
+        check_expected_fields(&object_json).unwrap();
+    }
+
+    /*******************************************
+     * Validate expected fields on object type
+     *******************************************/
+
+    #[test]
+    fn cannot_validate_type_object_if_no_properties() {
+        let non_valid_json = json!({ "type": "object" });
+
+        let res = match &non_valid_json {
+            Value::Object(map) => check_expected_fields_in_object_typed_value(map),
+            _ => unreachable!()
+        };
+
+        assert!(res.is_err());
+        assert!(res.err().unwrap().to_string().contains("properties field missing in the json schema"));
+    }
+
+    #[test]
+    fn cannot_validate_type_object_if_properties_is_not_object() {
+        let non_valid_json = json!({ "type": "object", "properties": "string" });
+
+        let res = match &non_valid_json {
+            Value::Object(map) => check_expected_fields_in_object_typed_value(map),
+            _ => unreachable!()
+        };
+
+        assert!(res.is_err());
+        assert!(
+            res.err().unwrap()
+                .to_string()
+                .contains("properties field value should be an object in a json schema")
+        );
+    }
+
+    #[test]
+    fn can_validate_proper_object() {
+        let non_valid_json = json!({ "type": "object", "properties": { "id": {"type": "string"}} });
+
+        let res = match &non_valid_json {
+            Value::Object(map) => check_expected_fields_in_object_typed_value(map).unwrap(),
+            _ => unreachable!()
+        };
+    }
+
+
+    /*******************************************
+     * Validate expected fields on array
+     *******************************************/
+
+    #[test]
+    fn cannot_validate_if_no_items_or_prefix_items_in_schema() {
+        let invalid_json = json!({"type": "array"});
+
+        let res = match &invalid_json {
+            Value::Object(map) => check_expected_fields_in_array_typed_value(map),
+            _ => unreachable!()
+        };
+
+        assert!(res.is_err());
+        assert!(
+            res.err().unwrap()
+                .to_string()
+                .contains("items or prefixItems field missing in the json schema")
+        );
+    }
+
+    #[test]
+    fn cannot_validate_if_items_not_object() {
+        let invalid_json = json!({"type": "array", "items": "string"});
+
+        let res = match &invalid_json {
+            Value::Object(map) => check_expected_fields_in_array_typed_value(map),
+            _ => unreachable!()
+        };
+
+        assert!(res.is_err());
+        assert!(
+            res.err().unwrap()
+                .to_string()
+                .contains("items field value should be an object in a json schema")
+        );
+    }
+
+    #[test]
+    fn cannot_validate_if_prefix_items_not_array() {
+        let invalid_json = json!({"type": "array", "prefixItems": "string"});
+
+        let res = match &invalid_json {
+            Value::Object(map) => check_expected_fields_in_array_typed_value(map),
+            _ => unreachable!()
+        };
+
+        assert!(res.is_err());
+        assert!(
+            res.err().unwrap()
+                .to_string()
+                .contains("prefixItems field value should be an array in a json schema")
+        );
+    }
+
+    #[test]
+    fn can_validate_items() {
+        let invalid_json = json!({"type": "array", "items": {"type": "string"}});
+
+        let res = match &invalid_json {
+            Value::Object(map) => check_expected_fields_in_array_typed_value(map).unwrap(),
+            _ => unreachable!()
+        };
+    }
+
+    #[test]
+    fn can_validate_prefix_items() {
+        let invalid_json = json!({"type": "array", "prefixItems": [{"type": "string"}]});
+
+        let res = match &invalid_json {
+            Value::Object(map) => check_expected_fields_in_array_typed_value(map).unwrap(),
+            _ => unreachable!()
+        };
+    }
+
+    /*******************************************
+     * Validate json schema
+     *******************************************/
+
+    #[test]
+    fn cannot_validate_non_json_string() {
+        let non_json = "i am not a json";
+
+        let res = validate_json_schema(non_json);
+
+        assert!(res.is_err());
+        assert!(res.err().unwrap().to_string().contains("invalid string can not be passed to json"));
     }
 }
