@@ -16,3 +16,30 @@ pub fn shorten_prettify_json_literal(json_string: &str) -> String {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn cannot_prettify_non_json() {
+        let string = "non_json";
+
+        // Try to format a no JSON str
+        let result_string = shorten_prettify_json_literal(string);
+
+        assert_eq!(String::new(), result_string);
+    }
+
+    #[test]
+    fn can_prettify_json() {
+        let string = "{\"type\": \"array\", \"prefixItems\": [{\"type\": \"string\"}]}";
+        // We add indentation and return to line to have a pretty formatting
+        let expected_result = "{\n  \"prefixItems\": [\n    {\n      \"type\": \"string\"\n    }\n  ],\n  \"type\": \"array\"\n}";
+
+        // Format JSON
+        let result_string = shorten_prettify_json_literal(string);
+
+        assert_eq!(expected_result, result_string.as_str());
+    }
+}
