@@ -33,6 +33,7 @@ mod test {
 
     #[test]
     fn can_prettify_json() {
+        // Non prettify JSON
         let string = "{\"type\": \"array\", \"prefixItems\": [{\"type\": \"string\"}]}";
         // We add indentation and return to line to have a pretty formatting
         let expected_result = "{\n  \"prefixItems\": [\n    {\n      \"type\": \"string\"\n    }\n  ],\n  \"type\": \"array\"\n}";
