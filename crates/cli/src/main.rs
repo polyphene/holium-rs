@@ -26,6 +26,7 @@ fn main() {
             commands::transformation::cmd(),
             commands::connection::cmd(),
             commands::portation::cmd(),
+            commands::project::cmd(),
         ])
         .get_matches();
 
@@ -37,6 +38,7 @@ fn main() {
         ("transformation", Some(matches)) => commands::transformation::handle_cmd(matches),
         ("connection", Some(matches)) => commands::connection::handle_cmd(matches),
         ("portation", Some(matches)) => commands::portation::handle_cmd(matches),
+        ("project", Some(matches)) => commands::project::handle_cmd(matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 

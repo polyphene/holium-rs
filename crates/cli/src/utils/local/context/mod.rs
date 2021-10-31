@@ -1,13 +1,17 @@
-pub mod helpers;
-
-use anyhow::{anyhow, Result, Context};
-use crate::utils::local::models;
-use std::path::PathBuf;
-use crate::utils::repo::helpers::get_root_path;
-use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
-use crate::utils::repo::models::portation::Portations;
-use sled::Db;
 use std::fs::File;
+use std::path::PathBuf;
+
+use anyhow::{anyhow, Context, Result};
+use sled::Db;
+
+use crate::utils::local::models;
+use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
+use crate::utils::repo::helpers::get_root_path;
+use crate::utils::repo::models::portation::Portations;
+use crate::utils::local::context::helpers::NodeType;
+
+pub mod helpers;
+pub mod constants;
 
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
@@ -53,6 +57,16 @@ impl LocalContext {
         // Get portations handler from the configuration file
         let portations = Portations::from_path(portations_file_path)?;
         // Return the context handler
-        Ok(LocalContext{ sources, shapers, transformations, connections, portations })
+        Ok(LocalContext { sources, shapers, transformations, connections, portations })
+    }
+
+    /// For all fields of a local context, select the ones related to nodes of a [ PipelineDag ] and
+    /// tuple them with the related [ NodeType ].
+    pub fn get_nodes_tree_type_tuples(&self) -> Vec<(&sled::Tree, NodeType)> {
+        vec![
+            (&self.sources, NodeType::source),
+            (&self.shapers, NodeType::shaper),
+            (&self.transformations, NodeType::transformation),
+        ]
     }
 }

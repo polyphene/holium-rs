@@ -18,3 +18,9 @@ pub fn print_update_success(key: &str) {
 pub fn print_delete_success(key: &str) {
     println!("{}", style(format!("object deleted: {}", style(key).bold())).green())
 }
+
+/// Print success message for methods checking the health of the transformation pipeline currently
+/// in the local area.
+pub fn print_pipeline_health_success() {
+    println!("{}", style("current project holds a healthy transformation pipeline").green())
+}
