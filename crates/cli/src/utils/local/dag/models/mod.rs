@@ -11,10 +11,15 @@ use crate::utils::local::context::helpers::{build_node_typed_name, NodeType, par
 #[derive(thiserror::Error, Debug)]
 /// Errors related to the [ PipelineDag ] structure.
 pub(crate) enum Error {
-    #[error("a transformation pipeline graph cannot hold any cycle")]
-    GraphIsCyclic,
+    /// This error is thrown when an operation on a [ PipelineDag ] fails for internal reasons.
+    #[error("failed to operate on the pipeline graph")]
+    DagOperationFailed,
+    #[error("a transformation pipeline graph cannot hold any cycle. Hint: {0} is part of a cycle.")]
+    GraphIsCyclic(String),
     #[error("all nodes of a transformation pipeline should be connected")]
     UnconnectedGraphNodes,
+    #[error("connection between unknown nodes: {0}")]
+    ConnectionBetweenUnknownNodes(String),
 }
 
 /// Structure holing information useful to the management of a transformation pipeline as a DAG
@@ -54,10 +59,10 @@ impl PipelineDag {
             // get the vertices' node indices
             let tail_index = key_mapping
                 .get_by_left(tail_typed_name)
-                .ok_or(anyhow!("NOT necessarily internal err, todo"))?;
+                .ok_or(Error::ConnectionBetweenUnknownNodes(tail_typed_name.to_string()))?;
             let head_index = key_mapping
                 .get_by_left(head_typed_name)
-                .ok_or(anyhow!("NOT necessarily internal err, todo"))?;
+                .ok_or(Error::ConnectionBetweenUnknownNodes(head_typed_name.to_string()))?;
             // add the edge to the graph
             graph.add_edge(*tail_index, *head_index, ());
         }
@@ -68,8 +73,15 @@ impl PipelineDag {
     /// Check if a [ PipelineDag ] is healthy, meaning it holds one connected and acyclic graph.
     /// In case it is not, return an error.
     pub fn is_valid_pipeline(&self) -> Result<()> {
-        if algo::is_cyclic_directed(&self.graph) {
-            return Err(Error::GraphIsCyclic.into());
+        match algo::toposort(&self.graph, None) {
+            Ok(_) => (),
+            Err(cycle) => {
+                // get the name of a node in a cycle
+                let node_id = cycle.node_id();
+                let node_name = self.key_mapping.get_by_right(&node_id)
+                    .ok_or(Error::DagOperationFailed)?;
+                return Err(Error::GraphIsCyclic(node_name.to_string()).into())
+            },
         }
         if algo::connected_components(&self.graph) != 1 {
             // TODO handle in a specific way the case with no node and no component
