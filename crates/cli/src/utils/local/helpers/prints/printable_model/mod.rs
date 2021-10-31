@@ -28,7 +28,7 @@ pub trait PrintableModel: Sized {
     fn object_to_row(&self) -> Row;
 
     /// Print a list of objects into a table.
-    fn table_print(objects: Vec<Self>) {
+    fn table_print(objects: Vec<&Self>) {
         if objects.len() < 1 {
             println!("{}", style("no object in the list").yellow());
             return

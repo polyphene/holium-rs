@@ -6,6 +6,7 @@ use std::str::from_utf8;
 use crate::utils::local::models::transformation::Transformation;
 use prettytable::{Table, format};
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
+use crate::utils::local::context::helpers::db_key_to_str;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -22,16 +23,17 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .iter()
         .map(|o| -> Result<Transformation> {
             let (name_vec, encoded) = o.context(DbOperationFailed)?;
-            let name = from_utf8(name_vec.as_ref())?;
+            let name = db_key_to_str(name_vec)?;
             let mut decoded: Transformation = bincode::deserialize(&encoded[..])
                 .ok()
                 .context(BinCodeDeserializeFailed)?;
-            decoded.name = name.to_string();
+            decoded.name = name;
             Ok(decoded)
         })
         .collect();
     let objects = objects_result?;
+    let references: Vec<&Transformation> = objects.iter().collect();
     // print
-    Transformation::table_print(objects);
+    Transformation::table_print(references);
     Ok(())
 }

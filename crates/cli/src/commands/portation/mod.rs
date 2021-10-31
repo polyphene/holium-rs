@@ -1,4 +1,4 @@
-//! Manipulate shaper nodes.
+//! Manipulate portation objects.
 
 mod commands;
 
@@ -15,8 +15,8 @@ use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, INTERPLANETARY_DIR, P
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("shaper")
-        .about("Manipulate shaper nodes of a pipeline")
+    SubCommand::with_name("portation")
+        .about("Manipulate portations from and to nodes of a pipeline")
         .setting(AppSettings::ArgRequiredElseHelp)
         .subcommand(commands::create::cmd())
         .subcommand(commands::read::cmd())

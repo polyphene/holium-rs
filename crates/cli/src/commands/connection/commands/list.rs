@@ -2,10 +2,10 @@ use anyhow::{Result, Context};
 use clap::{App, SubCommand, Arg, ArgMatches};
 use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
-use std::str::from_utf8;
 use crate::utils::local::models::connection::Connection;
 use prettytable::{Table, format};
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
+use crate::utils::local::context::helpers::db_key_to_str;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -22,7 +22,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .iter()
         .map(|o| -> Result<Connection> {
             let (id_vec, encoded) = o.context(DbOperationFailed)?;
-            let id = from_utf8(id_vec.as_ref())?;
+            let id = db_key_to_str(id_vec)?;
             let mut decoded: Connection = bincode::deserialize(&encoded[..])
                 .ok()
                 .context(BinCodeDeserializeFailed)?;
@@ -31,7 +31,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         })
         .collect();
     let objects = objects_result?;
+    let references: Vec<&Connection> = objects.iter().collect();
     // print
-    Connection::table_print(objects);
+    Connection::table_print(references);
     Ok(())
 }
