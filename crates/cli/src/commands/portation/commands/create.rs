@@ -15,6 +15,7 @@ use crate::utils::repo::models::portation::{Portation, PortationFileFormat};
 use crate::utils::local::context::helpers::{validate_pipeline_node_existence, NodeType};
 use crate::utils::local::helpers::selector::validate_selector;
 use crate::utils::repo::helpers::to_relative_path_to_project_root;
+use crate::utils::local::helpers::media_type::validate_mimetype_coherence;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -93,6 +94,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let file_path = to_relative_path_to_project_root(file_path_os_string)?;
     // parse file format
     let file_format = file_format.parse::<PortationFileFormat>().map_err(AnyhowError::msg)?;
+    // validate coherence of file format and file name
+    validate_mimetype_coherence(&file_path, &file_format)?;
     // create new object
     let object = Portation {
         id: id.clone(),
