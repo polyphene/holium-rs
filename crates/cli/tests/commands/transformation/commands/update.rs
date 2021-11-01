@@ -39,7 +39,7 @@ fn can_update_transformation_without_any_positional_arg() {
     // initialize a repository
     let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
-    
+
     // try to update transformation without positional argument
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
@@ -90,7 +90,7 @@ fn cannot_update_transformation_with_incorrect_json_schema_in() {
         .arg("update")
         .arg(TRANSFORMATION_NAME)
         .arg("--json-schema-in")
-        .arg("{\"type\": \"wrong_type\"}")
+        .arg(NON_VALID_JSON_SCHEMA)
         .assert();
     // check output
     assert
@@ -122,7 +122,7 @@ fn cannot_update_transformation_with_incorrect_json_schema_out() {
         .arg("update")
         .arg(TRANSFORMATION_NAME)
         .arg("--json-schema-out")
-        .arg("{\"type\": \"wrong_type\"}")
+        .arg(NON_VALID_JSON_SCHEMA)
         .assert();
     // check output
     assert

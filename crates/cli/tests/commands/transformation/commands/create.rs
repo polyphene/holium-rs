@@ -218,7 +218,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_in() {
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"wrong_type\"}",
+        NON_VALID_JSON_SCHEMA,
         JSON_SCHEMA,
     );
     // check output
@@ -239,7 +239,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_out() {
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
         JSON_SCHEMA,
-        "{\"type\": \"wrong_type\"}",
+        NON_VALID_JSON_SCHEMA,
     );
     // check output
     assert

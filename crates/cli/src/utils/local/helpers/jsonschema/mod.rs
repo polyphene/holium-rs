@@ -57,24 +57,43 @@ pub fn validate_json_schema(literal: &str) -> Result<()> {
     Ok(())
 }
 
+/// Validate that a JSON literal is a valid JSON Schema, ready to be used as a feature of local
+/// Holium objects. Add one more verification, making sure that the root object is of type `array`
+pub fn validate_transformation_json_schema(literal: &str) -> Result<()> {
+    // parse the string of data into serde_json::Value
+    let schema: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
+    // validate it against JSON schema meta schema
+    META_SCHEMA
+        .validate(&schema)
+        .ok()
+        .context(Error::InvalidJsonSchema)?;
+    // recursively check that all expected fields are present in the schema for it to be used in the
+    // local Holium area
+    check_transformation_expected_fields(&schema)?;
+    Ok(())
+}
+
 /// Check for the presence of fields in a JSON Schema necessary to their use in local Holium objects.
 /// This function fails iff this condition is not satisfied.
 fn check_expected_fields(schema: &Value) -> Result<()> {
-    // check that the value is an object
-    let schema_map = match schema {
-        Value::Object(schema_map) => schema_map,
-        _ => return Err(Error::SchemaShouldBeJsonObject.into()),
-    };
-    // check for the presence of a `type` field
-    let type_value = schema_map.get("type").ok_or(Error::MissingTypeField)?;
-    let type_name = match type_value {
-        Value::String(type_name) => type_name,
-        _ => return Err(Error::TypeFieldShouldHoldStringValue.into()),
-    };
+    // get type field value
+    let (schema_map, type_name) = get_type_field_value(schema)?;
     // match scalar and recursive types
     match type_name.as_str() {
         "null" | "boolean" | "number" | "string" => Ok(()),
         "object" => check_expected_fields_in_object_typed_value(schema_map),
+        "array" => check_expected_fields_in_array_typed_value(schema_map),
+        invalid_type => Err(Error::InvalidTypeFieldValue(invalid_type.to_string()).into()),
+    }
+}
+
+/// Check for a transformation that the base object is an array. Then follows the same pattern as
+/// [check_expected_fields]
+fn check_transformation_expected_fields(schema: &Value) -> Result<()> {
+    // get type field value
+    let (schema_map, type_name) = get_type_field_value(schema)?;
+    // match scalar and recursive types
+    match type_name.as_str() {
         "array" => check_expected_fields_in_array_typed_value(schema_map),
         invalid_type => Err(Error::InvalidTypeFieldValue(invalid_type.to_string()).into()),
     }
@@ -118,5 +137,22 @@ fn check_expected_fields_in_array_typed_value(schema_map: &Map<String, Value>) -
             .collect()
     } else {
         return Err(Error::MissingItemsField.into());
+    }
+}
+
+
+/// Checks that a [serde_json::Value] is a JSON object and returns the value of the `type` field in
+/// it
+fn get_type_field_value(schema: &Value) -> Result<(&Map<String, Value>, &String)> {
+    // check that the value is an object
+    let schema_map = match schema {
+        Value::Object(schema_map) => schema_map,
+        _ => return Err(Error::SchemaShouldBeJsonObject.into()),
+    };
+    // check for the presence of a `type` field
+    let type_value = schema_map.get("type").ok_or(Error::MissingTypeField)?;
+    match type_value {
+        Value::String(type_name) => Ok((schema_map, type_name)),
+        _ => return Err(Error::TypeFieldShouldHoldStringValue.into()),
     }
 }

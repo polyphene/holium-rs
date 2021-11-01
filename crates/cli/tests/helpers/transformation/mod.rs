@@ -18,9 +18,9 @@ pub(crate) const SOUND_BYTECODE: &'static str = "import.wasm";
 pub(crate) const ALTERNATIVE_BYTECODE: &'static str = "alternative_import.wasm";
 pub(crate) const CORRUPTED_BYTECODE: &'static str = "import_corrupted.wasm";
 
-pub(crate) const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
-pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = "{\"type\": \"number\"}";
-
+pub(crate) const JSON_SCHEMA: &'static str = "{\"type\": \"array\", \"items\": {\"type\": \"string\"}}";
+pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = "{\"type\": \"array\", \"items\": {\"type\": \"number\"}}";
+pub(crate) const NON_VALID_JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
 
 /// Same as [setup_repo] but with a transformation already created
 pub(crate) fn setup_repo_with_transformation() -> TempDir {
