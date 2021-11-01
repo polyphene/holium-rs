@@ -23,7 +23,7 @@ fn bytecode_path(transformation_filename: &str) -> PathBuf {
         .join(transformation_filename)
 }
 
-fn build_transformation_add_cmd(
+fn build_transformation_create_cmd(
     repo_path: &Path,
     transformation_name: &str,
     transformation_handle: &str,
@@ -67,7 +67,7 @@ fn cannot_create_transformation_outside_repo() {
     // work in an empty directory
     let temp_dir = assert_fs::TempDir::new().unwrap();
     // try to add transformation
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         temp_dir.path(),
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
@@ -237,7 +237,7 @@ fn cannot_create_transformation_which_bytecode_lacks_wasm_magic_number() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation with corrupted wasm file
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
@@ -257,12 +257,12 @@ fn cannot_create_transformation_with_incorrect_json_schema_in() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation with invalid json schema in
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
-        "{\"type\": \"integer\"}",
+        "{\"type\": \"wrong_type\"}",
         JSON_SCHEMA,
     );
     // check output
@@ -277,13 +277,13 @@ fn cannot_create_transformation_with_incorrect_json_schema_out() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation with invalid json schema out
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
         SOUND_BYTECODE,
         JSON_SCHEMA,
-        "{\"type\": \"integer\"}",
+        "{\"type\": \"wrong_type\"}",
     );
     // check output
     assert
@@ -297,7 +297,7 @@ fn can_create_transformation() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
@@ -330,7 +330,7 @@ fn can_create_transformation_with_same_options_but_different_name() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
@@ -342,7 +342,7 @@ fn can_create_transformation_with_same_options_but_different_name() {
     assert.success();
 
     // try to add same transformation with different name
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_ALTERNATIVE_NAME,
         TRANSFORMATION_HANDLE,

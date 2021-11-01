@@ -23,7 +23,7 @@ fn bytecode_path(transformation_filename: &str) -> PathBuf {
         .join(transformation_filename)
 }
 
-fn build_transformation_add_cmd(
+fn build_transformation_create_cmd(
     repo_path: &Path,
     transformation_name: &str,
     transformation_handle: &str,
@@ -84,7 +84,7 @@ fn can_update_transformation_without_any_positional_arg() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
@@ -114,7 +114,7 @@ fn can_update_transformation() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation
-    let assert = build_transformation_add_cmd(
+    let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
         TRANSFORMATION_HANDLE,
