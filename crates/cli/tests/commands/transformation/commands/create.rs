@@ -248,6 +248,46 @@ fn cannot_create_transformation_with_incorrect_json_schema_out() {
 }
 
 #[test]
+fn cannot_create_transformation_with_non_valid_json_object_in() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation with invalid json schema in
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        "",
+        JSON_SCHEMA,
+    );
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+}
+
+#[test]
+fn cannot_create_transformation_with_non_valid_json_object_out() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation with invalid json schema out
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        JSON_SCHEMA,
+        "",
+    );
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+}
+
+#[test]
 fn can_create_transformation() {
     // initialize a repository
     let repo = setup_repo();

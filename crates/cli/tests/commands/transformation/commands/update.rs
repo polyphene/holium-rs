@@ -132,6 +132,61 @@ fn cannot_update_transformation_with_incorrect_json_schema_out() {
 
 
 #[test]
+fn cannot_update_transformation_with_non_valid_json_object_in() {
+    // initialize a repository
+    let repo = setup_repo_with_transformation();
+    let repo_path = repo.path();
+
+    // try to update transformation with invalid json schema in
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("update")
+        .arg(TRANSFORMATION_NAME)
+        .arg("--json-schema-in")
+        .arg("")
+        .assert();
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+}
+
+#[test]
+fn cannot_update_transformation_with_non_valid_json_object_out() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        JSON_SCHEMA,
+        JSON_SCHEMA,
+    );
+    // check output
+    assert.success();
+    // try to update transformation with invalid json schema out
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("update")
+        .arg(TRANSFORMATION_NAME)
+        .arg("--json-schema-out")
+        .arg("")
+        .assert();
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+}
+
+
+#[test]
 fn can_update_transformation() {
     // initialize a repository
     let repo = setup_repo_with_transformation();
