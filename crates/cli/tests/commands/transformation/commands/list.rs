@@ -35,19 +35,8 @@ fn can_list_with_no_transformation() {
 #[test]
 fn can_list_with_transformation() {
     // initialize a repository
-    let repo = setup_repo();
+    let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
-    // try to add transformation
-    let assert = build_transformation_create_cmd(
-        repo_path,
-        TRANSFORMATION_NAME,
-        TRANSFORMATION_HANDLE,
-        SOUND_BYTECODE,
-        JSON_SCHEMA,
-        JSON_SCHEMA,
-    );
-    // check output
-    assert.success();
 
     // try to list transformation
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();

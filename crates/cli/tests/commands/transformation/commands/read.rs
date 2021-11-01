@@ -6,17 +6,6 @@ use assert_cmd::Command;
 use predicates::prelude::predicate;
 use crate::helpers::transformation::*;
 
-fn build_transformation_read_cmd(repo_path: &Path, transformation_name: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .current_dir(repo_path)
-        .arg("transformation")
-        .arg("read")
-        .arg(transformation_name)
-        .assert();
-    assert
-}
-
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
@@ -57,19 +46,8 @@ fn cannot_read_non_existent_transformation() {
 #[test]
 fn can_read_transformation() {
     // initialize a repository
-    let repo = setup_repo();
+    let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
-    // try to add transformation
-    let assert = build_transformation_create_cmd(
-        repo_path,
-        TRANSFORMATION_NAME,
-        TRANSFORMATION_HANDLE,
-        SOUND_BYTECODE,
-        JSON_SCHEMA,
-        JSON_SCHEMA,
-    );
-    // check output
-    assert.success();
 
     // try to read transformation
     let assert = build_transformation_read_cmd(repo_path, TRANSFORMATION_NAME);

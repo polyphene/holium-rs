@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
+use assert_fs::TempDir;
+use crate::helpers::repo::setup_repo;
 
 /***********************************************************
  * Constants useful to play around transformation testing
@@ -18,6 +20,27 @@ pub(crate) const CORRUPTED_BYTECODE: &'static str = "import_corrupted.wasm";
 
 pub(crate) const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
 pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = "{\"type\": \"number\"}";
+
+
+/// Same as [setup_repo] but with a transformation already created
+pub(crate) fn setup_repo_with_transformation() -> TempDir {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        JSON_SCHEMA,
+        JSON_SCHEMA,
+    );
+    // check output
+    assert.success();
+
+    repo
+}
 
 /// Returns a full path to the wasm bytecode in the test assets for transformations
 pub(crate) fn bytecode_path(transformation_filename: &str) -> PathBuf {

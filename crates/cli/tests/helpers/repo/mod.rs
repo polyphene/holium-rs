@@ -25,23 +25,3 @@ pub(crate) fn setup_repo() -> TempDir {
     // return repository directory
     temp_dir
 }
-
-/// Same as [setup_repo] but with a transformation already created
-pub(crate) fn setup_repo_with_transformation() -> TempDir {
-    // initialize a repository
-    let repo = setup_repo();
-    let repo_path = repo.path();
-    // try to add transformation
-    let assert = build_transformation_create_cmd(
-        repo_path,
-        TRANSFORMATION_NAME,
-        TRANSFORMATION_HANDLE,
-        SOUND_BYTECODE,
-        JSON_SCHEMA,
-        JSON_SCHEMA,
-    );
-    // check output
-    assert.success();
-
-    repo
-}

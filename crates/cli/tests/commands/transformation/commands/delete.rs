@@ -50,19 +50,8 @@ fn cannot_delete_non_existent_transformation() {
 #[test]
 fn can_delete_transformation() {
     // initialize a repository
-    let repo = setup_repo();
+    let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
-    // try to add transformation
-    let assert = build_transformation_create_cmd(
-        repo_path,
-        TRANSFORMATION_NAME,
-        TRANSFORMATION_HANDLE,
-        SOUND_BYTECODE,
-        JSON_SCHEMA,
-        JSON_SCHEMA,
-    );
-    // check output
-    assert.success();
 
     // try to delete transformation
     let assert = build_transformation_delete_cmd(repo_path, TRANSFORMATION_NAME);
