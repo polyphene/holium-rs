@@ -17,6 +17,8 @@ lazy_static::lazy_static! {
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
+    #[error("invalid string can not be passed to json")]
+    StringNotParsableToJSON,
     #[error("invalid json schema")]
     InvalidJsonSchema,
     #[error("a json schema should be a json object")]
@@ -43,7 +45,7 @@ enum Error {
 /// Holium objects.
 pub fn validate_json_schema(literal: &str) -> Result<()> {
     // parse the string of data into serde_json::Value
-    let schema: Value = serde_json::from_str(literal).context(Error::SchemaShouldBeJsonObject)?;
+    let schema: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
     // validate it against JSON schema meta schema
     META_SCHEMA
         .validate(&schema)
