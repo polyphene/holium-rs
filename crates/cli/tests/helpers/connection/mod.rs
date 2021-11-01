@@ -35,6 +35,7 @@ pub(crate) const SELECTOR: &'static str = "{ \".\": {} }";
 pub(crate) const ALTERNATIVE_SELECTOR: &'static str = "{ \"i\": { \"i\": 1, \">\": { \".\": {} } } }";
 pub(crate) const NON_VALID_SELECTOR: &'static str = "{ \"non\": \"valid\"}";
 
+pub(crate) const NON_VALID_CONNECTION_ID: &'static str = "non_valid_connection_id";
 pub(crate) fn default_connection_id() -> String {
     format!(
         "{}{}{}{}{}{}{}",
