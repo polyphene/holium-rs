@@ -10,6 +10,7 @@ const TRANSFORMATION_HANDLE: &'static str = "helloWorld";
 const TRANSFORMATION_ALTERNATIVE_HANDLE: &'static str = "alternative_transformation";
 
 const SOUND_BYTECODE: &'static str = "import.wasm";
+const CORRUPTED_BYTECODE: &'static str = "import_corrupted.wasm";
 
 const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
 const ALTERNATIVE_JSON_SCHEMA: &'static str = "{\"type\": \"number\"}";
@@ -107,6 +108,103 @@ fn can_update_transformation_without_any_positional_arg() {
         .success()
         .stdout(predicate::str::contains("object updated"));
 }
+
+#[test]
+fn cannot_update_transformation_which_bytecode_lacks_wasm_magic_number() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        JSON_SCHEMA,
+        JSON_SCHEMA,
+    );
+    // check output
+    assert.success();
+    // try to update transformation with invalid json schema out
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("update")
+        .arg(TRANSFORMATION_NAME)
+        .arg("--bytecode")
+        .arg(bytecode_path(CORRUPTED_BYTECODE).to_str().unwrap())
+        .assert();
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid WebAssembly bytecode"));
+}
+
+#[test]
+fn cannot_update_transformation_with_incorrect_json_schema_in() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        JSON_SCHEMA,
+        JSON_SCHEMA,
+    );
+    // check output
+    assert.success();
+    // try to update transformation with invalid json schema in
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("update")
+        .arg(TRANSFORMATION_NAME)
+        .arg("--json-schema-in")
+        .arg("{\"type\": \"wrong_type\"}")
+        .assert();
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid json schema"));
+}
+
+#[test]
+fn cannot_update_transformation_with_incorrect_json_schema_out() {
+    // initialize a repository
+    let repo = setup_repo();
+    let repo_path = repo.path();
+    // try to add transformation
+    let assert = build_transformation_create_cmd(
+        repo_path,
+        TRANSFORMATION_NAME,
+        TRANSFORMATION_HANDLE,
+        SOUND_BYTECODE,
+        JSON_SCHEMA,
+        JSON_SCHEMA,
+    );
+    // check output
+    assert.success();
+    // try to update transformation with invalid json schema out
+    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let assert = cmd
+        .current_dir(repo_path)
+        .arg("transformation")
+        .arg("update")
+        .arg(TRANSFORMATION_NAME)
+        .arg("--json-schema-out")
+        .arg("{\"type\": \"wrong_type\"}")
+        .assert();
+    // check output
+    assert
+        .failure()
+        .stderr(predicate::str::contains("invalid json schema"));
+}
+
 
 #[test]
 fn can_update_transformation() {
