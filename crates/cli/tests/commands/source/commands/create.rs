@@ -1,7 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::predicate;
 use crate::helpers::repo::setup_repo;
-use crate::helpers::source::{build_source_create_cmd, JSON_SCHEMA, NON_VALID_JSON_SCHEMA, SOURCE_NAME};
+use crate::helpers::source::{build_source_create_cmd, build_source_read_cmd, JSON_SCHEMA, NON_VALID_JSON_SCHEMA, SOURCE_NAME};
 
 #[test]
 fn help_available() {
@@ -19,7 +19,7 @@ fn help_available() {
 fn cannot_create_source_outside_repo() {
     // work in an empty directory
     let temp_dir = assert_fs::TempDir::new().unwrap();
-    // try to add transformation
+    // try to create source
     let assert = build_source_create_cmd(
         temp_dir.path(),
         SOURCE_NAME,
@@ -125,7 +125,18 @@ fn cannot_create_source() {
     let repo_path = repo.path();
     // try to create source
     let assert = build_source_create_cmd(repo_path, SOURCE_NAME, JSON_SCHEMA);
+
     // check output
     assert
-        .success();
+        .success()
+        .stdout(predicate::str::contains("new object created"));
+
+    // read created source
+    let assert = build_source_read_cmd(repo_path, SOURCE_NAME);
+
+    // check output
+    assert
+        .success()
+        .stdout(predicate::str::contains(SOURCE_NAME))
+        .stdout(predicate::str::contains("\"type\": \"string\""));
 }
