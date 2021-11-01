@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::setup_repo;
+use crate::helpers::repo::setup_repo;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use predicates::prelude::predicate;
