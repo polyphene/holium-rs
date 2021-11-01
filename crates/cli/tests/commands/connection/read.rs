@@ -1,7 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::predicate;
 use crate::helpers::repo::setup_repo;
-use crate::helpers::connection::{build_connection_read_cmd, setup_repo_connection, default_connection_id};
+use crate::helpers::connection::{build_connection_read_cmd, setup_repo_with_connection, default_connection_id};
 
 #[test]
 fn help_available() {
@@ -47,7 +47,7 @@ fn cannot_read_non_existent_connection() {
 #[test]
 fn can_read_connection() {
     // initialize a repository
-    let repo = setup_repo_connection();
+    let repo = setup_repo_with_connection();
     let repo_path = repo.path();
 
     // try to read connection

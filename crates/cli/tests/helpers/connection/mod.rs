@@ -3,7 +3,7 @@ use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::TempDir;
 use crate::helpers::repo::setup_repo;
-use crate::helpers::shaper::SHAPER_ALTERNATIVE_NAME;
+use crate::helpers::shaper::{SHAPER_ALTERNATIVE_NAME, SHAPER_NAME, JSON_SCHEMA as SHAPER_JSON_SCHEMA, build_shaper_create_cmd};
 use crate::helpers::source::{
     build_source_create_cmd,
     JSON_SCHEMA as SOURCE_JSON_SCHEMA,
@@ -49,6 +49,32 @@ pub(crate) fn default_connection_id() -> String {
     )
 }
 
+pub(crate) fn build_connection_id(
+    tail_type: &str,
+    tail_name: &str,
+    head_type: &str,
+    head_name: &str,
+) -> String {
+    format!(
+        "{}{}{}{}{}{}{}",
+        tail_type,
+        NODE_TYPE_NAME_DELIMITER,
+        tail_name,
+        CONNECTION_LINKING_DELIMITER,
+        head_type,
+        NODE_TYPE_NAME_DELIMITER,
+        head_name,
+    )
+}
+
+pub(crate) fn node_type_name_pairs() -> Vec<(&'static str, &'static str)> {
+    vec![
+        (SOURCE_TYPE, SOURCE_NAME),
+        (TRANSFORMATION_TYPE, TRANSFORMATION_NAME),
+        (SHAPER_TYPE, SHAPER_NAME)
+    ]
+}
+
 pub(crate) fn node_type_name_alternative_pairs() -> Vec<(&'static str, &'static str)> {
     vec![
         (SOURCE_TYPE, SOURCE_ALTERNATIVE_NAME),
@@ -58,7 +84,7 @@ pub(crate) fn node_type_name_alternative_pairs() -> Vec<(&'static str, &'static 
 }
 
 /// Same as [setup_repo] but with a source and a transformation already created
-pub(crate) fn setup_repo_source_transformation() -> TempDir {
+pub(crate) fn setup_repo_with_all_node_types() -> TempDir {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
@@ -83,14 +109,23 @@ pub(crate) fn setup_repo_source_transformation() -> TempDir {
     // check output
     assert.success();
 
+    // try to add shaper
+    let assert = build_shaper_create_cmd(
+        repo_path,
+        SHAPER_NAME,
+        SHAPER_JSON_SCHEMA
+    );
+    // check output
+    assert.success();
+
     repo
 }
 
 
 /// Same as [setup_repo_source_transformation] but also with a connection already created
-pub(crate) fn setup_repo_connection() -> TempDir {
+pub(crate) fn setup_repo_with_connection() -> TempDir {
     // initialize a repository
-    let repo = setup_repo_source_transformation();
+    let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
 
     // try to create connection
