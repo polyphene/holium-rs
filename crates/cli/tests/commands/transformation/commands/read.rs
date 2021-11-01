@@ -35,7 +35,7 @@ fn cannot_read_non_existent_transformation() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to read transformation
+    // try to read non existent transformation
     let assert = build_transformation_read_cmd(repo_path, TRANSFORMATION_NAME);
     // check output
     assert

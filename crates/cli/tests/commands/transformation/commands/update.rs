@@ -23,7 +23,7 @@ fn cannot_update_transformation_without_name() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to update transformation without positional argument
+    // try to update transformation without name
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -60,7 +60,7 @@ fn cannot_update_transformation_which_bytecode_lacks_wasm_magic_number() {
     let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
 
-    // try to update transformation with invalid json schema out
+    // try to update transformation with corrupted wasm bytecode
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -82,7 +82,7 @@ fn cannot_update_transformation_with_incorrect_json_schema_in() {
     let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
 
-    // try to update transformation with invalid json schema in
+    // try to update transformation with incorrect json schema in
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -101,20 +101,10 @@ fn cannot_update_transformation_with_incorrect_json_schema_in() {
 #[test]
 fn cannot_update_transformation_with_incorrect_json_schema_out() {
     // initialize a repository
-    let repo = setup_repo();
+    let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
-    // try to add transformation
-    let assert = build_transformation_create_cmd(
-        repo_path,
-        TRANSFORMATION_NAME,
-        TRANSFORMATION_HANDLE,
-        SOUND_BYTECODE,
-        JSON_SCHEMA,
-        JSON_SCHEMA,
-    );
-    // check output
-    assert.success();
-    // try to update transformation with invalid json schema out
+
+    // try to update transformation with incorrect json schema out
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -137,7 +127,7 @@ fn cannot_update_transformation_with_non_valid_json_object_in() {
     let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
 
-    // try to update transformation with invalid json schema in
+    // try to update transformation with non valid json object in
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -156,20 +146,10 @@ fn cannot_update_transformation_with_non_valid_json_object_in() {
 #[test]
 fn cannot_update_transformation_with_non_valid_json_object_out() {
     // initialize a repository
-    let repo = setup_repo();
+    let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
-    // try to add transformation
-    let assert = build_transformation_create_cmd(
-        repo_path,
-        TRANSFORMATION_NAME,
-        TRANSFORMATION_HANDLE,
-        SOUND_BYTECODE,
-        JSON_SCHEMA,
-        JSON_SCHEMA,
-    );
-    // check output
-    assert.success();
-    // try to update transformation with invalid json schema out
+
+    // try to update transformation with non valid json object out
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -192,7 +172,7 @@ fn can_update_transformation() {
     let repo = setup_repo_with_transformation();
     let repo_path = repo.path();
 
-    // try to update transformation without positional argument
+    // try to update transformation
     let alternative_bytecode_path = bytecode_path("alternative_import.wasm");
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd

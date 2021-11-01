@@ -39,7 +39,7 @@ fn cannot_delete_non_existent_transformation() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to delete transformation
+    // try to delete non existent transformation
     let assert = build_transformation_delete_cmd(repo_path, TRANSFORMATION_NAME);
     // check output
     assert
