@@ -22,7 +22,7 @@ fn help_available() {
 fn cannot_create_transformation_outside_repo() {
     // work in an empty directory
     let temp_dir = assert_fs::TempDir::new().unwrap();
-    // try to add transformation
+    // try to create transformation
     let assert = build_transformation_create_cmd(
         temp_dir.path(),
         TRANSFORMATION_NAME,
@@ -42,7 +42,7 @@ fn cannot_create_transformation_without_any_positional_arg() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation without positional argument
+    // try to create transformation without positional argument
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -60,7 +60,7 @@ fn cannot_create_transformation_without_bytecode() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation without bytecode
+    // try to create transformation without bytecode
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -87,7 +87,7 @@ fn cannot_create_transformation_without_name() {
     let repo_path = repo.path();
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
-    // try to add transformation without name
+    // try to create transformation without name
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -113,7 +113,7 @@ fn cannot_create_transformation_without_handle() {
     let repo_path = repo.path();
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
-    // try to add transformation without handle
+    // try to create transformation without handle
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -140,7 +140,7 @@ fn cannot_create_transformation_without_json_schema_in() {
     let repo_path = repo.path();
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
-    // try to add transformation without json schema in
+    // try to create transformation without json schema in
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -167,7 +167,7 @@ fn cannot_create_transformation_without_json_schema_out() {
     let repo_path = repo.path();
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
-    // try to add transformation without json schema out
+    // try to create transformation without json schema out
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)
@@ -192,7 +192,7 @@ fn cannot_create_transformation_which_bytecode_lacks_wasm_magic_number() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation with corrupted wasm file
+    // try to create transformation with corrupted wasm file
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -212,7 +212,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_in() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation with invalid json schema in
+    // try to create transformation with incorrect json schema in
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -232,7 +232,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_out() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation with invalid json schema out
+    // try to create transformation with incorrect json schema out
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -252,7 +252,7 @@ fn cannot_create_transformation_with_non_valid_json_object_in() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation with invalid json schema in
+    // try to create transformation with non valid json object in
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -272,7 +272,7 @@ fn cannot_create_transformation_with_non_valid_json_object_out() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation with invalid json schema out
+    // try to create transformation with non valid json object out
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -292,7 +292,7 @@ fn can_create_transformation() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation
+    // try to create transformation
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -319,7 +319,7 @@ fn can_create_transformation_with_same_options_but_different_name() {
     // initialize a repository
     let repo = setup_repo();
     let repo_path = repo.path();
-    // try to add transformation
+    // try to create transformation
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_NAME,
@@ -331,7 +331,7 @@ fn can_create_transformation_with_same_options_but_different_name() {
     // check output
     assert.success();
 
-    // try to add same transformation with different name
+    // try to create same transformation with different name
     let assert = build_transformation_create_cmd(
         repo_path,
         TRANSFORMATION_ALTERNATIVE_NAME,
