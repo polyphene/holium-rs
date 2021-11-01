@@ -17,6 +17,8 @@ lazy_static::lazy_static! {
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
+    #[error("invalid string can not be parsed to json")]
+    StringNotParsableToJSON,
     #[error("invalid holium selector")]
     InvalidHoliumSelector,
 }
@@ -24,7 +26,7 @@ enum Error {
 /// Validate a Holium selector JSON instance against the reference JSON Schema.
 pub fn validate_selector(literal: &str) -> Result<()> {
     // parse the instance literal into serde_json::Value
-    let instance: Value = serde_json::from_str(literal)?;
+    let instance: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
     // validate it against Holium selector schema
     HOLIUM_SELECTOR_SCHEMA.validate(&instance)
         .ok()
