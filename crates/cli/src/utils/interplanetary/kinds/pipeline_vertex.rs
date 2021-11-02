@@ -29,7 +29,7 @@ impl From<PipelineVertex> for sk_cbor::Value {
         }
         if let Some(metadata) = o.metadata {
             tuples.push((
-                cbor_text!("meta"),
+                cbor_text!("dt_meta"),
                 Link(&metadata).into(),
             ))
         }
