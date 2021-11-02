@@ -6,7 +6,7 @@ use anyhow::Result;
 use sk_cbor::cbor_text;
 use sk_cbor::Value;
 use sled::IVec;
-use crate::utils::local::context::helpers::NodeType;
+use crate::utils::local::context::helpers::{NodeType, build_node_typed_name};
 use crate::utils::local::models::shaper::Shaper;
 use crate::utils::errors::Error::BinCodeDeserializeFailed;
 use crate::utils::local::models::source::Source;
@@ -25,7 +25,7 @@ pub struct Metadata {
 impl Metadata {
     pub fn new(name: &str, encoded: &IVec, node_type: &NodeType) -> Result<Self> {
         let mut metadata = Metadata::default();
-        metadata.name = Some(name.to_string());
+        metadata.name = Some(build_node_typed_name(node_type, name));
         let a = match node_type {
             NodeType::shaper => {
                 let decoded: Shaper = bincode::deserialize(&encoded[..])
