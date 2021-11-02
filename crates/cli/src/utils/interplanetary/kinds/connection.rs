@@ -28,9 +28,13 @@ impl From<&Connection<'_>> for sk_cbor::Value {
     fn from(o: &Connection<'_>) -> Self {
         let tail_selector_link: Value = Link(o.tail_selector).into();
         let head_selector_link: Value = Link(o.head_selector).into();
-        cbor_array![
+        let content = cbor_array![
             tail_selector_link,
             head_selector_link,
-        ]
+        ];
+        cbor_map! {
+            "typedVersion" => DISCRIMINANT_KEY_V0,
+            "content" => content,
+        }
     }
 }
