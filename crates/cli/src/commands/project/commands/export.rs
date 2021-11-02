@@ -10,6 +10,7 @@ use crate::utils::local::dag::models::PipelineDag;
 use crate::utils::local::helpers::prints::commands_outputs::{print_pipeline_health_success, print_project_export_success};
 use crate::utils::local::export::export_project;
 use crate::utils::interplanetary::fs::helpers::clear_ip_area::clear_ip_area;
+use crate::utils::interplanetary::context::InterplanetaryContext;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -24,8 +25,9 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// handler
 pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
-    // create local context
+    // create local and interplanetary contexts
     let local_context = LocalContext::new()?;
+    let ip_context = InterplanetaryContext::new()?;
     // create pipeline dag
     let dag = PipelineDag::from_local_context(&local_context)?;
     // check if the dag is healthy for export
@@ -36,9 +38,9 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         return Ok(());
     }
     // clean the interplanetary area
-    clear_ip_area(&local_context)?;
+    clear_ip_area(&ip_context)?;
     // export pipeline from the local area to the interplanetary area
-    let pipeline_cid = export_project(&local_context)?;
+    let pipeline_cid = export_project(&local_context, &ip_context)?;
     // print success message
     print_project_export_success(&pipeline_cid);
     Ok(())

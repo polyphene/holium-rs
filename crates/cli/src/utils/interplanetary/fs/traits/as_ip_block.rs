@@ -8,6 +8,7 @@ use std::fs;
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
 use std::io;
 use std::io::{Seek, Read, Cursor};
+use crate::utils::interplanetary::context::InterplanetaryContext;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -24,17 +25,17 @@ pub trait AsInterplanetaryBlock<ContentType: Read + Seek> {
     // fn content(&self) -> Cursor<Vec<u8>> { Cursor::new(vec![])}
 
     /// Read and parse a block in the interplanetary area.
-    fn read_from_ip_area(cid: &Cid, local_context: &LocalContext) -> Result<Box<Self>> {
+    fn read_from_ip_area(cid: &Cid, ip_context: &InterplanetaryContext) -> Result<Box<Self>> {
         todo!()
     }
 
     /// Write as a new block in the interplanetary area.
-    fn write_to_ip_area(&self, local_context: &LocalContext) -> Result<Cid> {
+    fn write_to_ip_area(&self, ip_context: &InterplanetaryContext) -> Result<Cid> {
         let mut content: ContentType = self.content();
         // compute cid from reader
         let cid = compute_cid(&mut content, &Self::codec())?;
         // compute related block path
-        let path = cid_to_path(&cid, &local_context)?;
+        let path = cid_to_path(&cid, &ip_context)?;
         // write file if it does not already exist
         if !path.exists() {
             // create parent directory if necessary
