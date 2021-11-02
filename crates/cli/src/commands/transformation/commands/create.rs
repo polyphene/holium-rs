@@ -11,7 +11,7 @@ use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::local::helpers::jsonschema::validate_json_schema;
-use crate::utils::local::helpers::keys::validate_node_name;
+use crate::utils::local::context::helpers::validate_node_name;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 
 /// command

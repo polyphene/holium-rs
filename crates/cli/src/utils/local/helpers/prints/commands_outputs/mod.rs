@@ -7,6 +7,12 @@ use thiserror::Error;
 enum Error {
     #[error("error while writing success message")]
     FailedToWriteSuccessMessage,
+    #[error("error while writing update message")]
+    FailedToWriteUpdateMessage,
+    #[error("error while writing delete message")]
+    FailedToWriteDeleteMessage,
+    #[error("error while writing health success message")]
+    FailedToWriteHealthSuccessMessage,
 }
 
 /*
@@ -27,7 +33,7 @@ pub fn print_update_success(writter: &mut Write, key: &str) -> Result<()> {
     writeln!(writter,
              "{}",
              style(format!("object updated: {}", style(key).bold())).green()
-    ).context(Error::FailedToWriteSuccessMessage)
+    ).context(Error::FailedToWriteUpdateMessage)
 }
 
 /// Print DELETE method success message.
@@ -35,7 +41,17 @@ pub fn print_delete_success(writter: &mut Write, key: &str) -> Result<()> {
     writeln!(writter,
              "{}",
              style(format!("object deleted: {}", style(key).bold())).green()
-    ).context(Error::FailedToWriteSuccessMessage)
+    ).context(Error::FailedToWriteDeleteMessage)
+}
+
+/// Print success message for methods checking the health of the transformation pipeline currently
+/// in the local area.
+pub fn print_pipeline_health_success(writter: &mut Write) -> Result<()> {
+    writeln!(
+        writter,
+        "{}",
+        style("current project holds a healthy transformation pipeline").green()
+    ).context(Error::FailedToWriteHealthSuccessMessage)
 }
 
 #[cfg(test)]
@@ -77,4 +93,16 @@ mod test {
 
         assert_eq!(awaited_msg.as_bytes(), stdout);
     }
+
+    #[test]
+    fn can_have_formatted_msg_for_health_success() {
+        let mut stdout = Vec::new();
+        let awaited_msg = "current project holds a healthy transformation pipeline\n";
+
+        // pass fake stdout when calling when testing
+        print_pipeline_health_success(&mut stdout).unwrap();
+
+        assert_eq!(awaited_msg.as_bytes(), stdout);
+    }
 }
+
