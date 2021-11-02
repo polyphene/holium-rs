@@ -111,6 +111,10 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
 mod test {
     use super::*;
 
+    /*************************************
+     * Validate node name
+     *************************************/
+
     #[test]
     fn cannot_validate_node_name_with_arrow_character() {
         let name = "my→name";
@@ -130,5 +134,17 @@ mod test {
         let name = "node_name";
 
         validate_node_name(name).unwrap();
+    }
+
+    /*************************************
+     * Build node typed name
+     *************************************/
+    #[test]
+    fn can_build_node_typed_name() {
+        let name = "node_name";
+        let expected_node_typed_name = format!("source:{}", name);
+
+        let res = build_node_typed_name(&NodeType::source, name);
+        assert_eq!(expected_node_typed_name, res);
     }
 }
