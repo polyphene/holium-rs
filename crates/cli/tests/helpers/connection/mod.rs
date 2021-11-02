@@ -37,14 +37,10 @@ pub(crate) const NON_VALID_SELECTOR: &'static str = "{ \"non\": \"valid\"}";
 
 pub(crate) const NON_VALID_CONNECTION_ID: &'static str = "non_valid_connection_id";
 pub(crate) fn default_connection_id() -> String {
-    format!(
-        "{}{}{}{}{}{}{}",
+    build_connection_id(
         SOURCE_TYPE,
-        NODE_TYPE_NAME_DELIMITER,
         SOURCE_NAME,
-        CONNECTION_LINKING_DELIMITER,
         TRANSFORMATION_TYPE,
-        NODE_TYPE_NAME_DELIMITER,
         TRANSFORMATION_NAME
     )
 }
