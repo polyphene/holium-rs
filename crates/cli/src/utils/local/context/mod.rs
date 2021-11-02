@@ -15,6 +15,12 @@ use std::fs;
 pub mod helpers;
 pub mod constants;
 
+#[derive(thiserror::Error, Debug)]
+enum Error {
+    #[error("failed to initialize local context")]
+    FailedToInit,
+}
+
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
 pub struct LocalContext {
@@ -37,7 +43,7 @@ impl LocalContext {
     /// Initialize a [ LocalContext ] object in a temporary directory.
     pub fn new_tmp() -> Result<Self> {
         let root_dir = tempdir()
-            .context("TODO")?;
+            .context(Error::FailedToInit)?;
         let root_path = root_dir.path().to_path_buf();
         Self::from_root_path(&root_path)
     }
@@ -47,12 +53,12 @@ impl LocalContext {
         // create the holium root directory if it does not exist
         let holium_root_path = root_path
             .join(HOLIUM_DIR);
-        if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context("TODO")? }
+        if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context(Error::FailedToInit)? }
         // create the local area directory if it does not exist
         let local_area_path = holium_root_path.join(LOCAL_DIR);
-        if !local_area_path.exists() { fs::create_dir(&local_area_path).context("TODO")? }
+        if !local_area_path.exists() { fs::create_dir(&local_area_path).context(Error::FailedToInit)? }
         // initialize database handle
-        let db: sled::Db = sled::open(&local_area_path).context("TODO")?;
+        let db: sled::Db = sled::open(&local_area_path).context(Error::FailedToInit)?;
         // create the portation file if it does not exist
         let portations_file_path = holium_root_path.join(PORTATIONS_FILE);
         if !portations_file_path.exists() {
@@ -60,7 +66,7 @@ impl LocalContext {
                 .create(true)
                 .write(true)
                 .open(&portations_file_path)
-                .context("TODO")?;
+                .context(Error::FailedToInit)?;
         }
         // configure local context
         LocalContext::from_db_and_conf_files(db, portations_file_path)

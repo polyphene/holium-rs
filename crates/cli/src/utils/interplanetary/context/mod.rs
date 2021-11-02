@@ -12,6 +12,12 @@ use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR, LOCAL_DIR, P
 use crate::utils::repo::helpers::get_root_path;
 use crate::utils::repo::models::portation::Portations;
 
+#[derive(thiserror::Error, Debug)]
+enum Error {
+    #[error("failed to initialize interplanetary context")]
+    FailedToInit,
+}
+
 /// Context structure helping accessing the interplanetary area in a consistent way throughout the CLI
 /// commands.
 pub struct InterplanetaryContext {
@@ -29,7 +35,7 @@ impl InterplanetaryContext {
     /// Initialize a [ InterplanetaryContext ] object in a temporary directory.
     pub fn new_tmp() -> Result<Self> {
         let root_dir = tempdir()
-            .context("TODO")?;
+            .context(Error::FailedToInit)?;
         let root_path = root_dir.path().to_path_buf();
         Self::from_root_path(&root_path)
     }
@@ -39,10 +45,10 @@ impl InterplanetaryContext {
         // create the holium root directory if it does not exist
         let holium_root_path = root_path
             .join(HOLIUM_DIR);
-        if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context("TODO")? }
+        if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context(Error::FailedToInit)? }
         // create the interplanetary area directory if it does not exist
         let ip_area_path = holium_root_path.join(INTERPLANETARY_DIR);
-        if !ip_area_path.exists() { fs::create_dir(&ip_area_path).context("TODO")? }
+        if !ip_area_path.exists() { fs::create_dir(&ip_area_path).context(Error::FailedToInit)? }
         // configure local context
         Ok(InterplanetaryContext { ip_area_path })
     }
