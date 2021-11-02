@@ -13,19 +13,19 @@ use sk_cbor::cbor_array;
 
 static DISCRIMINANT_KEY_V0: &str = "cx_0";
 
-pub struct Connexion<'a> {
+pub struct Connection<'a> {
     tail_selector: &'a Cid,
     head_selector: &'a Cid,
 }
 
-impl<'a> Connexion<'a> {
+impl<'a> Connection<'a> {
     pub fn new(tail_selector: &'a Cid, head_selector: &'a Cid) -> Self {
-        Connexion{ tail_selector, head_selector }
+        Connection { tail_selector, head_selector }
     }
 }
 
-impl From<&Connexion<'_>> for sk_cbor::Value {
-    fn from(o: &Connexion<'_>) -> Self {
+impl From<&Connection<'_>> for sk_cbor::Value {
+    fn from(o: &Connection<'_>) -> Self {
         let tail_selector_link: Value = Link(o.tail_selector).into();
         let head_selector_link: Value = Link(o.head_selector).into();
         cbor_array![

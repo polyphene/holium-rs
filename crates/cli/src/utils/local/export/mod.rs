@@ -17,13 +17,13 @@ use crate::utils::local::models::shaper::Shaper;
 use crate::utils::local::models::source::Source;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::interplanetary::kinds::metadata::Metadata;
-use crate::utils::local::models::connection::Connection;
 use bimap::BiMap;
 use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
-use crate::utils::interplanetary::kinds::connexion::Connexion;
 use crate::utils::interplanetary::kinds::pipeline_vertex::PipelineVertex;
 use crate::utils::interplanetary::kinds::pipeline_edge::PipelineEdge;
 use crate::utils::interplanetary::kinds::pipeline::Pipeline;
+use crate::utils::interplanetary::kinds::connection::Connection as ConnectionBlock;
+use crate::utils::local::models::connection::Connection;
 
 /// [ VerticesContentMap ] is used to map nodes' name to their content while constructing the
 /// interplanetary representation of a pipeline.
@@ -127,13 +127,13 @@ fn export_connections(local_context: &LocalContext)
         let head_selector = SelectorEnvelope::new(&decoded.head_selector)?;
         let head_selector_cid = Value::from(head_selector).write_to_ip_area(&local_context)?;
         // store connexion
-        let connexion = Connexion::new(&tail_selector_cid, &head_selector_cid);
+        let connexion = ConnectionBlock::new(&tail_selector_cid, &head_selector_cid);
         let connexion_cid = Value::from(&connexion).write_to_ip_area(&local_context)?;
         // add new edge to the list
         edges.push(PipelineEdge {
             tail_index,
             head_index,
-            connexion_cid: connexion_cid,
+            connection_cid: connexion_cid,
         })
     }
     Ok((edges, vertex_idx_mapping))

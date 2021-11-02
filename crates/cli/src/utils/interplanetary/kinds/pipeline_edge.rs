@@ -17,16 +17,16 @@ use sk_cbor::cbor_unsigned;
 pub struct PipelineEdge {
     pub tail_index: u64,
     pub head_index: u64,
-    pub connexion_cid: Cid,
+    pub connection_cid: Cid,
 }
 
 impl From<PipelineEdge> for sk_cbor::Value {
     fn from(o: PipelineEdge) -> Self {
-        let connexion_link: Value = Link(&o.connexion_cid).into();
+        let connection_link: Value = Link(&o.connection_cid).into();
         cbor_array![
             cbor_unsigned!( o.tail_index ),
             cbor_unsigned!( o.head_index ),
-            connexion_link,
+            connection_link,
         ]
     }
 }

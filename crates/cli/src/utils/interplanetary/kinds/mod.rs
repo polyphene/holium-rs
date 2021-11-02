@@ -6,7 +6,7 @@ pub mod module_bytecode_envelope;
 pub mod link;
 pub mod dry_transformation;
 pub mod metadata;
-pub mod connexion;
+pub mod connection;
 pub mod selector;
 pub mod pipeline_edge;
 pub mod pipeline_vertex;
