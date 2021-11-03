@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 use serde_cbor::to_vec;
 
+use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
 #[derive(thiserror::Error, Debug)]
@@ -24,33 +25,83 @@ enum Error {
     UnhandledDataDetails,
     #[error("data details in cbor header wrongly encoded")]
     BadCborHeader,
+    #[error("major type is non recursive")]
+    MajorTypeNonRecursive,
 }
 
-/// [`MajorType`] represents cbor major types that can be found in the HoliumCbor format
+/// [`ScalarType`] contains all information relative to a scalar cbor major type in a cursor
 #[derive(Clone, Copy, Debug)]
+pub struct ScalarType {
+    header_offset: u64,
+    data_offset: Option<u64>,
+    data_size: u64,
+}
+
+/// [`RecursiveType`] contains all information relative to a recursive cbor major type in a cursor
+#[derive(Clone, Debug)]
+pub struct RecursiveType {
+    header_offset: u64,
+    data_offset: Option<u64>,
+    nbr_elements: usize,
+    elements: Vec<MajorType>,
+}
+
+/// [`MajorType`] represents cbor major types that can be found in the HoliumCbor format.
+#[derive(Clone, Debug)]
 pub enum MajorType {
-    Unsigned,
-    Negative,
-    Bytes,
-    String,
-    Array,
-    Map,
-    SimpleValues,
+    Unsigned(ScalarType),
+    Negative(ScalarType),
+    Bytes(ScalarType),
+    String(ScalarType),
+    Array(RecursiveType),
+    Map(RecursiveType),
+    SimpleValues(ScalarType),
 }
 
 impl MajorType {
     fn is_array(&self) -> bool {
         match self {
-            MajorType::Array => true,
+            MajorType::Array(_) => true,
             _ => false,
         }
     }
 
     fn is_map(&self) -> bool {
         match self {
-            MajorType::Map => true,
-            _ => false
+            MajorType::Map(_) => true,
+            _ => false,
         }
+    }
+
+    fn next_offset(&self) -> u64 {
+        return match self {
+            MajorType::Array(recursive) | MajorType::Map(recursive) => {
+                // if no elements in recursive then return offset after header
+                if recursive.nbr_elements == 0usize {
+                    return recursive.header_offset + 1;
+                }
+
+                // if currently no elements in recursive but some element are expected then return
+                // data offset. We can unwrap as we checked that some elements are expected.
+                if recursive.elements.len() == 0usize {
+                    return recursive.data_offset.unwrap();
+                }
+
+                // if some elements are already written then return offset after the last element
+                recursive.elements[recursive.elements.len() - 1].next_offset()
+            }
+            MajorType::Unsigned(scalar)
+            | MajorType::Negative(scalar)
+            | MajorType::Bytes(scalar)
+            | MajorType::String(scalar)
+            | MajorType::SimpleValues(scalar) => {
+                if scalar.data_offset.is_some() {
+                    scalar.data_offset.unwrap() + scalar.data_size
+                } else {
+                    scalar.header_offset + 1
+                }
+            }
+        };
     }
 }
 
@@ -58,7 +109,23 @@ trait ParseHoliumCbor {
     // To implement to define cursor on reader
     fn as_cursor(&self) -> Cursor<&[u8]>;
 
-    fn read_complete_cbor(&self) -> Result<Vec<((MajorType, u64, u64, u64))>> {
+    fn read_complete_cbor(&self) -> Result<MajorType> {
+        let mut buff = self.as_cursor();
+
+        let mut major_type = read_header(&mut buff)?;
+
+        if !major_type.is_array() {
+            return Err(Error::RootNotArray.into());
+        }
+        read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
+
+        Ok(major_type)
+    }
+
+    /*fn select_cbor(
+        &self,
+        selector_envelope: &SelectorEnvelope,
+    ) -> Result<Vec<((MajorType, u64, u64, u64))>> {
         let mut buff = self.as_cursor();
 
         let mut elements: Vec<((MajorType, u64, u64, u64))> = vec![];
@@ -76,14 +143,29 @@ trait ParseHoliumCbor {
 
         elements.append(&mut elements_details);
 
-        for (major_type) in elements.iter() {
+        for (major_type, _, _, _) in elements.iter() {
             if major_type.is_map() {
                 return Err(Error::NotHandlingMap.into());
             }
         }
 
+        match selector_envelope.selector() {
+            Selector::Matcher(matcher) => {
+                dbg!(matcher);
+            }
+            Selector::ExploreIndex(explore_index) => {
+                dbg!(explore_index);
+            }
+            Selector::ExploreRange(explore_range) => {
+                dbg!(explore_range);
+            }
+            Selector::ExploreUnion(explore_union) => {
+                dbg!(explore_union);
+            }
+        };
+
         Ok(elements)
-    }
+    }*/
 }
 
 fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
@@ -93,7 +175,7 @@ fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
 }
 
 /// Read returning its major type, its data byte offset and size
-fn read_header<R: Read + Seek>(reader: &mut R) -> Result<(MajorType, u64, u64, u64)> {
+fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
     // Save he&der offset for later use
     let header_offset = get_cursor_position(reader)?;
 
@@ -103,40 +185,80 @@ fn read_header<R: Read + Seek>(reader: &mut R) -> Result<(MajorType, u64, u64, u
         .read(&mut first_byte_buffer[..])
         .context(Error::NonReadableByte(get_cursor_position(reader)?))?;
 
-    // Retrieving major type from the first 3 bits
-    let major_type = match first_byte_buffer[0] >> 5 {
-        0 => MajorType::Unsigned,
-        1 => MajorType::Negative,
-        2 => MajorType::Bytes,
-        3 => MajorType::String,
-        4 => MajorType::Array,
-        5 => MajorType::Map,
-        7 => MajorType::SimpleValues,
-        _ => return Err(Error::NonExistingMajorType.into()),
-    };
+    // Major type information on first 3 bits
+    let major_type_number = first_byte_buffer[0] >> 5;
 
-    // Retrieving value for 5 next bits, acceding to data details
+    // Retrieving value for 5 last bits, acceding to data details
     let data_details = first_byte_buffer[0] & 0x1F;
 
     let (data_offset, data_size) =
-        read_data_size(reader, &major_type, header_offset, data_details)?;
+        read_data_size(reader, major_type_number, header_offset, data_details)?;
 
-    Ok((major_type, header_offset, data_offset, data_size))
+    // Retrieving major type from the first 3 bits
+    Ok(match major_type_number {
+        0 => MajorType::Unsigned(ScalarType {
+            header_offset,
+            data_offset,
+            data_size,
+        }),
+        1 => MajorType::Negative(ScalarType {
+            header_offset,
+            data_offset,
+            data_size,
+        }),
+        2 => MajorType::Bytes(ScalarType {
+            header_offset,
+            data_offset,
+            data_size,
+        }),
+        3 => MajorType::String(ScalarType {
+            header_offset,
+            data_offset,
+            data_size,
+        }),
+        4 => MajorType::Array(RecursiveType {
+            header_offset,
+            data_offset,
+            nbr_elements: data_size as usize,
+            elements: vec![],
+        }),
+        5 => MajorType::Map(RecursiveType {
+            header_offset,
+            data_offset,
+            nbr_elements: data_size as usize * 2,
+            elements: vec![],
+        }),
+        7 => MajorType::SimpleValues(ScalarType {
+            header_offset,
+            data_offset,
+            data_size,
+        }),
+        _ => return Err(Error::NonExistingMajorType.into()),
+    })
 }
 
 /// Read data size from data details in Cbor header. Returns a tuple with data offset and data length
 /// in bytes.
 fn read_data_size<R: Read + Seek>(
     reader: &mut R,
-    major_type: &MajorType,
+    major_type: u8,
     header_offset: u64,
     data_details: u8,
-) -> Result<(u64, u64)> {
+) -> Result<(Option<u64>, u64)> {
     match major_type {
-        MajorType::Bytes | MajorType::String | MajorType::Array | MajorType::Map => {
+        0 | 1 => match data_details {
+            0..=23 => Ok((Some(header_offset), 1)),
+            24 => Ok((Some(header_offset + 1), 1)),
+            25 => Ok((Some(header_offset + 1), 2)),
+            26 => Ok((Some(header_offset + 1), 4)),
+            27 => Ok((Some(header_offset + 1), 8)),
+            _ => return Err(Error::UnhandledDataDetails.into()),
+        },
+        2 | 3 | 4 | 5 => {
             // As specified in CBOR, if sum of leftover bits >= 24 then information can be found on other bytes
             let additional_bytes_to_read = match data_details {
-                0..=23 => return Ok((header_offset + 1, data_details as u64)),
+                0 => return Ok((None, data_details as u64)),
+                1..=23 => return Ok((Some(header_offset + 1), data_details as u64)),
                 24 => 1,
                 25 => 2,
                 26 => 4,
@@ -171,73 +293,55 @@ fn read_data_size<R: Read + Seek>(
                 // Compute data offset
                 let data_offset = complementary_bytes_offset + additional_bytes_to_read as u64;
 
-                Ok((data_offset, data_size))
+                Ok((Some(data_offset), data_size))
             }
         }
-        MajorType::Unsigned | MajorType::Negative => match data_details {
-            0..=23 => Ok((header_offset, 1)),
-            24 => Ok((header_offset + 1, 1)),
-            25 => Ok((header_offset + 1, 2)),
-            26 => Ok((header_offset + 1, 4)),
-            27 => Ok((header_offset + 1, 8)),
-            _ => return Err(Error::UnhandledDataDetails.into()),
-        },
-        MajorType::SimpleValues => Ok((header_offset, 1)),
+        7 => Ok((Some(header_offset), 1)),
+        _ => return Err(Error::NonExistingMajorType.into()),
     }
 }
 
 fn read_recursive_elements_detail<R: Read + Seek>(
     reader: &mut R,
-    major_type: MajorType,
-    data_offset: u64,
-    data_size: u64,
-) -> Result<Vec<((MajorType, u64, u64, u64))>> {
-    // Initialize returned vec
-    let mut elements_details: Vec<((MajorType, u64, u64, u64))> = vec![];
-    // Set current position at data offset
-    reader
-        .seek(SeekFrom::Start(data_offset))
-        .context(Error::FailToSeekToOffset)?;
+    major_type: &mut MajorType,
+) -> Result<()> {
+    // Check that major type is recursive
+    match major_type {
+        MajorType::Array(recursive) | MajorType::Map(recursive) => {
+            // if no elements are expected then return
+            if recursive.nbr_elements == 0usize {
+                return Ok(());
+            }
 
-    let mut elements_to_parse = data_size as u128;
+            // Set current position at data offset. We can unwrap as elements are expected.
+            reader
+                .seek(SeekFrom::Start(recursive.data_offset.unwrap()))
+                .context(Error::FailToSeekToOffset)?;
 
-    // For maps we have key/value to find so *2
-    if major_type.is_map() {
-        elements_to_parse *= 2;
-    }
+            // Can unwrap we check previously that
+            let mut elements_to_parse = recursive.nbr_elements;
 
-    for _ in 0..elements_to_parse {
-        // Get element details
-        let (element_major_type, header_offset, element_data_offset, element_data_size) =
-            read_header(reader)?;
+            for _ in 0..elements_to_parse {
+                // Get element details
+                let mut element_major_type = read_header(reader)?;
 
-        // Add element to details
-        elements_details.push((
-            element_major_type,
-            header_offset,
-            element_data_offset,
-            element_data_size,
-        ));
+                // If element is array, retrieve his elements size
+                if element_major_type.is_array() || element_major_type.is_map() {
+                    read_recursive_elements_detail(reader, &mut element_major_type)?;
+                }
 
-        // If element is array, retrieve his elements size
-        if element_major_type.is_array() || element_major_type.is_map() {
-            let mut recursive_elements_details = read_recursive_elements_detail(
-                reader,
-                MajorType::Array,
-                element_data_offset,
-                element_data_size,
-            )?;
+                recursive.elements.push(element_major_type);
 
-            // Add element to details list
-            elements_details.append(&mut recursive_elements_details);
+                // Set current position at next element offset
+                let next_offset = recursive.elements[recursive.elements.len() - 1].next_offset();
+
+                reader
+                    .seek(SeekFrom::Start(next_offset))
+                    .context(Error::FailToSeekToOffset)?;
+            }
         }
-
-        // Set current position at next element offset
-        let (_, _, element_data_offset, element_data_size) =
-            elements_details[elements_details.len() - 1];
-        reader
-            .seek(SeekFrom::Start(element_data_offset + element_data_size))
-            .context(Error::FailToSeekToOffset)?;
+        _ => return Err(Error::MajorTypeNonRecursive.into()),
     }
-    Ok(elements_details)
+
+    Ok(())
 }
