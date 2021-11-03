@@ -129,7 +129,6 @@ fn read_data_size<R: Read + Seek>(
     match major_type {
         MajorType::Bytes | MajorType::String | MajorType::Array | MajorType::Map => {
             // As specified in CBOR, if sum of leftover bits >= 24 then information can be found on other bytes
-            // Now handling up to 8 bytes for length, could be higher later on
             let additional_bytes_to_read = match data_details {
                 0..=23 => return Ok((header_offset + 1, data_details as u64)),
                 24 => 1,
