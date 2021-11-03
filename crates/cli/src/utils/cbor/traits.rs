@@ -76,6 +76,12 @@ trait ParseHoliumCbor {
 
         elements.append(&mut elements_details);
 
+        for (major_type) in elements.iter() {
+            if major_type.is_map() {
+                return Err(Error::NotHandlingMap.into());
+            }
+        }
+
         Ok(elements)
     }
 }
