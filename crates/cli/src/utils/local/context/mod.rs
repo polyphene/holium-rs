@@ -16,6 +16,7 @@ pub mod constants;
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
 pub struct LocalContext {
+    pub data: sled::Tree,
     pub sources: sled::Tree,
     pub shapers: sled::Tree,
     pub transformations: sled::Tree,
@@ -46,6 +47,7 @@ impl LocalContext {
     /// portations file.
     fn from_db_and_conf_files(db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
         // Get trees from the DB
+        let data: sled::Tree = db.open_tree(models::data::TREE_NAME)?;
         let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
         sources.set_merge_operator(models::source::merge);
         let shapers: sled::Tree = db.open_tree(models::shaper::TREE_NAME)?;
@@ -57,7 +59,7 @@ impl LocalContext {
         // Get portations handler from the configuration file
         let portations = Portations::from_path(portations_file_path)?;
         // Return the context handler
-        Ok(LocalContext { sources, shapers, transformations, connections, portations })
+        Ok(LocalContext { data, sources, shapers, transformations, connections, portations })
     }
 
     /// For all fields of a local context, select the ones related to nodes of a [ PipelineDag ] and
