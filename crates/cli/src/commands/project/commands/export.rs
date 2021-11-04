@@ -7,7 +7,7 @@ use crate::utils::local::models::shaper::Shaper;
 use prettytable::{Table, format};
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 use crate::utils::local::dag::models::PipelineDag;
-use crate::utils::local::helpers::prints::commands_outputs::{print_pipeline_health_success, print_project_export_success};
+use crate::utils::local::helpers::prints::commands_outputs::{print_local_pipeline_health_success, print_project_export_success};
 use crate::utils::local::export::export_project;
 use crate::utils::interplanetary::fs::helpers::clear_ip_area::clear_ip_area;
 use crate::utils::interplanetary::context::InterplanetaryContext;
@@ -34,7 +34,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     dag.is_valid_pipeline()?;
     // with the --no-write option, stop the execution there
     if matches.is_present("no-write") {
-        print_pipeline_health_success();
+        print_local_pipeline_health_success();
         return Ok(());
     }
     // clean the interplanetary area

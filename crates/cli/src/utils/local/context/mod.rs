@@ -9,7 +9,7 @@ use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
 use crate::utils::repo::helpers::get_root_path;
 use crate::utils::repo::models::portation::Portations;
 use crate::utils::local::context::helpers::NodeType;
-use tempfile::tempdir;
+use tempfile::{tempdir, TempDir};
 use std::fs;
 
 pub mod helpers;
@@ -24,6 +24,8 @@ enum Error {
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
 pub struct LocalContext {
+    pub root_path: PathBuf,
+    pub db: sled::Db,
     pub sources: sled::Tree,
     pub shapers: sled::Tree,
     pub transformations: sled::Tree,
@@ -40,12 +42,12 @@ impl LocalContext {
         Self::from_root_path(&root_path)
     }
 
-    /// Initialize a [ LocalContext ] object in a temporary directory.
-    pub fn new_tmp() -> Result<Self> {
+    /// Initialize a [ LocalContext ] object in a new temporary directory.
+    pub fn new_tmp() -> Result<(Self, TempDir)> {
         let root_dir = tempdir()
             .context(Error::FailedToInit)?;
         let root_path = root_dir.path().to_path_buf();
-        Self::from_root_path(&root_path)
+        Ok((Self::from_root_path(&root_path)?, root_dir))
     }
 
     /// Initialize a local context from a project root path.
@@ -69,12 +71,12 @@ impl LocalContext {
                 .context(Error::FailedToInit)?;
         }
         // configure local context
-        LocalContext::from_db_and_conf_files(db, portations_file_path)
+        LocalContext::from_db_and_conf_files(root_path, db, portations_file_path)
     }
 
     /// Initialize a [ LocalContext ] object from a project a local [ sled::Db ] object
     /// and the path of the portations file.
-    fn from_db_and_conf_files(db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
+    fn from_db_and_conf_files(root_path: &PathBuf, db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
         // Get trees from the DB
         let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
         sources.set_merge_operator(models::source::merge);
@@ -87,7 +89,27 @@ impl LocalContext {
         // Get portations handler from the configuration file
         let portations = Portations::from_path(portations_file_path)?;
         // Return the context handler
-        Ok(LocalContext { sources, shapers, transformations, connections, portations })
+        Ok(LocalContext { root_path: root_path.clone(), db, sources, shapers, transformations, connections, portations })
+    }
+
+    /// Move local area from a context to another.
+    ///
+    /// # Warnings
+    ///
+    /// The destination local context may be inconsistent after this operation and should be
+    /// rebuilt from its root path.
+    pub fn mv_local_area(&self, destination: &Self) -> Result<()> {
+        // manually replace the destination database with a new one
+        let to_local_area_path = destination.root_path.join(HOLIUM_DIR).join(LOCAL_DIR);
+        if to_local_area_path.exists() {
+            fs::remove_dir_all(&to_local_area_path)?;
+        }
+        fs::create_dir_all(&to_local_area_path);
+        let new_db = sled::open(&to_local_area_path)?;
+        // export and import the db to move it
+        let dump = self.db.export();
+        new_db.import(dump);
+        Ok(())
     }
 
     /// For all fields of a local context, select the ones related to nodes of a [ PipelineDag ] and

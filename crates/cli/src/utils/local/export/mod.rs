@@ -59,12 +59,12 @@ fn export_dry_transformations(local_context: &LocalContext, ip_context: &Interpl
             .context(BinCodeDeserializeFailed)?;
         // store the bytecode
         let module_bytecode = ModuleBytecode::new(decoded.bytecode);
-        let module_bytecode_cid = &module_bytecode.write_to_ip_area(&ip_context)?;
+        let module_bytecode_cid = module_bytecode.write_to_ip_area(&ip_context)?;
         // store the module bytecode envelope
-        let module_bytecode_envelope = ModuleBytecodeEnvelope::new(&module_bytecode_cid);
+        let module_bytecode_envelope = ModuleBytecodeEnvelope::new(module_bytecode_cid);
         let module_bytecode_envelope_cid = Value::from(module_bytecode_envelope).write_to_ip_area(&ip_context)?;
         // store the dry transformation
-        let dry_transformation = DryTransformation::new(&module_bytecode_envelope_cid, &decoded.handle);
+        let dry_transformation = DryTransformation::new(module_bytecode_envelope_cid, decoded.handle);
         let dry_transformation_cid = Value::from(dry_transformation).write_to_ip_area(&ip_context)?;
         // add it to the vertices context map
         let typed_name = build_node_typed_name(&NodeType::transformation, name.as_str());
@@ -127,14 +127,14 @@ fn export_connections(local_context: &LocalContext, ip_context: &InterplanetaryC
         let tail_selector_cid = Value::from(tail_selector).write_to_ip_area(&ip_context)?;
         let head_selector = SelectorEnvelope::new(&decoded.head_selector)?;
         let head_selector_cid = Value::from(head_selector).write_to_ip_area(&ip_context)?;
-        // store connexion
-        let connexion = ConnectionBlock::new(&tail_selector_cid, &head_selector_cid);
-        let connexion_cid = Value::from(&connexion).write_to_ip_area(&ip_context)?;
+        // store connection
+        let connection = ConnectionBlock::new(tail_selector_cid, head_selector_cid);
+        let connection_cid = Value::from(connection).write_to_ip_area(&ip_context)?;
         // add new edge to the list
         edges.push(PipelineEdge {
             tail_index,
             head_index,
-            connection_cid: connexion_cid,
+            connection_cid,
         })
     }
     Ok((edges, vertex_idx_mapping))

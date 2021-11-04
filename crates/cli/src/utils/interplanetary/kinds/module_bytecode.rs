@@ -1,5 +1,6 @@
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
+use anyhow::Context;
 use std::io::{Cursor, Read, Seek};
 use std::convert::{TryInto, TryFrom};
 use sk_cbor::Value;
@@ -9,7 +10,7 @@ use cid::Cid;
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
 
 pub struct ModuleBytecode {
-    bytecode: Cursor<Vec<u8>>
+    pub bytecode: Cursor<Vec<u8>>
 }
 
 impl ModuleBytecode {
@@ -23,7 +24,11 @@ impl AsInterplanetaryBlock<Cursor<Vec<u8>>> for ModuleBytecode {
         BlockMulticodec::Raw
     }
 
-    fn content(&self) -> Cursor<Vec<u8>> {
+    fn get_content(&self) -> Cursor<Vec<u8>> {
         self.bytecode.clone()
+    }
+
+    fn from_content(content: &Cursor<Vec<u8>>) -> Result<Box<Self>> {
+        Ok(Box::new(ModuleBytecode{bytecode: content.clone() }))
     }
 }
