@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context, Result};
 use sled::Db;
 
-use crate::utils::local::context::helpers::NodeType;
 use crate::utils::local::models;
 use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
 use crate::utils::repo::helpers::get_root_path;
