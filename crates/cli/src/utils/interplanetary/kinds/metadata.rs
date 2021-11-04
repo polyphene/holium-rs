@@ -3,18 +3,26 @@
 
 use anyhow::Context;
 use anyhow::Result;
+use anyhow::Error as AnyhowError;
 use sk_cbor::cbor_text;
 use sk_cbor::Value;
 use sled::IVec;
-use crate::utils::local::context::helpers::NodeType;
+use crate::utils::local::context::helpers::{NodeType, build_node_typed_name};
 use crate::utils::local::models::shaper::Shaper;
 use crate::utils::errors::Error::BinCodeDeserializeFailed;
 use crate::utils::local::models::source::Source;
 use crate::utils::local::models::transformation::Transformation;
+use std::convert::TryFrom;
+
+#[derive(thiserror::Error, Debug)]
+enum Error {
+    #[error("failed to manipulate metadata kind")]
+    FailedToManipulated,
+}
 
 static DISCRIMINANT_KEY_V0: &str = "meta_0";
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Metadata {
     pub name: Option<String>,
     pub json_schema: Option<String>,
@@ -25,7 +33,7 @@ pub struct Metadata {
 impl Metadata {
     pub fn new(name: &str, encoded: &IVec, node_type: &NodeType) -> Result<Self> {
         let mut metadata = Metadata::default();
-        metadata.name = Some(name.to_string());
+        metadata.name = Some(build_node_typed_name(node_type, name));
         let a = match node_type {
             NodeType::shaper => {
                 let decoded: Shaper = bincode::deserialize(&encoded[..])
@@ -69,5 +77,38 @@ impl From<Metadata> for sk_cbor::Value {
             values.push((cbor_text!("json_schema_out"), cbor_text!(json_schema_out)))
         }
         Value::Map(values)
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for Metadata {
+    type Error = AnyhowError;
+    fn try_from(value: Value) -> Result<Self> {
+        let mut metadata = Metadata::default();
+        if let Value::Map(map) = value {
+            for (key, value) in &map {
+                if *key == cbor_text!("name") {
+                    if let Value::TextString(name) = value {
+                        metadata.name = Some(name.clone());
+                    }
+                }
+                if *key == cbor_text!("json_schema") {
+                    if let Value::TextString(json_schema) = value {
+                        metadata.json_schema = Some(json_schema.clone());
+                    }
+                }
+                if *key == cbor_text!("json_schema_in") {
+                    if let Value::TextString(json_schema_in) = value {
+                        metadata.json_schema_in = Some(json_schema_in.clone());
+                    }
+                }
+                if *key == cbor_text!("json_schema_out") {
+                    if let Value::TextString(json_schema_out) = value {
+                        metadata.json_schema_out = Some(json_schema_out.clone());
+                    }
+                }
+            }
+            return Ok(metadata)
+        }
+        Err(Error::FailedToManipulated.into())
     }
 }

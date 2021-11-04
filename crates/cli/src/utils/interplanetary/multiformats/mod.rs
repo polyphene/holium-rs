@@ -27,6 +27,7 @@ use crate::utils::interplanetary::multiformats::Error::{WrongObjectPath, FailedT
 use std::io::{Read, Seek};
 use crate::utils::local::context::LocalContext;
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::context::InterplanetaryContext;
 
 
 /// Blake3 multicodec code.
@@ -94,13 +95,11 @@ pub fn blake3_hash_to_multihash(hash: [u8; 32]) -> Result<Multihash> {
 
 
 /// Deterministically convert an object CID to a path for local storage.
-pub(crate) fn cid_to_path(cid: &Cid, local_context: &LocalContext) -> Result<PathBuf> {
+pub(crate) fn cid_to_path(cid: &Cid, ip_context: &InterplanetaryContext) -> Result<PathBuf> {
     // create relative path from cid
     let rel_path = cid_to_object_path(&cid)?;
     // create absolute path with context and return
-    Ok(local_context.root_path
-        .join(HOLIUM_DIR)
-        .join(INTERPLANETARY_DIR)
+    Ok(ip_context.ip_area_path
         .join(rel_path))
 }
 
@@ -123,11 +122,9 @@ fn cid_to_object_path(cid: &Cid) -> Result<PathBuf> {
 }
 
 /// Deterministically convert an object absolute path used for local storage to related CID.
-pub fn path_to_cid(path: &PathBuf, local_context: &LocalContext) -> Result<Cid> {
+pub fn path_to_cid(path: &PathBuf, ip_context: &InterplanetaryContext) -> Result<Cid> {
     // check if given path is in expected directory according to the context
-    let interplanetary_dir_path = local_context.root_path
-        .join(HOLIUM_DIR)
-        .join(INTERPLANETARY_DIR);
+    let interplanetary_dir_path = &ip_context.ip_area_path;
     if !path.starts_with(&interplanetary_dir_path) {
         return Err(Error::CidFromPathError.into())
     }

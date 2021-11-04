@@ -24,6 +24,7 @@ use crate::utils::interplanetary::kinds::pipeline_edge::PipelineEdge;
 use crate::utils::interplanetary::kinds::pipeline::Pipeline;
 use crate::utils::interplanetary::kinds::connection::Connection as ConnectionBlock;
 use crate::utils::local::models::connection::Connection;
+use crate::utils::interplanetary::context::InterplanetaryContext;
 
 /// [ VerticesContentMap ] is used to map nodes' name to their content while constructing the
 /// interplanetary representation of a pipeline.
@@ -33,20 +34,20 @@ pub type VerticesContentMap = HashMap<String, PipelineVertex>;
 /// vertices while constructing the interplanetary representation of a pipeline.
 pub type VerticesKeyMap = HashMap<String, u64>;
 
-pub fn export_project(context: &LocalContext) -> Result<Cid> {
+pub fn export_project(local_context: &LocalContext, ip_context: &InterplanetaryContext) -> Result<Cid> {
     // initialize an object to store the content of the graph nodes
     let mut vertices_content = VerticesContentMap::new();
     // export dry transformations
-    export_dry_transformations(&context, &mut vertices_content)?;
+    export_dry_transformations(&local_context, &ip_context, &mut vertices_content)?;
     // export metadata
-    export_metadata(&context, &mut vertices_content)?;
+    export_metadata(&local_context, &ip_context, &mut vertices_content)?;
     // export connections
-    let (edges, vertices_key_mapping) = export_connections(&context)?;
+    let (edges, vertices_key_mapping) = export_connections(&local_context, &ip_context)?;
     // export the pipeline itself, and return its cid
-    export_pipeline(&context, &vertices_key_mapping, &vertices_content, edges)
+    export_pipeline(&ip_context, &vertices_key_mapping, &vertices_content, edges)
 }
 
-fn export_dry_transformations(local_context: &LocalContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
+fn export_dry_transformations(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
     for o in local_context
         .transformations
         .iter() {
@@ -58,13 +59,13 @@ fn export_dry_transformations(local_context: &LocalContext, vertices_content: &m
             .context(BinCodeDeserializeFailed)?;
         // store the bytecode
         let module_bytecode = ModuleBytecode::new(decoded.bytecode);
-        let module_bytecode_cid = &module_bytecode.write_to_ip_area(&local_context)?;
+        let module_bytecode_cid = module_bytecode.write_to_ip_area(&ip_context)?;
         // store the module bytecode envelope
-        let module_bytecode_envelope = ModuleBytecodeEnvelope::new(&module_bytecode_cid);
-        let module_bytecode_envelope_cid = Value::from(module_bytecode_envelope).write_to_ip_area(&local_context)?;
+        let module_bytecode_envelope = ModuleBytecodeEnvelope::new(module_bytecode_cid);
+        let module_bytecode_envelope_cid = Value::from(module_bytecode_envelope).write_to_ip_area(&ip_context)?;
         // store the dry transformation
-        let dry_transformation = DryTransformation::new(&module_bytecode_envelope_cid, &decoded.handle);
-        let dry_transformation_cid = Value::from(dry_transformation).write_to_ip_area(&local_context)?;
+        let dry_transformation = DryTransformation::new(module_bytecode_envelope_cid, decoded.handle);
+        let dry_transformation_cid = Value::from(dry_transformation).write_to_ip_area(&ip_context)?;
         // add it to the vertices context map
         let typed_name = build_node_typed_name(&NodeType::transformation, name.as_str());
         let vertex_content = vertices_content.entry(typed_name).or_insert(PipelineVertex::default());
@@ -73,7 +74,7 @@ fn export_dry_transformations(local_context: &LocalContext, vertices_content: &m
     Ok(())
 }
 
-fn export_metadata(local_context: &LocalContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
+fn export_metadata(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
     for (local_context_tree, node_type) in
     local_context
         .get_nodes_tree_type_tuples()
@@ -84,7 +85,7 @@ fn export_metadata(local_context: &LocalContext, vertices_content: &mut Vertices
             let name = db_key_to_str(name_vec)?;
             // create and write a metadata block
             let metadata = Metadata::new(&name, &encoded, &node_type)?;
-            let metadata_cid = Value::from(metadata).write_to_ip_area(&local_context)?;
+            let metadata_cid = Value::from(metadata).write_to_ip_area(&ip_context)?;
             // add it to the vertices context map
             let typed_name = build_node_typed_name(&node_type, name.as_str());
             let vertex_content = vertices_content.entry(typed_name).or_insert(PipelineVertex::default());
@@ -94,7 +95,7 @@ fn export_metadata(local_context: &LocalContext, vertices_content: &mut Vertices
     Ok(())
 }
 
-fn export_connections(local_context: &LocalContext)
+fn export_connections(local_context: &LocalContext, ip_context: &InterplanetaryContext)
     -> Result<(Vec<PipelineEdge>, VerticesKeyMap)> {
     // initialize mapping from nodes' typed names to content block future index in the pipeline's
     // list of vertices, and the list of edges
@@ -123,17 +124,17 @@ fn export_connections(local_context: &LocalContext)
             .to_owned();
         // store selectors
         let tail_selector = SelectorEnvelope::new(&decoded.tail_selector)?;
-        let tail_selector_cid = Value::from(tail_selector).write_to_ip_area(&local_context)?;
+        let tail_selector_cid = Value::from(tail_selector).write_to_ip_area(&ip_context)?;
         let head_selector = SelectorEnvelope::new(&decoded.head_selector)?;
-        let head_selector_cid = Value::from(head_selector).write_to_ip_area(&local_context)?;
-        // store connexion
-        let connexion = ConnectionBlock::new(&tail_selector_cid, &head_selector_cid);
-        let connexion_cid = Value::from(&connexion).write_to_ip_area(&local_context)?;
+        let head_selector_cid = Value::from(head_selector).write_to_ip_area(&ip_context)?;
+        // store connection
+        let connection = ConnectionBlock::new(tail_selector_cid, head_selector_cid);
+        let connection_cid = Value::from(connection).write_to_ip_area(&ip_context)?;
         // add new edge to the list
         edges.push(PipelineEdge {
             tail_index,
             head_index,
-            connection_cid: connexion_cid,
+            connection_cid,
         })
     }
     Ok((edges, vertex_idx_mapping))
@@ -146,7 +147,7 @@ fn increment_after(x: &mut u64) -> u64 {
 }
 
 fn export_pipeline(
-    local_context: &LocalContext,
+    ip_context: &InterplanetaryContext,
     vertices_key_mapping: &VerticesKeyMap,
     vertices_content: &VerticesContentMap,
     edges: Vec<PipelineEdge>
@@ -154,5 +155,5 @@ fn export_pipeline(
     // create the pipeline object
     let pipeline = Pipeline::new(&vertices_key_mapping, &vertices_content, edges)?;
     // store it and return its cid
-    Value::from(pipeline).write_to_ip_area(&local_context)
+    Value::from(pipeline).write_to_ip_area(&ip_context)
 }

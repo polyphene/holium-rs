@@ -7,7 +7,7 @@ use thiserror;
 use crate::utils::errors::Error::DbOperationFailed;
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::context::constants::{TYPED_NODE_NAME_SEPARATOR, CONNECTION_ID_SEPARATOR, PORTATION_PREFIX_SEPARATOR, PORTATION_FROM_HOLIUM_PREFIX, PORTATION_TO_HOLIUM_PREFIX};
-use std::str::from_utf8;
+use std::str::{from_utf8, FromStr};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -15,6 +15,8 @@ enum Error {
     InvalidNodeName(String, String),
     #[error("invalid connection id: {0}")]
     InvalidConnectionId(String),
+    #[error("invalid node typed name: {0}")]
+    InvalidNodeTypedName(String),
     #[error("invalid pipeline node type: {0}")]
     InvalidNodeType(String),
     #[error("no {0} node found with name: {1}")]
@@ -57,6 +59,17 @@ pub fn validate_node_name(name: &str) -> Result<()> {
 /// and name (*eg* `my-transformation`).
 pub fn build_node_typed_name(node_type: &NodeType, node_name: &str) -> String {
     format!("{}{}{}", node_type.to_string(), TYPED_NODE_NAME_SEPARATOR, node_name)
+}
+
+/// Parse a node typed name (*eg* `transformation:my-transformation`) into its type (*eg* `transformation`)
+/// and untyped name (*eg* `my-transformation`).
+pub fn parse_node_typed_name(node_typed_name: &str) -> Result<(NodeType, String)> {
+    let splits: Vec<&str> = node_typed_name.split(TYPED_NODE_NAME_SEPARATOR).collect();
+    if splits.len() != 2 {
+        return Err(Error::InvalidNodeTypedName(node_typed_name.to_string()).into());
+    }
+    let node_type = NodeType::from_str(splits[0]).map_err(AnyhowError::msg)?;
+    Ok((node_type, splits[1].to_string()))
 }
 
 /// Check from a node type string and a node name that a pipeline node does exist in the local Holium area.

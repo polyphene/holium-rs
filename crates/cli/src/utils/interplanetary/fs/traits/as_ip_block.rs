@@ -3,38 +3,55 @@ use crate::utils::local::context::LocalContext;
 use cid::Cid;
 use anyhow::Result;
 use anyhow::Context;
+use anyhow::Error as AnyhowError;
 use crate::utils::interplanetary::multiformats::{compute_cid, cid_to_path};
 use std::fs;
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
 use std::io;
-use std::io::{Seek, Read, Cursor};
+use std::io::{Seek, Read, Cursor, Write};
+use crate::utils::interplanetary::context::InterplanetaryContext;
+use std::fs::File;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to write block in the interplanetary area: {0}")]
     FailedToWriteBlock(String),
+    #[error("failed to create interplanetary block structure from content")]
+    FailedCreationFromContent,
 }
 
-pub trait AsInterplanetaryBlock<ContentType: Read + Seek> {
+pub trait AsInterplanetaryBlock<ContentType: Read + Write + Seek + Default> {
     /// Returns the multicodec used for the interplanetary block.
     fn codec() -> BlockMulticodec;
 
     /// Access the content of the block.
-    fn content(&self) -> ContentType;
-    // fn content(&self) -> Cursor<Vec<u8>> { Cursor::new(vec![])}
+    fn get_content(&self) -> ContentType;
+
+    /// Create new object from content.
+    fn from_content(content: &ContentType) -> Result<Box<Self>>;
 
     /// Read and parse a block in the interplanetary area.
-    fn read_from_ip_area(cid: &Cid, local_context: &LocalContext) -> Result<Box<Self>> {
-        todo!()
+    fn read_from_ip_area(cid: &Cid, ip_context: &InterplanetaryContext) -> Result<Box<Self>> {
+        // compute block path related to the cid
+        let path = cid_to_path(&cid, &ip_context)?;
+        // read the whole block
+        let mut file = File::open(path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        let mut buf_cursor = Cursor::new(buffer);
+        let mut content: ContentType = ContentType::default();
+        io::copy(&mut buf_cursor, &mut content)?;
+        // returned boxed object
+        Self::from_content(&content)
     }
 
     /// Write as a new block in the interplanetary area.
-    fn write_to_ip_area(&self, local_context: &LocalContext) -> Result<Cid> {
-        let mut content: ContentType = self.content();
+    fn write_to_ip_area(&self, ip_context: &InterplanetaryContext) -> Result<Cid> {
+        let mut content: ContentType = self.get_content();
         // compute cid from reader
         let cid = compute_cid(&mut content, &Self::codec())?;
         // compute related block path
-        let path = cid_to_path(&cid, &local_context)?;
+        let path = cid_to_path(&cid, &ip_context)?;
         // write file if it does not already exist
         if !path.exists() {
             // create parent directory if necessary
@@ -66,10 +83,18 @@ impl AsInterplanetaryBlock<Cursor<Vec<u8>>> for sk_cbor::Value {
         BlockMulticodec::DagCbor
     }
 
-    fn content(&self) -> Cursor<Vec<u8>> {
+    fn get_content(&self) -> Cursor<Vec<u8>> {
         let cloned_value = self.clone();
         let mut encoded_cbor = Vec::new();
         sk_cbor::writer::write(cloned_value, &mut encoded_cbor);
         Cursor::new(encoded_cbor)
+    }
+
+    fn from_content(content: &Cursor<Vec<u8>>) -> Result<Box<Self>> {
+        if let Ok(new_object) = sk_cbor::reader::read(content.get_ref()) {
+            Ok(Box::new(new_object))
+        } else {
+            Err(Error::FailedCreationFromContent.into())
+        }
     }
 }
