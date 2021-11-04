@@ -5,6 +5,7 @@ use jsonschema::JSONSchema;
 use serde_json::value::Value;
 use serde_json::{json, Map};
 use ellipse::Ellipse;
+use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
 
 lazy_static::lazy_static! {
     static ref HOLIUM_SELECTOR_SCHEMA: JSONSchema = {
@@ -28,5 +29,9 @@ pub fn validate_selector(literal: &str) -> Result<()> {
     // validate it against Holium selector schema
     HOLIUM_SELECTOR_SCHEMA.validate(&instance)
         .ok()
-        .context(Error::InvalidHoliumSelector)
+        .context(Error::InvalidHoliumSelector)?;
+    // further validate the literal by trying to parse it with the interplanetary kind
+    SelectorEnvelope::new(literal)
+        .context(Error::InvalidHoliumSelector)?;;
+    Ok(())
 }

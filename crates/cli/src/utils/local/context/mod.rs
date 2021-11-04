@@ -16,6 +16,7 @@ pub mod constants;
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
 pub struct LocalContext {
+    pub root_path: PathBuf,
     pub sources: sled::Tree,
     pub shapers: sled::Tree,
     pub transformations: sled::Tree,
@@ -31,20 +32,15 @@ impl LocalContext {
         let root_path = get_root_path()?;
         let holium_root_path = root_path
             .join(HOLIUM_DIR);
-        LocalContext::from_holium_root_path(&holium_root_path)
-    }
-
-    /// Initialize a [ LocalContext ] object from the path of a Holium root directory path.
-    fn from_holium_root_path(holium_root_path: &PathBuf) -> Result<Self> {
         let local_area_path = holium_root_path.join(LOCAL_DIR);
         let db: sled::Db = sled::open(local_area_path)?;
         let portations_file_path = holium_root_path.join(PORTATIONS_FILE);
-        LocalContext::from_db_and_conf_files(db, portations_file_path)
+        LocalContext::from_db_and_conf_files(root_path, db, portations_file_path)
     }
 
-    /// Initialize a [ LocalContext ] object from a local [ sled::Db ] object and the path of the
-    /// portations file.
-    fn from_db_and_conf_files(db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
+    /// Initialize a [ LocalContext ] object from a project root path, a local [ sled::Db ] object
+    /// and the path of the portations file.
+    fn from_db_and_conf_files(root_path: PathBuf, db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
         // Get trees from the DB
         let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
         sources.set_merge_operator(models::source::merge);
@@ -57,7 +53,7 @@ impl LocalContext {
         // Get portations handler from the configuration file
         let portations = Portations::from_path(portations_file_path)?;
         // Return the context handler
-        Ok(LocalContext { sources, shapers, transformations, connections, portations })
+        Ok(LocalContext { root_path, sources, shapers, transformations, connections, portations })
     }
 
     /// For all fields of a local context, select the ones related to nodes of a [ PipelineDag ] and
