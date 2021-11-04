@@ -73,6 +73,7 @@ impl MajorType {
         }
     }
 
+    /// Crawl through a major type and compute the next empty byte offset
     fn next_offset(&self) -> u64 {
         return match self {
             MajorType::Array(recursive) | MajorType::Map(recursive) => {
@@ -103,12 +104,76 @@ impl MajorType {
             }
         };
     }
+
+    /// Return a reference to a child of a recursive major type
+    fn child(&self, index: u64) -> Option<&MajorType> {
+        return match self {
+            MajorType::Array(recursive) | MajorType::Map(recursive) => {
+                // if no elements in recursive or index is out of bounds return none
+                if recursive.nbr_elements == 0usize || recursive.nbr_elements - 1 < index as usize {
+                    return None;
+                }
+
+                // if some elements are already written then return offset after the last element
+                Some(&recursive.elements[index as usize])
+            }
+            MajorType::Unsigned(scalar)
+            | MajorType::Negative(scalar)
+            | MajorType::Bytes(scalar)
+            | MajorType::String(scalar)
+            | MajorType::SimpleValues(scalar) => None,
+        };
+    }
+
+    /// Find a major type by using a selector
+    fn select(&self, selector: &Selector) -> Vec<MajorType> {
+        match selector {
+            Selector::Matcher(_) => {
+                // TODO not handling label right now
+                vec![self.clone()]
+            }
+            Selector::ExploreIndex(explore_index) => {
+                let explored_major_type = self.child(explore_index.index);
+
+                match explored_major_type {
+                    Some(major_type) => major_type.select(&explore_index.next),
+                    None => vec![],
+                }
+            }
+            Selector::ExploreRange(explore_range) => {
+                let mut selected_major_types: Vec<MajorType> = vec![];
+
+                for index in explore_range.start..explore_range.end {
+                    let explored_major_type = self.child(index);
+                    match explored_major_type {
+                        Some(major_type) => {
+                            selected_major_types
+                                .append(&mut major_type.select(&explore_range.next));
+                        }
+                        None => {}
+                    }
+                }
+
+                selected_major_types
+            }
+            Selector::ExploreUnion(explore_union) => {
+                let mut selectors_results: Vec<MajorType> = vec![];
+                let selectors = &explore_union.0;
+                for selector in selectors.iter() {
+                    selectors_results.append(&mut self.select(selector));
+                }
+
+                selectors_results
+            }
+        }
+    }
 }
 
 trait ParseHoliumCbor {
     // To implement to define cursor on reader
     fn as_cursor(&self) -> Cursor<&[u8]>;
 
+    /// Give entire description of a holium cbor serialized object
     fn read_complete_cbor(&self) -> Result<MajorType> {
         let mut buff = self.as_cursor();
 
@@ -122,50 +187,19 @@ trait ParseHoliumCbor {
         Ok(major_type)
     }
 
-    /*fn select_cbor(
-        &self,
-        selector_envelope: &SelectorEnvelope,
-    ) -> Result<Vec<((MajorType, u64, u64, u64))>> {
+    /// Select part of a holium cbor serialized object using a selector
+    fn select_cbor(&self, selector_envelope: &SelectorEnvelope) -> Result<Vec<MajorType>> {
         let mut buff = self.as_cursor();
 
-        let mut elements: Vec<((MajorType, u64, u64, u64))> = vec![];
-
-        let (major_type, header_offset, data_offset, data_size) = read_header(&mut buff)?;
-
-        elements.push((major_type, header_offset, data_offset, data_size));
+        let mut major_type = read_header(&mut buff)?;
 
         if !major_type.is_array() {
             return Err(Error::RootNotArray.into());
         }
+        read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
-        let mut elements_details =
-            read_recursive_elements_detail(&mut buff, major_type, data_offset, data_size).unwrap();
-
-        elements.append(&mut elements_details);
-
-        for (major_type, _, _, _) in elements.iter() {
-            if major_type.is_map() {
-                return Err(Error::NotHandlingMap.into());
-            }
-        }
-
-        match selector_envelope.selector() {
-            Selector::Matcher(matcher) => {
-                dbg!(matcher);
-            }
-            Selector::ExploreIndex(explore_index) => {
-                dbg!(explore_index);
-            }
-            Selector::ExploreRange(explore_range) => {
-                dbg!(explore_range);
-            }
-            Selector::ExploreUnion(explore_union) => {
-                dbg!(explore_union);
-            }
-        };
-
-        Ok(elements)
-    }*/
+        Ok(major_type.select(&selector_envelope.0))
+    }
 }
 
 fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
@@ -173,7 +207,6 @@ fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
         .stream_position()
         .context(Error::FailToGetCursorPosition)
 }
-
 /// Read returning its major type, its data byte offset and size
 fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
     // Save he&der offset for later use

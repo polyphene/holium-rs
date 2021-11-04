@@ -26,7 +26,7 @@ SelectorEnvelope
 ****************/
 
 #[derive(Debug)]
-pub struct SelectorEnvelope(Selector);
+pub struct SelectorEnvelope(pub Selector);
 
 impl SelectorEnvelope {
     pub fn new(selector_str: &str) -> Result<Self> {
@@ -34,12 +34,6 @@ impl SelectorEnvelope {
             serde_json::from_str(&selector_str).context(Error::FailedToParseJsonLiteral)?;
         let selector = Selector::try_from(v)?;
         Ok(SelectorEnvelope { 0: selector })
-    }
-
-    pub fn selector(&self) -> &Selector {
-        match self {
-            SelectorEnvelope(selector) => selector,
-        }
     }
 }
 
@@ -102,7 +96,7 @@ Matcher
 
 #[derive(Debug)]
 pub struct Matcher {
-    label: Option<String>,
+    pub label: Option<String>,
 }
 
 impl From<Matcher> for sk_cbor::Value {
@@ -138,8 +132,8 @@ ExploreIndex
 
 #[derive(Debug)]
 pub struct ExploreIndex {
-    index: u64,
-    next: Box<Selector>,
+    pub index: u64,
+    pub next: Box<Selector>,
 }
 
 impl From<ExploreIndex> for sk_cbor::Value {
@@ -177,9 +171,9 @@ ExploreRange
 
 #[derive(Debug)]
 pub struct ExploreRange {
-    start: u64,
-    end: u64,
-    next: Box<Selector>,
+    pub start: u64,
+    pub end: u64,
+    pub next: Box<Selector>,
 }
 
 impl From<ExploreRange> for sk_cbor::Value {
@@ -221,7 +215,7 @@ impl TryFrom<JsonValue> for ExploreRange {
 ExploreUnion
 ****************/
 #[derive(Debug)]
-pub struct ExploreUnion(Vec<Selector>);
+pub struct ExploreUnion(pub Vec<Selector>);
 
 impl From<ExploreUnion> for sk_cbor::Value {
     fn from(o: ExploreUnion) -> Self {
