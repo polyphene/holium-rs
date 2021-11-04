@@ -15,6 +15,8 @@ enum Error {
     FailedToWriteDeleteMessage,
     #[error("error while writing health success message")]
     FailedToWriteHealthSuccessMessage,
+    #[error("error while writing project export success message")]
+    FailedToWriteProjectExportSuccessMessage,
 }
 /*
 Success messages
@@ -62,11 +64,12 @@ pub fn print_pipeline_health_success(writter: &mut Write) -> Result<()> {
 }
 
 /// Print project EXPORT success message.
-pub fn print_project_export_success(cid: &Cid) {
+pub fn print_project_export_success(writter: &mut Write, cid: &Cid) -> Result<()> {
     let cid_str = cid
         .to_string_of_base(DEFAULT_MULTIBASE)
         .unwrap_or("".to_string());
-    println!(
+    writeln!(
+        writter,
         "{}",
         style(format!(
             "project exported with pipeline cid: {}",
@@ -74,11 +77,13 @@ pub fn print_project_export_success(cid: &Cid) {
         ))
         .green()
     )
+    .context(Error::FailedToWriteProjectExportSuccessMessage)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn can_have_formatted_msg_for_create_success() {
@@ -124,6 +129,20 @@ mod test {
         // pass fake stdout when calling when testing
         print_pipeline_health_success(&mut stdout).unwrap();
 
+        assert_eq!(awaited_msg.as_bytes(), stdout);
+    }
+
+    #[test]
+    fn can_have_formatted_msg_for_project_export_success() {
+        let mut stdout = Vec::new();
+        let cid_str = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi";
+        let cid =
+            Cid::from_str("bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi").unwrap();
+        let awaited_msg = format!("project exported with pipeline cid: {}\n", cid_str);
+
+        // pass fake stdout when calling when testing
+        print_project_export_success(&mut stdout, &cid).unwrap();
+        println!("{:?}", String::from_utf8(stdout.clone()));
         assert_eq!(awaited_msg.as_bytes(), stdout);
     }
 }
