@@ -1,3 +1,5 @@
+// TODO Delete this file.
+
 //! Module implementing some improvements to the more generic but less specialised official
 //! multiformat crates.
 
