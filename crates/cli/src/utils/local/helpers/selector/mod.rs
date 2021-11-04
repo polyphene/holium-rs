@@ -1,10 +1,11 @@
 //! Helper methods related to selectors associated to local Holium connection objects.
 
-use anyhow::{Result, Context};
+use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
+use anyhow::{Context, Result};
+use ellipse::Ellipse;
 use jsonschema::JSONSchema;
 use serde_json::value::Value;
 use serde_json::{json, Map};
-use ellipse::Ellipse;
 
 lazy_static::lazy_static! {
     static ref HOLIUM_SELECTOR_SCHEMA: JSONSchema = {
@@ -28,9 +29,13 @@ pub fn validate_selector(literal: &str) -> Result<()> {
     // parse the instance literal into serde_json::Value
     let instance: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
     // validate it against Holium selector schema
-    HOLIUM_SELECTOR_SCHEMA.validate(&instance)
+    HOLIUM_SELECTOR_SCHEMA
+        .validate(&instance)
         .ok()
-        .context(Error::InvalidHoliumSelector)
+        .context(Error::InvalidHoliumSelector)?;
+    // further validate the literal by trying to parse it with the interplanetary kind
+    SelectorEnvelope::new(literal).context(Error::InvalidHoliumSelector)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -44,7 +49,11 @@ mod test {
         let res = validate_selector(non_json);
 
         assert!(res.is_err());
-        assert!(res.err().unwrap().to_string().contains("invalid string can not be passed to json"));
+        assert!(res
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("invalid string can not be passed to json"));
     }
 
     #[test]
@@ -54,6 +63,10 @@ mod test {
         let res = validate_selector(non_json);
 
         assert!(res.is_err());
-        assert!(res.err().unwrap().to_string().contains("invalid holium selector"));
+        assert!(res
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("invalid holium selector"));
     }
 }

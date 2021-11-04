@@ -1,6 +1,8 @@
+use crate::utils::interplanetary::multiformats::DEFAULT_MULTIBASE;
 use anyhow::{Context, Result};
-use std::io::Write;
+use cid::Cid;
 use console::style;
+use std::io::Write;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -14,10 +16,9 @@ enum Error {
     #[error("error while writing health success message")]
     FailedToWriteHealthSuccessMessage,
 }
-
 /*
- Success messages
- */
+Success messages
+*/
 
 /// Print CREATE method success message.
 pub fn print_create_success(writter: &mut Write, key: &str) -> Result<()> {
@@ -25,23 +26,28 @@ pub fn print_create_success(writter: &mut Write, key: &str) -> Result<()> {
         writter,
         "{}",
         style(format!("new object created: {}", style(key).bold())).green()
-    ).context(Error::FailedToWriteSuccessMessage)
+    )
+    .context(Error::FailedToWriteSuccessMessage)
 }
 
 /// Print UPDATE method success message.
 pub fn print_update_success(writter: &mut Write, key: &str) -> Result<()> {
-    writeln!(writter,
-             "{}",
-             style(format!("object updated: {}", style(key).bold())).green()
-    ).context(Error::FailedToWriteUpdateMessage)
+    writeln!(
+        writter,
+        "{}",
+        style(format!("object updated: {}", style(key).bold())).green()
+    )
+    .context(Error::FailedToWriteUpdateMessage)
 }
 
 /// Print DELETE method success message.
 pub fn print_delete_success(writter: &mut Write, key: &str) -> Result<()> {
-    writeln!(writter,
-             "{}",
-             style(format!("object deleted: {}", style(key).bold())).green()
-    ).context(Error::FailedToWriteDeleteMessage)
+    writeln!(
+        writter,
+        "{}",
+        style(format!("object deleted: {}", style(key).bold())).green()
+    )
+    .context(Error::FailedToWriteDeleteMessage)
 }
 
 /// Print success message for methods checking the health of the transformation pipeline currently
@@ -51,7 +57,23 @@ pub fn print_pipeline_health_success(writter: &mut Write) -> Result<()> {
         writter,
         "{}",
         style("current project holds a healthy transformation pipeline").green()
-    ).context(Error::FailedToWriteHealthSuccessMessage)
+    )
+    .context(Error::FailedToWriteHealthSuccessMessage)
+}
+
+/// Print project EXPORT success message.
+pub fn print_project_export_success(cid: &Cid) {
+    let cid_str = cid
+        .to_string_of_base(DEFAULT_MULTIBASE)
+        .unwrap_or("".to_string());
+    println!(
+        "{}",
+        style(format!(
+            "project exported with pipeline cid: {}",
+            style(cid_str).bold()
+        ))
+        .green()
+    )
 }
 
 #[cfg(test)]
@@ -105,4 +127,3 @@ mod test {
         assert_eq!(awaited_msg.as_bytes(), stdout);
     }
 }
-

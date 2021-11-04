@@ -1,4 +1,5 @@
 #[macro_use]
+extern crate alloc;
 extern crate humansize;
 extern crate lazy_static;
 extern crate prettytable;
