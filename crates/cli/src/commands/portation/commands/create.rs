@@ -16,6 +16,7 @@ use crate::utils::local::context::helpers::{validate_pipeline_node_existence, No
 use crate::utils::local::helpers::selector::validate_selector;
 use crate::utils::repo::helpers::to_relative_path_to_project_root;
 use crate::utils::local::helpers::media_type::validate_mimetype_coherence;
+use crate::utils::repo::context::RepositoryContext;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -67,8 +68,9 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// handler
 pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
-    // create local context
+    // create contexts
     let mut local_context = LocalContext::new()?;
+    let mut repo_context = RepositoryContext::new()?;
     // get argument values
     let direction = matches.value_of("direction")
         .context(MissingRequiredArgument("direction".to_string()))?;
@@ -87,7 +89,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let direction = direction.parse::<PortationDirectionType>().map_err(AnyhowError::msg)?;
     let id = build_portation_id(&direction, &node_typed_name);
     // check that the object does not already exist
-    if local_context.portations.contains_key(&id.to_string()) {
+    if repo_context.portations.contains_key(&id.to_string()) {
         return Err(ObjectAlreadyExistsForGivenKey(id.to_string()).into());
     }
     // validate file path
@@ -103,7 +105,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         file_format,
     };
     // store new object
-    local_context.portations
+    repo_context.portations
         .insert(object.id.clone(), object)?;
     print_create_success(&id);
     Ok(())

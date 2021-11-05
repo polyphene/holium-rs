@@ -5,9 +5,8 @@ use anyhow::{anyhow, Context, Result};
 use sled::Db;
 
 use crate::utils::local::models;
-use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
+use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR};
 use crate::utils::repo::helpers::get_root_path;
-use crate::utils::repo::models::portation::Portations;
 use crate::utils::local::context::helpers::NodeType;
 use tempfile::{tempdir, TempDir};
 use std::fs;
@@ -31,7 +30,6 @@ pub struct LocalContext {
     pub shapers: sled::Tree,
     pub transformations: sled::Tree,
     pub connections: sled::Tree,
-    pub portations: Portations,
 }
 
 impl LocalContext {
@@ -62,22 +60,12 @@ impl LocalContext {
         if !local_area_path.exists() { fs::create_dir(&local_area_path).context(Error::FailedToInit)? }
         // initialize database handle
         let db: sled::Db = sled::open(&local_area_path).context(Error::FailedToInit)?;
-        // create the portation file if it does not exist
-        let portations_file_path = holium_root_path.join(PORTATIONS_FILE);
-        if !portations_file_path.exists() {
-            OpenOptions::new()
-                .create(true)
-                .write(true)
-                .open(&portations_file_path)
-                .context(Error::FailedToInit)?;
-        }
         // configure local context
-        LocalContext::from_db_and_conf_files(root_path, db, portations_file_path)
+        LocalContext::from_db_and_conf_files(root_path, db)
     }
 
-    /// Initialize a [ LocalContext ] object from a project a local [ sled::Db ] object
-    /// and the path of the portations file.
-    fn from_db_and_conf_files(root_path: &PathBuf, db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
+    /// Initialize a [ LocalContext ] object from a project root path and a local [ sled::Db ] object.
+    fn from_db_and_conf_files(root_path: &PathBuf, db: sled::Db) -> Result<Self> {
         // Get trees from the DB
         let data: sled::Tree = db.open_tree(models::data::TREE_NAME)?;
         let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
@@ -88,10 +76,8 @@ impl LocalContext {
         transformations.set_merge_operator(models::transformation::merge);
         let connections: sled::Tree = db.open_tree(models::connection::TREE_NAME)?;
         connections.set_merge_operator(models::connection::merge);
-        // Get portations handler from the configuration file
-        let portations = Portations::from_path(portations_file_path)?;
         // Return the context handler
-        Ok(LocalContext { data, root_path: root_path.clone(), db, sources, shapers, transformations, connections, portations })
+        Ok(LocalContext { data, root_path: root_path.clone(), db, sources, shapers, transformations, connections })
     }
 
     /// Move local area from a context to another.
