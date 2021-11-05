@@ -58,6 +58,15 @@ pub enum Selector {
     ExploreUnion(Box<ExploreUnion>),
 }
 
+impl Selector {
+    pub fn is_matcher(&self) -> bool {
+        match self {
+            Selector::Matcher(_) => true,
+            _ => false,
+        }
+    }
+}
+
 impl From<Selector> for sk_cbor::Value {
     fn from(o: Selector) -> Self {
         let (key, child_selector): (&str, sk_cbor::Value) = match o {

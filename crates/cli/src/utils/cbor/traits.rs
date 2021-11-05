@@ -29,6 +29,14 @@ enum Error {
     MajorTypeNonRecursive,
 }
 
+#[derive(thiserror::Error, Debug)]
+enum SelectorError {
+    #[error("non valid selector structure")]
+    NonValidSelectorStructure,
+    #[error("no node for given selector")]
+    NoNodeFound,
+}
+
 /// [`ScalarType`] contains all information relative to a scalar cbor major type in a cursor
 #[derive(Clone, Copy, Debug)]
 pub struct ScalarType {
@@ -126,44 +134,45 @@ impl MajorType {
     }
 
     /// Find a major type by using a selector
-    fn select(&self, selector: &Selector) -> Vec<MajorType> {
+    fn select(&self, selector: &Selector) -> Result<Vec<Vec<MajorType>>> {
         match selector {
-            Selector::Matcher(_) => {
-                // TODO not handling label right now
-                vec![self.clone()]
-            }
+            Selector::Matcher(_) => Ok(vec![vec![self.clone()]]),
             Selector::ExploreIndex(explore_index) => {
                 let explored_major_type = self.child(explore_index.index);
 
                 match explored_major_type {
-                    Some(major_type) => major_type.select(&explore_index.next),
-                    None => vec![],
+                    Some(major_type) => Ok(major_type.select(&explore_index.next)?),
+                    None => return Err(SelectorError::NoNodeFound.into()),
                 }
             }
             Selector::ExploreRange(explore_range) => {
                 let mut selected_major_types: Vec<MajorType> = vec![];
 
                 for index in explore_range.start..explore_range.end {
+                    // After a range we expect a matcher, otherwise error
+                    if explore_range.next.is_matcher() {
+                        return Err(SelectorError::NonValidSelectorStructure.into());
+                    }
+
                     let explored_major_type = self.child(index);
                     match explored_major_type {
                         Some(major_type) => {
-                            selected_major_types
-                                .append(&mut major_type.select(&explore_range.next));
+                            selected_major_types.push(major_type.clone());
                         }
-                        None => {}
+                        None => return Err(SelectorError::NoNodeFound.into()),
                     }
                 }
 
-                selected_major_types
+                Ok(vec![selected_major_types])
             }
             Selector::ExploreUnion(explore_union) => {
-                let mut selectors_results: Vec<MajorType> = vec![];
+                let mut selectors_results: Vec<Vec<MajorType>> = vec![];
                 let selectors = &explore_union.0;
                 for selector in selectors.iter() {
-                    selectors_results.append(&mut self.select(selector));
+                    selectors_results.append(&mut self.select(selector)?);
                 }
 
-                selectors_results
+                Ok(selectors_results)
             }
         }
     }
@@ -174,7 +183,7 @@ trait ParseHoliumCbor {
     fn as_cursor(&self) -> Cursor<&[u8]>;
 
     /// Give entire description of a holium cbor serialized object
-    fn read_complete_cbor(&self) -> Result<MajorType> {
+    fn complete_cbor_structure(&self) -> Result<MajorType> {
         let mut buff = self.as_cursor();
 
         let mut major_type = read_header(&mut buff)?;
@@ -188,7 +197,10 @@ trait ParseHoliumCbor {
     }
 
     /// Select part of a holium cbor serialized object using a selector
-    fn select_cbor(&self, selector_envelope: &SelectorEnvelope) -> Result<Vec<MajorType>> {
+    fn select_cbor_structure(
+        &self,
+        selector_envelope: &SelectorEnvelope,
+    ) -> Result<Vec<Vec<MajorType>>> {
         let mut buff = self.as_cursor();
 
         let mut major_type = read_header(&mut buff)?;
@@ -198,7 +210,7 @@ trait ParseHoliumCbor {
         }
         read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
-        Ok(major_type.select(&selector_envelope.0))
+        Ok(major_type.select(&selector_envelope.0)?)
     }
 }
 
