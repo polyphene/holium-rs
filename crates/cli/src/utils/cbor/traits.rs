@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use std::borrow::Borrow;
 use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,7 @@ use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
 #[derive(thiserror::Error, Debug)]
-enum Error {
+enum ParseError {
     #[error("non existing major type")]
     NonExistingMajorType,
     #[error("holium cbor does not handle maps")]
@@ -35,7 +36,35 @@ enum SelectorError {
     NonValidSelectorStructure,
     #[error("no node for given selector")]
     NoNodeFound,
+    #[error("union can only be found at the root of a selector")]
+    UnionOnlyAtRoot,
 }
+
+#[derive(thiserror::Error, Debug)]
+enum WriteError {
+    #[error("non compatible selectors")]
+    NonCompatibleSelectors,
+    #[error("tail and head selectors union does not have the same number of elements")]
+    DifferentUnionLength,
+    #[error("union should only be applied at root level for a Holium selector")]
+    UnionOnlyAtRootLevel,
+    #[error("tried to apply an index selection on a declared leaf in the tree")]
+    IndexSelectionOnLeaf,
+    #[error("tried to apply a range selection on a declared leaf in the tree")]
+    RangeSelectionOnLeaf,
+    #[error("index already taken by another element")]
+    IndexAlreadyTaken,
+    #[error("data set length is not equal to range length")]
+    DatasetLengthInequalRangeLength,
+    #[error("no data in dataset")]
+    NoDataInDataSet,
+    #[error("no node at given index")]
+    NoNodeAtIndex,
+}
+
+/**************************************************
+ * MajorTypes
+ **************************************************/
 
 /// [`ScalarType`] contains all information relative to a scalar cbor major type in a cursor
 #[derive(Clone, Copy, Debug)]
@@ -78,6 +107,43 @@ impl MajorType {
         match self {
             MajorType::Map(_) => true,
             _ => false,
+        }
+    }
+
+    /// [details] returns the header offset for a given major type and its size in bytes. If no data then
+    /// returns `(header_offset, 1)
+    fn details(&self) -> (u64, usize) {
+        match self {
+            MajorType::Unsigned(scalar)
+            | MajorType::Negative(scalar)
+            | MajorType::Bytes(scalar)
+            | MajorType::String(scalar)
+            | MajorType::SimpleValues(scalar) => {
+                return if scalar.data_offset.is_none() {
+                    (scalar.header_offset, 1usize)
+                } else {
+                    (
+                        scalar.header_offset,
+                        (scalar.data_offset.unwrap() - scalar.header_offset + scalar.data_size)
+                            as usize,
+                    )
+                }
+            }
+            MajorType::Array(recursive) | MajorType::Map(recursive) => {
+                if recursive.nbr_elements == 0 {
+                    return (recursive.header_offset, 1);
+                }
+
+                let mut recursive_size = 0usize;
+                recursive_size +=
+                    (recursive.data_offset.unwrap() - recursive.header_offset) as usize;
+
+                for major_type in recursive.elements.iter() {
+                    recursive_size += major_type.details().1;
+                }
+
+                (recursive.header_offset, recursive_size)
+            }
         }
     }
 
@@ -150,7 +216,7 @@ impl MajorType {
 
                 for index in explore_range.start..explore_range.end {
                     // After a range we expect a matcher, otherwise error
-                    if explore_range.next.is_matcher() {
+                    if !explore_range.next.is_matcher() {
                         return Err(SelectorError::NonValidSelectorStructure.into());
                     }
 
@@ -178,7 +244,223 @@ impl MajorType {
     }
 }
 
-trait ParseHoliumCbor {
+// [Leaf] represent a data that is a leaf in a HoliumCbor data
+#[derive(Clone, Debug)]
+struct Leaf {
+    index: u64,
+    data: Vec<u8>,
+}
+
+/// [Node] represent a node in a HoliumCbor data
+#[derive(Clone, Debug)]
+struct Node {
+    index: Option<u64>,
+    data: Option<Vec<u8>>,
+    elements: Vec<HoliumCborNode>,
+}
+
+/// [HoliumCborConstructor] is a utility structure to create a HoliumCbor object at a later time
+#[derive(Clone, Debug)]
+enum HoliumCborNode {
+    Leaf(Leaf),
+    Node(Node),
+}
+
+impl HoliumCborNode {
+    fn root() -> Self {
+        HoliumCborNode::Node(Node {
+            index: None,
+            data: None,
+            elements: vec![],
+        })
+    }
+
+    fn get_index(&self) -> Option<u64> {
+        match self {
+            HoliumCborNode::Node(node) => node.index,
+            HoliumCborNode::Leaf(leaf) => Some(leaf.index),
+        }
+    }
+
+    fn is_node(&self) -> bool {
+        match self {
+            HoliumCborNode::Node(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Ingest data from a dataset based on a [Selector]
+    fn ingest(&mut self, selector: &Selector, data_set: &mut [Vec<u8>]) -> Result<()> {
+        match selector {
+            Selector::ExploreIndex(explore_index) => {
+                // Making sure that we are on a Node and not a leaf. This can be avoided if selector is
+                // properly constructed
+                match self {
+                    HoliumCborNode::Node(node) => {
+                        match explore_index.next.borrow() {
+                            Selector::Matcher(_) => {
+                                // Making sure index is not already taken
+                                if node
+                                    .elements
+                                    .iter()
+                                    .any(|e| e.get_index().unwrap() == explore_index.index)
+                                {
+                                    return Err(WriteError::IndexAlreadyTaken.into());
+                                }
+                                // If multiple object in dataset, create a Node object that will
+                                // contain our leaves, and set it at given index.
+                                // Otherwise lets store the data in a leaf
+                                if data_set.len() > 1usize {
+                                    let mut node_to_store: Node = Node {
+                                        index: Some(explore_index.index),
+                                        data: None,
+                                        elements: vec![],
+                                    };
+
+                                    for (i, data) in data_set.iter().enumerate() {
+                                        node_to_store.elements.push(HoliumCborNode::Leaf(Leaf {
+                                            index: i as u64,
+                                            data: data.clone(),
+                                        }))
+                                    }
+                                    node.elements.push(HoliumCborNode::Node(node_to_store));
+                                } else {
+                                    node.elements.push(HoliumCborNode::Leaf(Leaf {
+                                        index: explore_index.index,
+                                        data: data_set
+                                            .get(0)
+                                            .ok_or(WriteError::NoDataInDataSet)?
+                                            .clone(),
+                                    }))
+                                }
+                            }
+                            Selector::ExploreIndex(_) | Selector::ExploreRange(_) => {
+                                // If node does not exist then create it
+                                if !node
+                                    .elements
+                                    .iter()
+                                    .any(|e| e.get_index().unwrap() == explore_index.index)
+                                {
+                                    node.elements.push(HoliumCborNode::Node(Node {
+                                        index: Some(explore_index.index),
+                                        data: None,
+                                        elements: vec![],
+                                    }));
+                                }
+                                let mut next_node: Vec<&mut HoliumCborNode> = node
+                                    .elements
+                                    .iter_mut()
+                                    .filter(|e| e.get_index().unwrap() == explore_index.index)
+                                    .collect::<Vec<&mut HoliumCborNode>>();
+
+                                return next_node[0].ingest(&explore_index.next, data_set);
+                            }
+                            Selector::ExploreUnion(_) => {
+                                return Err(SelectorError::UnionOnlyAtRoot.into())
+                            }
+                        }
+                    }
+                    _ => return Err(WriteError::IndexSelectionOnLeaf.into()),
+                }
+            }
+            Selector::ExploreRange(explore_range) => {
+                // Making sure that we are on a Node and not a leaf. This can be avoided if selector is
+                // properly constructed
+                match self {
+                    HoliumCborNode::Node(node) => {
+                        // If range then deconstruct in it. But the data set needs to have the exact number of
+                        // elements
+                        if data_set.len() as u64 != explore_range.end - explore_range.start {
+                            return Err(WriteError::DatasetLengthInequalRangeLength.into());
+                        }
+
+                        for (i, to_set_index) in
+                            (explore_range.start..explore_range.end).enumerate()
+                        {
+                            // Making sure index is not already taken
+                            if node
+                                .elements
+                                .iter()
+                                .any(|e| e.get_index().unwrap() == to_set_index)
+                            {
+                                return Err(WriteError::IndexAlreadyTaken.into());
+                            }
+                            node.elements.push(HoliumCborNode::Leaf(Leaf {
+                                index: to_set_index,
+                                data: data_set[i].clone(),
+                            }))
+                        }
+                    }
+                    _ => return Err(WriteError::RangeSelectionOnLeaf.into()),
+                }
+            }
+            Selector::ExploreUnion(_) => return Err(WriteError::UnionOnlyAtRootLevel.into()),
+            Selector::Matcher(_) => {
+                // If we arrive here it means that we are at root, just checking for safety with
+                // an unreachable macro if not on a node type
+                match self {
+                    HoliumCborNode::Node(node) => {
+                        // If one element then it is our data
+                        // Otherwise we build an array out of dataset and use it as data
+                        if data_set.len() == 1usize {
+                            node.data = Some(data_set[0].clone());
+                        } else {
+                            let mut buff = generate_array_cbor_header(data_set.len() as u64);
+                            for mut data in data_set.iter_mut() {
+                                buff.append(data);
+                            }
+                            node.data = Some(buff);
+                        }
+                        return Ok(());
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Generates Cbor object based on the current data held by a [HoliumCborNode] structure
+    fn generate_cbor(&self) -> Result<Vec<u8>> {
+        match self {
+            HoliumCborNode::Leaf(leaf) => Ok(leaf.data.clone()),
+            HoliumCborNode::Node(node) => {
+                // Check if root has data, if so then it is our object
+                if node.data.is_some() {
+                    return Ok(node.data.clone().unwrap());
+                }
+
+                // Otherwise lets create it recursively
+                let mut node_data: Vec<u8> = vec![];
+                for i in 0..node.elements.len() {
+                    // Find node with index
+                    let mut next_node: Vec<&HoliumCborNode> = node
+                        .elements
+                        .iter()
+                        .filter(|e| e.get_index().unwrap() == i as u64)
+                        .collect::<Vec<&HoliumCborNode>>();
+
+                    node_data.append(
+                        &mut next_node
+                            .get(0)
+                            .ok_or(WriteError::NoNodeAtIndex)?
+                            .generate_cbor()?,
+                    );
+                }
+                let mut buff: Vec<u8> = generate_array_cbor_header(node.elements.len() as u64);
+
+                buff.append(&mut node_data);
+                return Ok(buff);
+            }
+        }
+    }
+}
+
+/**************************************************
+ * Traits
+ **************************************************/
+
+pub trait ParseHoliumCbor {
     // To implement to define cursor on reader
     fn as_cursor(&self) -> Cursor<&[u8]>;
 
@@ -189,7 +471,7 @@ trait ParseHoliumCbor {
         let mut major_type = read_header(&mut buff)?;
 
         if !major_type.is_array() {
-            return Err(Error::RootNotArray.into());
+            return Err(ParseError::RootNotArray.into());
         }
         read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
@@ -206,18 +488,78 @@ trait ParseHoliumCbor {
         let mut major_type = read_header(&mut buff)?;
 
         if !major_type.is_array() {
-            return Err(Error::RootNotArray.into());
+            return Err(ParseError::RootNotArray.into());
         }
         read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
         Ok(major_type.select(&selector_envelope.0)?)
     }
+
+    fn select_cbor(&self, selector_envelope: &SelectorEnvelope) -> Result<Vec<Vec<Vec<u8>>>> {
+        let select_cbor_structure = self.select_cbor_structure(selector_envelope)?;
+
+        let mut buff = self.as_cursor();
+
+        retrieve_cbor_in_reader(&mut buff, &select_cbor_structure)
+    }
 }
+
+pub trait WriteHoliumCbor {
+    // To implement to define cursor on reader
+    fn as_cursor(&self) -> Cursor<&[u8]>;
+
+    fn copy_cbor<H: ParseHoliumCbor>(
+        &self,
+        source_data: H,
+        tail_selector: &SelectorEnvelope,
+        head_selector: &SelectorEnvelope,
+    ) -> Result<Vec<u8>> {
+        let mut selected_cbor = source_data.select_cbor(tail_selector)?;
+
+        let mut holium_cbor_constructor: HoliumCborNode = HoliumCborNode::Node(Node {
+            index: None,
+            data: None,
+            elements: vec![],
+        });
+        // If head selector a union, check that tail selector is also one with the same number of
+        // selectors
+        match &head_selector.0 {
+            Selector::ExploreUnion(receiver_union) => match &tail_selector.0 {
+                Selector::ExploreUnion(source_union) => {
+                    if source_union.0.len() != receiver_union.0.len() {
+                        return Err(WriteError::DifferentUnionLength.into());
+                    }
+
+                    for (i, data_set) in selected_cbor.iter_mut().enumerate() {
+                        holium_cbor_constructor.ingest(&source_union.0[i], data_set)?;
+                    }
+                }
+                _ => return Err(WriteError::NonCompatibleSelectors.into()),
+            },
+            _ => {
+                holium_cbor_constructor.ingest(
+                    &head_selector.0,
+                    &mut selected_cbor
+                        .get_mut(0)
+                        .ok_or(WriteError::NoDataInDataSet)?,
+                )?;
+            }
+        }
+
+        let mut buff = self.as_cursor();
+
+        Ok(holium_cbor_constructor.generate_cbor()?)
+    }
+}
+
+/**************************************************
+ * Utilities
+ **************************************************/
 
 fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
     reader
         .stream_position()
-        .context(Error::FailToGetCursorPosition)
+        .context(ParseError::FailToGetCursorPosition)
 }
 /// Read returning its major type, its data byte offset and size
 fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
@@ -228,7 +570,7 @@ fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
     let mut first_byte_buffer = [0];
     reader
         .read(&mut first_byte_buffer[..])
-        .context(Error::NonReadableByte(get_cursor_position(reader)?))?;
+        .context(ParseError::NonReadableByte(get_cursor_position(reader)?))?;
 
     // Major type information on first 3 bits
     let major_type_number = first_byte_buffer[0] >> 5;
@@ -278,7 +620,7 @@ fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
             data_offset,
             data_size,
         }),
-        _ => return Err(Error::NonExistingMajorType.into()),
+        _ => return Err(ParseError::NonExistingMajorType.into()),
     })
 }
 
@@ -297,7 +639,7 @@ fn read_data_size<R: Read + Seek>(
             25 => Ok((Some(header_offset + 1), 2)),
             26 => Ok((Some(header_offset + 1), 4)),
             27 => Ok((Some(header_offset + 1), 8)),
-            _ => return Err(Error::UnhandledDataDetails.into()),
+            _ => return Err(ParseError::UnhandledDataDetails.into()),
         },
         2 | 3 | 4 | 5 => {
             // As specified in CBOR, if sum of leftover bits >= 24 then information can be found on other bytes
@@ -308,7 +650,7 @@ fn read_data_size<R: Read + Seek>(
                 25 => 2,
                 26 => 4,
                 27 => 8,
-                _ => return Err(Error::UnhandledDataDetails.into()),
+                _ => return Err(ParseError::UnhandledDataDetails.into()),
             };
 
             // Get current offset
@@ -318,7 +660,7 @@ fn read_data_size<R: Read + Seek>(
             let mut bytes_buffer = vec![0; additional_bytes_to_read];
             reader
                 .read(&mut bytes_buffer[..])
-                .context(Error::NonReadableByte(get_cursor_position(reader)?))?;
+                .context(ParseError::NonReadableByte(get_cursor_position(reader)?))?;
 
             // Currently handling up to 64 bits for length
             let mut data_size = 0 as u64;
@@ -333,7 +675,7 @@ fn read_data_size<R: Read + Seek>(
             if (additional_bytes_to_read == 1 && data_size < 24)
                 || data_size < (1u64 << (8 * (additional_bytes_to_read >> 1)))
             {
-                Err(Error::BadCborHeader.into())
+                Err(ParseError::BadCborHeader.into())
             } else {
                 // Compute data offset
                 let data_offset = complementary_bytes_offset + additional_bytes_to_read as u64;
@@ -342,7 +684,7 @@ fn read_data_size<R: Read + Seek>(
             }
         }
         7 => Ok((Some(header_offset), 1)),
-        _ => return Err(Error::NonExistingMajorType.into()),
+        _ => return Err(ParseError::NonExistingMajorType.into()),
     }
 }
 
@@ -361,7 +703,7 @@ fn read_recursive_elements_detail<R: Read + Seek>(
             // Set current position at data offset. We can unwrap as elements are expected.
             reader
                 .seek(SeekFrom::Start(recursive.data_offset.unwrap()))
-                .context(Error::FailToSeekToOffset)?;
+                .context(ParseError::FailToSeekToOffset)?;
 
             // Can unwrap we check previously that
             let mut elements_to_parse = recursive.nbr_elements;
@@ -382,11 +724,65 @@ fn read_recursive_elements_detail<R: Read + Seek>(
 
                 reader
                     .seek(SeekFrom::Start(next_offset))
-                    .context(Error::FailToSeekToOffset)?;
+                    .context(ParseError::FailToSeekToOffset)?;
             }
         }
-        _ => return Err(Error::MajorTypeNonRecursive.into()),
+        _ => return Err(ParseError::MajorTypeNonRecursive.into()),
     }
 
     Ok(())
+}
+
+/// [retrieve_cbor_in_reader] will fetch cbor data in reader based on a [MajorType] structure containing
+/// structural information of wherethe data is in the reader
+fn retrieve_cbor_in_reader<R: Read + Seek>(
+    reader: &mut R,
+    to_retrieve: &[Vec<MajorType>],
+) -> Result<Vec<Vec<Vec<u8>>>> {
+    let mut retrieved_data: Vec<Vec<Vec<u8>>> = vec![];
+
+    // Iterate o multiple set of data to retrieve
+    for major_types_set in to_retrieve.iter() {
+        let mut data_set: Vec<Vec<u8>> = vec![];
+        // Iterate on data in each set
+        for major_type in major_types_set.iter() {
+            // Get major type details
+            let (header_offset, size) = major_type.details();
+
+            reader
+                .seek(SeekFrom::Start(header_offset))
+                .context(ParseError::FailToSeekToOffset)?;
+
+            // read bytes
+            let mut byte_buffer = vec![0; size];
+            reader
+                .read(&mut byte_buffer[..])
+                .context(ParseError::NonReadableByte(get_cursor_position(reader)?))?;
+
+            data_set.push(byte_buffer);
+        }
+        retrieved_data.push(data_set);
+    }
+
+    Ok(retrieved_data)
+}
+
+/// Generates a cbor header for an array major type based on its size
+fn generate_array_cbor_header(size: u64) -> Vec<u8> {
+    let (mut first_byte, shift) = match size {
+        0..=23 => (size as u8, 0),
+        24..=0xFF => (24, 1),
+        0x100..=0xFFFF => (25, 2),
+        0x10000..=0xFFFF_FFFF => (26, 4),
+        _ => (27, 8),
+    };
+    first_byte |= 128;
+
+    let mut buff: Vec<u8> = vec![first_byte];
+
+    for i in (0..shift).rev() {
+        buff.push((size >> (i * 8)) as u8);
+    }
+
+    buff
 }
