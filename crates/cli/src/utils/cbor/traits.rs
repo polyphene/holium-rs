@@ -109,10 +109,10 @@ impl MajorType {
             | MajorType::Bytes(scalar)
             | MajorType::String(scalar)
             | MajorType::SimpleValues(scalar) => {
-                if let Some(data_offset) = scalar.data_offset {
-                    data_offset + scalar.data_size;
+                return if let Some(data_offset) = scalar.data_offset {
+                    data_offset + scalar.data_size
                 } else {
-                    scalar.header_offset + 1;
+                    scalar.header_offset + 1
                 }
             }
         };
@@ -193,10 +193,12 @@ trait AsHoliumCbor {
 
         let mut major_type = read_header(&mut buff)?;
 
-        if !major_type.is_array() {
-            return Err(Error::RootNotArray.into());
+        match &mut major_type {
+            MajorType::Array(recursive_type) => {
+                fetch_recursive_elements_detail(&mut buff, recursive_type)?
+            }
+            _ => return Err(Error::RootNotArray.into()),
         }
-        fetch_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
         Ok(major_type)
     }
@@ -210,10 +212,12 @@ trait AsHoliumCbor {
 
         let mut major_type = read_header(&mut buff)?;
 
-        if !major_type.is_array() {
-            return Err(Error::RootNotArray.into());
+        match &mut major_type {
+            MajorType::Array(recursive_type) => {
+                fetch_recursive_elements_detail(&mut buff, recursive_type)?
+            }
+            _ => return Err(Error::RootNotArray.into()),
         }
-        fetch_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
         Ok(major_type.select(&selector_envelope.0)?)
     }
@@ -368,44 +372,41 @@ fn read_data_size<R: Read + Seek>(
 
 fn fetch_recursive_elements_detail<R: Read + Seek>(
     reader: &mut R,
-    major_type: &mut MajorType,
+    recursive_type: &mut RecursiveType,
 ) -> Result<()> {
-    // Check that major type is recursive
-    match major_type {
-        MajorType::Array(recursive) | MajorType::Map(recursive) => {
-            // if no elements are expected then return
-            if recursive.nbr_elements == 0usize {
-                return Ok(());
+    // if no elements are expected then return
+    if recursive_type.nbr_elements == 0usize {
+        return Ok(());
+    }
+
+    // Set current position at data offset. We can unwrap as elements are expected.
+    reader
+        .seek(SeekFrom::Start(recursive_type.data_offset.unwrap()))
+        .context(Error::FailToSeekToOffset)?;
+
+    // Can unwrap we check previously that
+    let mut elements_to_parse = recursive_type.nbr_elements;
+
+    for _ in 0..elements_to_parse {
+        // Get element details
+        let mut element_major_type = read_header(reader)?;
+
+        // If element is array, retrieve his elements size
+        match &mut element_major_type {
+            MajorType::Array(recursive_element) | MajorType::Map(recursive_element) => {
+                fetch_recursive_elements_detail(reader, recursive_element)?
             }
-
-            // Set current position at data offset. We can unwrap as elements are expected.
-            reader
-                .seek(SeekFrom::Start(recursive.data_offset.unwrap()))
-                .context(Error::FailToSeekToOffset)?;
-
-            // Can unwrap we check previously that
-            let mut elements_to_parse = recursive.nbr_elements;
-
-            for _ in 0..elements_to_parse {
-                // Get element details
-                let mut element_major_type = read_header(reader)?;
-
-                // If element is array, retrieve his elements size
-                if element_major_type.is_array() || element_major_type.is_map() {
-                    fetch_recursive_elements_detail(reader, &mut element_major_type)?;
-                }
-
-                recursive.elements.push(element_major_type);
-
-                // Set current position at next element offset
-                let next_offset = recursive.elements[recursive.elements.len() - 1].next_offset();
-
-                reader
-                    .seek(SeekFrom::Start(next_offset))
-                    .context(Error::FailToSeekToOffset)?;
-            }
+            _ => {}
         }
-        _ => return Err(Error::MajorTypeNonRecursive.into()),
+
+        recursive_type.elements.push(element_major_type);
+
+        // Set current position at next element offset
+        let next_offset = recursive_type.elements[recursive_type.elements.len() - 1].next_offset();
+
+        reader
+            .seek(SeekFrom::Start(next_offset))
+            .context(Error::FailToSeekToOffset)?;
     }
 
     Ok(())
