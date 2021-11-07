@@ -384,7 +384,7 @@ fn fetch_recursive_elements_detail<R: Read + Seek>(
         // Get element details
         let mut element_major_type = read_header(reader)?;
 
-        // If element is array, retrieve his elements size
+        // If element is array or map, retrieve his elements size
         match &mut element_major_type {
             MajorType::Array(recursive_element) | MajorType::Map(recursive_element) => {
                 fetch_recursive_elements_detail(reader, recursive_element)?
