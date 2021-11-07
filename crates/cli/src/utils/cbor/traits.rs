@@ -104,10 +104,10 @@ impl MajorType {
             | MajorType::Bytes(scalar)
             | MajorType::String(scalar)
             | MajorType::SimpleValues(scalar) => {
-                if scalar.data_offset.is_some() {
-                    scalar.data_offset.unwrap() + scalar.data_size
+                if let Some(data_offset) = scalar.data_offset {
+                    data_offset + scalar.data_size;
                 } else {
-                    scalar.header_offset + 1
+                    scalar.header_offset + 1;
                 }
             }
         };
