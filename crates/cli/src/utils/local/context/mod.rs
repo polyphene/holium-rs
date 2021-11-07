@@ -109,4 +109,13 @@ impl LocalContext {
             (&self.transformations, NodeType::transformation),
         ]
     }
+
+    /// Get the [ sled::Tree ] related to a [ NodeType ].
+    pub fn get_tree_from_node_type(&self, node_type: &NodeType) -> &sled::Tree {
+        match node_type {
+            NodeType::shaper => &self.shapers,
+            NodeType::source => &self.sources,
+            NodeType::transformation => &self.transformations,
+        }
+    }
 }

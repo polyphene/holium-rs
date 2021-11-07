@@ -38,6 +38,22 @@ enum Error {
     InvalidTypeFieldValue(String),
 }
 
+
+pub struct HoliumJsonSchema(pub HoliumJsonSchemaName, pub Box<HoliumJsonSchemaType>);
+
+pub struct HoliumJsonSchemaName(pub Option<String>);
+
+pub enum HoliumJsonSchemaType {
+    Object(Vec<HoliumJsonSchema>),
+    TupleArray(Vec<HoliumJsonSchema>),
+    ItemsArray(HoliumJsonSchema),
+    ByteString,
+    TextString,
+    Number,
+    Boolean,
+    Null,
+}
+
 /// Validate that a JSON literal is a valid JSON Schema, ready to be used as a feature of local
 /// Holium objects.
 pub fn validate_json_schema(literal: &str) -> Result<()> {
@@ -47,77 +63,109 @@ pub fn validate_json_schema(literal: &str) -> Result<()> {
     META_SCHEMA.validate(&schema)
         .ok()
         .context(Error::InvalidJsonSchema)?;
+    // TODO change comment
     // recursively check that all expected fields are present in the schema for it to be used in the
     // local Holium area
-    check_expected_fields(&schema)?;
+    parse_root_json_schema(&schema)?;
     Ok(())
 }
 
-/// Check for the presence of fields in a JSON Schema necessary to their use in local Holium objects.
+/// Parse a JSON schema from a JSON Value into a HoliumJsonSchema.
+pub fn parse_root_json_schema(schema: &Value)  -> Result<HoliumJsonSchema> {
+    parse_json_schema(HoliumJsonSchemaName(None), schema)
+}
+
+/// Check for the presence of fields in a JSON Schema necessary to their use in local Holium objects,
+/// and parse them into a HoliumJsonSchema.
 /// This function fails iff this condition is not satisfied.
-fn check_expected_fields(schema: &Value) -> Result<()> {
+fn parse_json_schema(schema_name: HoliumJsonSchemaName, schema: &Value) -> Result<HoliumJsonSchema> {
     // check that the value is an object
     let schema_map = match schema {
         Value::Object(schema_map) => schema_map,
         _ => {
-            return Err(Error::SchemaShouldBeJsonObject.into())
+            return Err(Error::SchemaShouldBeJsonObject.into());
         }
     };
     // check for the presence of a `type` field
     let type_value = schema_map.get("type")
         .ok_or(Error::MissingTypeField)?;
     let type_name = match type_value {
-        Value::String( type_name) => type_name,
+        Value::String(type_name) => type_name,
         _ => {
-            return Err(Error::TypeFieldShouldHoldStringValue.into())
+            return Err(Error::TypeFieldShouldHoldStringValue.into());
         }
     };
     // match scalar and recursive types
     match type_name.as_str() {
-        "null" | "boolean" | "number" | "string" => Ok(()),
-        "object" => check_expected_fields_in_object_typed_value(schema_map),
-        "array" => check_expected_fields_in_array_typed_value(schema_map),
+        "null" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Null))),
+        "boolean" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Boolean))),
+        "number" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Number))),
+        "string" => {
+            if has_base64_encoding(&schema_map) {
+                Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::ByteString)))
+            } else {
+                Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::TextString)))
+            }
+        }
+        "object" => Ok(HoliumJsonSchema(
+            schema_name,
+            Box::from(HoliumJsonSchemaType::Object(parse_object_properties(schema_map)?))
+        )),
+        "array" => {
+            if is_tuples_array(&schema_map) {
+                Ok(HoliumJsonSchema(
+                    schema_name,
+                    Box::from(HoliumJsonSchemaType::TupleArray(parse_tuples_array_items(schema_map)?))
+                ))
+            } else {
+                Ok(HoliumJsonSchema(
+                    schema_name,
+                    Box::from(HoliumJsonSchemaType::ItemsArray(parse_items_array_item(schema_map)?))
+                ))
+            }
+        },
         invalid_type => Err(Error::InvalidTypeFieldValue(invalid_type.to_string()).into()),
     }
 }
 
-fn check_expected_fields_in_object_typed_value(schema_map: &Map<String, Value>) -> Result<()> {
-    // check for the presence of a `properties` field
-    let properties_value = schema_map.get("properties")
-        .ok_or(Error::MissingPropertiesField)?;
-    let properties_map = match properties_value {
-        Value::Object( properties_map) => properties_map,
-        _ => {
-            return Err(Error::PropertiesFieldShouldHoldObjectValue.into())
-        }
-    };
-    // recursively check properties' schemata
-    let properties: Vec<&Value> = properties_map.values().collect();
-    properties.into_iter()
-        .map(|v| check_expected_fields(v))
-        .collect()
+fn has_base64_encoding(schema_map: &Map<String, Value>) -> bool {
+    schema_map.get("contentEncoding")
+        .map(|encoding| encoding == &Value::String("base64".to_string()))
+        .unwrap_or(false)
 }
 
-fn check_expected_fields_in_array_typed_value(schema_map: &Map<String, Value>) -> Result<()> {
-    // check for the presence of an `items` or `prefixItems` field
-    if let Some(items_value) = schema_map.get("items") {
-        // recursively check the items' schema
-        if !items_value.is_object() {   // this test may run twice (here and in the recursive call)
-            return Err(Error::ItemsFieldShouldHoldObjectValue.into())
-        }
-        check_expected_fields(items_value)
-    } else if let Some(prefix_items_value) = schema_map.get("prefixItems") {
-        // recursively check the items' schemata
-        let prefix_items = match prefix_items_value {
-            Value::Array( prefix_items) => prefix_items,
-            _ => {
-                return Err(Error::PrefixItemsFieldShouldHoldArrayValue.into())
-            }
-        };
-        prefix_items.into_iter()
-            .map(|v| check_expected_fields(v))
-            .collect()
-    } else {
-        return Err(Error::MissingItemsField.into())
+fn is_tuples_array(schema_map: &Map<String, Value>) -> bool {
+    schema_map.get("prefixItems").is_some()
+}
+
+fn parse_object_properties(schema_map: &Map<String, Value>) -> Result<Vec<HoliumJsonSchema>> {
+    schema_map.get("properties")
+        .ok_or(Error::MissingPropertiesField)?
+        .as_object()
+        .ok_or(Error::PropertiesFieldShouldHoldObjectValue)?
+        .into_iter()
+        .map(|(prop_name, prop_schema)| {
+            let prop_schema_name = HoliumJsonSchemaName(Some(prop_name.to_string()));
+            parse_json_schema(prop_schema_name, prop_schema)
+        })
+        .collect::<Result<Vec<HoliumJsonSchema>>>()
+}
+
+fn parse_tuples_array_items(schema_map: &Map<String, Value>) -> Result<Vec<HoliumJsonSchema>> {
+    schema_map.get("prefixItems")
+        .ok_or(Error::MissingItemsField)?
+        .as_array()
+        .ok_or(Error::PrefixItemsFieldShouldHoldArrayValue)?
+        .into_iter()
+        .map(parse_root_json_schema)
+        .collect::<Result<Vec<HoliumJsonSchema>>>()
+}
+
+fn parse_items_array_item(schema_map: &Map<String, Value>) -> Result<HoliumJsonSchema> {
+    let items_field = schema_map.get("items")
+        .ok_or(Error::MissingItemsField)?;
+    if !items_field.is_object() {
+        return Err(Error::ItemsFieldShouldHoldObjectValue.into());
     }
+    parse_root_json_schema(items_field)
 }

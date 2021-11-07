@@ -1,0 +1,36 @@
+use anyhow::{Result, Context};
+use anyhow::Error as AnyhowError;
+use std::io::Read;
+use std::io::Write;
+use serde_json::Value as JsonValue;
+use sk_cbor::Value as CborValue;
+use sk_cbor::{cbor_null, cbor_bool, cbor_unsigned, cbor_int, cbor_text, cbor_bytes, cbor_array_vec};
+use sk_cbor::write;
+use crate::utils::local::models::data::HoliumCbor;
+use crate::utils::local::helpers::jsonschema::{HoliumJsonSchema, HoliumJsonSchemaType, HoliumJsonSchemaName};
+use crate::utils::repo::ports::formats::{FormatPorter, Error};
+
+pub struct BinPorter;
+
+impl FormatPorter for BinPorter {
+    fn import_to_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()> {// read the CBOR contents
+        let mut contents = Vec::new();
+        reader.read_to_end(&mut contents)?;
+        // check that the json schema is coherent
+        let boxed_schema = &json_schema.1;
+        let schema: &HoliumJsonSchemaType = boxed_schema.as_ref();
+        match schema {
+            HoliumJsonSchemaType::ByteString => {},
+            _ => return Err(Error::IncompatibleSchemaAndValue.into())
+        }
+        // encode the binary contents as a cbor byte string and write it
+        let holium_cbor = cbor_bytes!(contents);    // todo: we could just compute the cbor header, and prepend it to contents
+        // write the HoliumCBOR to the writer
+        let mut buffer: Vec<u8> = Vec::new();
+        write(holium_cbor, &mut buffer)
+            .map_err(|_| Error::FailedToWriteHoliumCbor)?;
+        writer.write_all(&buffer)
+            .context(Error::FailedToWriteHoliumCbor)?;
+        Ok(())
+    }
+}
