@@ -144,16 +144,16 @@ impl MajorType {
                 _ => Err(Error::MajorTypeNonRecursive.into()),
             },
             Selector::ExploreRange(explore_range) => {
+                // After a range we expect a matcher, otherwise error
+                if explore_range.next.is_matcher() {
+                    return Err(SelectorError::NonValidSelectorStructure.into());
+                }
+
                 let mut selected_major_types: Vec<MajorType> = vec![];
 
                 match &self {
                     MajorType::Array(recursive_type) | MajorType::Map(recursive_type) => {
                         for index in explore_range.start..explore_range.end {
-                            // After a range we expect a matcher, otherwise error
-                            if explore_range.next.is_matcher() {
-                                return Err(SelectorError::NonValidSelectorStructure.into());
-                            }
-
                             let major_type = recursive_type.child(index as usize)?;
                             selected_major_types.push(major_type.clone());
                         }
