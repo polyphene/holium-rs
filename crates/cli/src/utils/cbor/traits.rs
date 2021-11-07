@@ -50,7 +50,12 @@ pub struct ScalarType {
 pub struct RecursiveType {
     header_offset: u64,
     data_offset: Option<u64>,
+    // nbr_elements is a field that represents the number of awaited elements in our recursive major
+    // type. It has to be based on the size given by a cbor header
     nbr_elements: usize,
+    // elements contains all cbor details about children of the recursive major type. When reading
+    // a major type from a cbor serialized value the elements detail will not be fetched. It has
+    // to be done asynchronously.
     elements: Vec<MajorType>,
 }
 
