@@ -3,12 +3,14 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey};
+use crate::utils::errors::Error::{
+    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey,
+};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::models::source::{OptionalSource, Source};
 use crate::utils::local::helpers::jsonschema::validate_json_schema;
 use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
+use crate::utils::local::models::source::{OptionalSource, Source};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -32,11 +34,16 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // get argument values
-    let name = matches.value_of("name")
+    let name = matches
+        .value_of("name")
         .context(MissingRequiredArgument("name".to_string()))?;
     let json_schema = matches.value_of("json-schema");
     // check that the object exists
-    if !local_context.sources.contains_key(name).context(DbOperationFailed)? {
+    if !local_context
+        .sources
+        .contains_key(name)
+        .context(DbOperationFailed)?
+    {
         return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // validate JSON schema, if any
@@ -48,10 +55,11 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         name: None,
         json_schema: json_schema.map(|s| s.to_string()),
     };
-    let merge_source_encoded = bincode::serialize(&merge_source)
-        .context(BinCodeSerializeFailed)?;
-    local_context.sources.merge(name, merge_source_encoded)
+    let merge_source_encoded = bincode::serialize(&merge_source).context(BinCodeSerializeFailed)?;
+    local_context
+        .sources
+        .merge(name, merge_source_encoded)
         .context(DbOperationFailed)?;
-    print_update_success(&mut std::io::stdout(), name);
+    print_update_success(name);
     Ok(())
 }

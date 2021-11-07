@@ -34,7 +34,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     dag.is_valid_pipeline()?;
     // with the --no-write option, stop the execution there
     if matches.is_present("no-write") {
-        print_pipeline_health_success(&mut std::io::stdout());
+        print_pipeline_health_success();
         return Ok(());
     }
     // clean the interplanetary area
@@ -42,6 +42,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // export pipeline from the local area to the interplanetary area
     let pipeline_cid = export_project(&local_context)?;
     // print success message
-    print_project_export_success(&mut std::io::stdout(), &pipeline_cid);
+    print_project_export_success(&pipeline_cid);
     Ok(())
 }

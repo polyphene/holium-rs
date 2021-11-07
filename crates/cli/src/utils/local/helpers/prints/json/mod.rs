@@ -43,4 +43,19 @@ mod test {
 
         assert_eq!(expected_result, result_string.as_str());
     }
+
+    #[test]
+    fn can_truncate_long_json() {
+        let string = "{\"type\": \"array\", \"prefixItems\": [{\"type\": \"string\"}, \
+        {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"},\
+        {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"},\
+        {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"},\
+        {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"}, {\"type\": \"string\"}]}";
+
+        // Format JSON
+        let result_string = shorten_prettify_json_literal(string);
+
+        // 256 characters of string and 3 of "..."
+        assert_eq!(259, result_string.len());
+    }
 }

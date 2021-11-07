@@ -70,4 +70,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .context(DbOperationFailed)?
         .ok()
         .context(anyhow!("cannot create source with name: {}", name))?;
-   
+    print_create_success(name);
+    Ok(())
+}
