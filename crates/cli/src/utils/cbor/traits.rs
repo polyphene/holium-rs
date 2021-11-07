@@ -21,7 +21,7 @@ enum Error {
     FailToSeekToOffset,
     #[error("could not retrieve cursor position")]
     FailToGetCursorPosition,
-    #[error("unhandled data details, currently handling data up to 64 bits of length")]
+    #[error("unhandled data details, currently handling counts up to 64 bits of length")]
     UnhandledDataDetails,
     #[error("data details in cbor header wrongly encoded")]
     BadCborHeader,
