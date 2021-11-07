@@ -8,7 +8,7 @@ use crate::utils::errors::Error::{
 };
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::helpers::jsonschema::validate_json_schema;
+use crate::utils::local::helpers::jsonschema::{validate_transformation_json_schema};
 use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
 use crate::utils::local::models::transformation::{OptionalTransformation, Transformation};
 
@@ -75,10 +75,10 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .transpose()?;
     // validate JSON schemata, if any
     if let Some(json_schema_in) = json_schema_in {
-        validate_json_schema(json_schema_in)?;
+        validate_transformation_json_schema(json_schema_in)?;
     }
     if let Some(json_schema_out) = json_schema_out {
-        validate_json_schema(json_schema_out)?;
+        validate_transformation_json_schema(json_schema_out)?;
     }
     // merge object
     let merge_transformation = OptionalTransformation {
