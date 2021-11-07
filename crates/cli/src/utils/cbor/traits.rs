@@ -149,7 +149,8 @@ impl MajorType {
                     return Err(SelectorError::NonValidSelectorStructure.into());
                 }
 
-                let mut selected_major_types: Vec<MajorType> = vec![];
+                let mut selected_major_types: Vec<MajorType> =
+                    Vec::with_capacity((explore_range.end - explore_range.start) as usize);
 
                 match &self {
                     MajorType::Array(recursive_type) | MajorType::Map(recursive_type) => {
@@ -164,8 +165,10 @@ impl MajorType {
                 Ok(vec![selected_major_types])
             }
             Selector::ExploreUnion(explore_union) => {
-                let mut selectors_results: Vec<Vec<MajorType>> = vec![];
                 let selectors = &explore_union.0;
+                let mut selectors_results: Vec<Vec<MajorType>> =
+                    Vec::with_capacity(selectors.len());
+
                 for selector in selectors.iter() {
                     selectors_results.append(&mut self.select(selector)?);
                 }
