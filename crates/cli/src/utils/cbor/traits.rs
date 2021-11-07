@@ -138,7 +138,9 @@ impl MajorType {
         };
     }
 
-    /// Find a major type by using a selector
+    /// Find a major type by using a selector. Returned value is a list of data set description. If
+    /// the selector contains a union (`|`) operator then we have multiple data sets. Then each
+    /// data set contains one or multiple fetched [`MajorType`]
     fn select(&self, selector: &Selector) -> Result<Vec<Vec<MajorType>>> {
         match selector {
             Selector::Matcher(_) => Ok(vec![vec![self.clone()]]),
