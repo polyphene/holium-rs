@@ -221,7 +221,7 @@ fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
 }
 /// Read returning its major type, its data byte offset and size
 fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
-    // Save he&der offset for later use
+    // Save header offset for later use
     let header_offset = get_cursor_position(reader)?;
 
     // read first byte
