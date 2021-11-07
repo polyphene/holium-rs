@@ -291,22 +291,37 @@ fn read_data_size<R: Read + Seek>(
     data_details: u8,
 ) -> Result<(Option<u64>, u64)> {
     match major_type {
+        // Major type is either unsigned or negative
         0 | 1 => match data_details {
+            // In that case the data is directly contained in the header byte
             0..=23 => Ok((Some(header_offset), 1)),
+            // Number data starts next offset and is 1 byte long
             24 => Ok((Some(header_offset + 1), 1)),
+            // Number data starts next offset and is 2 byte long
             25 => Ok((Some(header_offset + 1), 2)),
+            // Number data starts next offset and is 4 byte long
             26 => Ok((Some(header_offset + 1), 4)),
+            // Number data starts next offset and is 8 byte long
             27 => Ok((Some(header_offset + 1), 8)),
             _ => return Err(Error::UnhandledDataDetails.into()),
         },
+        // Major type is either bytes, string, array or map
         2 | 3 | 4 | 5 => {
             // As specified in CBOR, if sum of leftover bits >= 24 then information can be found on other bytes
             let additional_bytes_to_read = match data_details {
+                // If data_details is 0 then there is no data to be found in our element. There is no
+                // data offset and data size is 0
                 0 => return Ok((None, data_details as u64)),
+                // Case where data length can be directly found on header byte, returning data offset
+                // and data details which is also data length
                 1..=23 => return Ok((Some(header_offset + 1), data_details as u64)),
+                // Length can be found on 1 byte after the header offset
                 24 => 1,
+                // Length can be found on 2 byte after the header offset
                 25 => 2,
+                // Length can be found on 4 byte after the header offset
                 26 => 4,
+                // Length can be found on 8 byte after the header offset
                 27 => 8,
                 _ => return Err(Error::UnhandledDataDetails.into()),
             };
