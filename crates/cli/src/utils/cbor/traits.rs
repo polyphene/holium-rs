@@ -187,7 +187,7 @@ trait AsHoliumCbor {
     fn complete_cbor_structure(&self) -> Result<MajorType> {
         let mut buff = self.as_cursor();
 
-        let mut major_type = read_header(&mut buff)?;
+        let mut major_type = read_header(&mut buff, 0)?;
 
         match &mut major_type {
             MajorType::Array(recursive_type) => {
@@ -206,7 +206,7 @@ trait AsHoliumCbor {
     ) -> Result<Vec<Vec<MajorType>>> {
         let mut buff = self.as_cursor();
 
-        let mut major_type = read_header(&mut buff)?;
+        let mut major_type = read_header(&mut buff, 0)?;
 
         match &mut major_type {
             MajorType::Array(recursive_type) => {
@@ -225,9 +225,11 @@ fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {
         .context(Error::FailToGetCursorPosition)
 }
 /// Read returning its major type, its data byte offset and size
-fn read_header<R: Read + Seek>(reader: &mut R) -> Result<MajorType> {
-    // Save header offset for later use
-    let header_offset = get_cursor_position(reader)?;
+fn read_header<R: Read + Seek>(reader: &mut R, header_offset: u64) -> Result<MajorType> {
+    // Seek header offset
+    reader
+        .seek(SeekFrom::Start(header_offset))
+        .context(Error::FailToSeekToOffset)?;
 
     // read first byte
     let mut first_byte_buffer = [0];
@@ -334,6 +336,11 @@ fn read_data_size<R: Read + Seek>(
             // Get current offset
             let complementary_bytes_offset = header_offset + 1;
 
+            // Set current position at header offset + 1
+            reader
+                .seek(SeekFrom::Start(complementary_bytes_offset))
+                .context(Error::FailToSeekToOffset)?;
+
             // read desired bytes
             let mut bytes_buffer = vec![0; additional_bytes_to_read];
             reader
@@ -375,14 +382,12 @@ fn fetch_recursive_elements_detail<R: Read + Seek>(
         return Ok(());
     }
 
-    // Set current position at data offset. We can unwrap as elements are expected.
-    reader
-        .seek(SeekFrom::Start(recursive_type.data_offset.unwrap()))
-        .context(Error::FailToSeekToOffset)?;
+    // Define data offset
+    let mut data_offset = recursive_type.data_offset.unwrap();
 
     for _ in 0..recursive_type.nbr_elements {
         // Get element details
-        let mut element_major_type = read_header(reader)?;
+        let mut element_major_type = read_header(reader, data_offset)?;
 
         // If element is array or map, retrieve his elements size
         match &mut element_major_type {
@@ -395,11 +400,7 @@ fn fetch_recursive_elements_detail<R: Read + Seek>(
         recursive_type.elements.push(element_major_type);
 
         // Set current position at next element offset
-        let next_offset = recursive_type.elements[recursive_type.elements.len() - 1].next_offset();
-
-        reader
-            .seek(SeekFrom::Start(next_offset))
-            .context(Error::FailToSeekToOffset)?;
+        data_offset = recursive_type.elements[recursive_type.elements.len() - 1].next_offset();
     }
 
     Ok(())
