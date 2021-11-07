@@ -367,6 +367,6 @@ mod test {
             .err()
             .unwrap()
             .to_string()
-            .contains("invalid string can not be passed to json"));
+            .contains("invalid string can not be parsed to json"));
     }
 }
