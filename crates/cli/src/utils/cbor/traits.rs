@@ -178,7 +178,7 @@ impl MajorType {
     }
 }
 
-trait ParseHoliumCbor {
+trait AsHoliumCbor {
     // To implement to define cursor on reader
     fn as_cursor(&self) -> Cursor<&[u8]>;
 
