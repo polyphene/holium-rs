@@ -380,7 +380,6 @@ fn fetch_recursive_elements_detail<R: Read + Seek>(
         .seek(SeekFrom::Start(recursive_type.data_offset.unwrap()))
         .context(Error::FailToSeekToOffset)?;
 
-    // Can unwrap we check previously that
     let mut elements_to_parse = recursive_type.nbr_elements;
 
     for _ in 0..elements_to_parse {
