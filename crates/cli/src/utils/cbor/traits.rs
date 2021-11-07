@@ -196,7 +196,7 @@ trait AsHoliumCbor {
         if !major_type.is_array() {
             return Err(Error::RootNotArray.into());
         }
-        read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
+        fetch_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
         Ok(major_type)
     }
@@ -213,7 +213,7 @@ trait AsHoliumCbor {
         if !major_type.is_array() {
             return Err(Error::RootNotArray.into());
         }
-        read_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
+        fetch_recursive_elements_detail(&mut buff, &mut major_type).unwrap();
 
         Ok(major_type.select(&selector_envelope.0)?)
     }
@@ -366,7 +366,7 @@ fn read_data_size<R: Read + Seek>(
     }
 }
 
-fn read_recursive_elements_detail<R: Read + Seek>(
+fn fetch_recursive_elements_detail<R: Read + Seek>(
     reader: &mut R,
     major_type: &mut MajorType,
 ) -> Result<()> {
@@ -392,7 +392,7 @@ fn read_recursive_elements_detail<R: Read + Seek>(
 
                 // If element is array, retrieve his elements size
                 if element_major_type.is_array() || element_major_type.is_map() {
-                    read_recursive_elements_detail(reader, &mut element_major_type)?;
+                    fetch_recursive_elements_detail(reader, &mut element_major_type)?;
                 }
 
                 recursive.elements.push(element_major_type);
