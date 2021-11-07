@@ -59,6 +59,18 @@ pub struct RecursiveType {
     elements: Vec<MajorType>,
 }
 
+impl RecursiveType {
+    /// Return a reference to a child of a recursive major type
+    fn child(&self, index: usize) -> Result<&MajorType> {
+        if self.nbr_elements == 0usize || self.nbr_elements - 1 < index {
+            return Err(SelectorError::NoNodeFound.into());
+        }
+
+        // if some elements are already written then return offset after the last element
+        Ok(&self.elements[index])
+    }
+}
+
 /// [`MajorType`] represents cbor major types that can be found in the HoliumCbor format.
 #[derive(Clone, Debug)]
 pub enum MajorType {
@@ -118,57 +130,36 @@ impl MajorType {
         };
     }
 
-    /// Return a reference to a child of a recursive major type
-    fn child(&self, index: u64) -> Option<&MajorType> {
-        return match self {
-            MajorType::Array(recursive) | MajorType::Map(recursive) => {
-                // if no elements in recursive or index is out of bounds return none
-                if recursive.nbr_elements == 0usize || recursive.nbr_elements - 1 < index as usize {
-                    return None;
-                }
-
-                // if some elements are already written then return offset after the last element
-                Some(&recursive.elements[index as usize])
-            }
-            MajorType::Unsigned(scalar)
-            | MajorType::Negative(scalar)
-            | MajorType::Bytes(scalar)
-            | MajorType::String(scalar)
-            | MajorType::SimpleValues(scalar) => None,
-        };
-    }
-
     /// Find a major type by using a selector. Returned value is a list of data set description. If
     /// the selector contains a union (`|`) operator then we have multiple data sets. Then each
     /// data set contains one or multiple fetched [`MajorType`]
     fn select(&self, selector: &Selector) -> Result<Vec<Vec<MajorType>>> {
         match selector {
             Selector::Matcher(_) => Ok(vec![vec![self.clone()]]),
-            Selector::ExploreIndex(explore_index) => {
-                let explored_major_type = self.child(explore_index.index);
-
-                match explored_major_type {
-                    Some(major_type) => Ok(major_type.select(&explore_index.next)?),
-                    None => return Err(SelectorError::NoNodeFound.into()),
+            Selector::ExploreIndex(explore_index) => match &self {
+                MajorType::Array(recursive_type) | MajorType::Map(recursive_type) => {
+                    let major_type = recursive_type.child(explore_index.index as usize)?;
+                    Ok(major_type.select(&explore_index.next)?)
                 }
-            }
+                _ => Err(Error::MajorTypeNonRecursive.into()),
+            },
             Selector::ExploreRange(explore_range) => {
                 let mut selected_major_types: Vec<MajorType> = vec![];
 
-                for index in explore_range.start..explore_range.end {
-                    // After a range we expect a matcher, otherwise error
-                    if explore_range.next.is_matcher() {
-                        return Err(SelectorError::NonValidSelectorStructure.into());
-                    }
+                match &self {
+                    MajorType::Array(recursive_type) | MajorType::Map(recursive_type) => {
+                        for index in explore_range.start..explore_range.end {
+                            // After a range we expect a matcher, otherwise error
+                            if explore_range.next.is_matcher() {
+                                return Err(SelectorError::NonValidSelectorStructure.into());
+                            }
 
-                    let explored_major_type = self.child(index);
-                    match explored_major_type {
-                        Some(major_type) => {
+                            let major_type = recursive_type.child(index as usize)?;
                             selected_major_types.push(major_type.clone());
                         }
-                        None => return Err(SelectorError::NoNodeFound.into()),
                     }
-                }
+                    _ => return Err(Error::MajorTypeNonRecursive.into()),
+                };
 
                 Ok(vec![selected_major_types])
             }
