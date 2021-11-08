@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use serde_cbor::to_vec;
 
 use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
+use either::Either;
+use either::Either::{Left, Right};
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
 #[derive(thiserror::Error, Debug)]
@@ -60,6 +62,10 @@ enum WriteError {
     NoDataInDataSet,
     #[error("no node at given index")]
     NoNodeAtIndex,
+    #[error("expected children for recursive type")]
+    ExpectedChildrenForRecursiveType,
+    #[error("expected cbor data for recursive type")]
+    ExpectedCborDataForRecursiveType,
 }
 
 /**************************************************
@@ -255,8 +261,7 @@ struct ScalarNode {
 #[derive(Clone, Debug)]
 struct RecursiveNode {
     index: Option<u64>,
-    data: Option<Vec<u8>>,
-    elements: Vec<HoliumCborNode>,
+    data: Either<Vec<u8>, Vec<HoliumCborNode>>,
 }
 
 /// [HoliumCborConstructor] is a utility structure to create a HoliumCbor object at a later time
@@ -269,9 +274,8 @@ enum HoliumCborNode {
 impl HoliumCborNode {
     fn root() -> Self {
         HoliumCborNode::NonLeaf(RecursiveNode {
-            index: None,
-            data: None,
-            elements: vec![],
+            index: Default::default(),
+            data: Right(vec![]),
         })
     }
 
@@ -301,7 +305,10 @@ impl HoliumCborNode {
                             Selector::Matcher(_) => {
                                 // Making sure index is not already taken
                                 if node
-                                    .elements
+                                    .data
+                                    .as_ref()
+                                    .right()
+                                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
                                     .iter()
                                     .any(|e| e.get_index().unwrap() == explore_index.index)
                                 {
@@ -311,46 +318,63 @@ impl HoliumCborNode {
                                 // contain our leaves, and set it at given index.
                                 // Otherwise lets store the data in a leaf
                                 if data_set.len() > 1usize {
-                                    let mut node_to_store: RecursiveNode = RecursiveNode {
-                                        index: Some(explore_index.index),
-                                        data: None,
-                                        elements: vec![],
-                                    };
-
+                                    // Initialize vec with capacity of data set
+                                    let mut elements_to_store: Vec<HoliumCborNode> =
+                                        Vec::with_capacity(data_set.len());
+                                    // New leaf for each data
                                     for (i, data) in data_set.iter().enumerate() {
-                                        node_to_store.elements.push(HoliumCborNode::Leaf(
-                                            ScalarNode {
-                                                index: i as u64,
-                                                data: data.clone(),
-                                            },
-                                        ))
+                                        elements_to_store.push(HoliumCborNode::Leaf(ScalarNode {
+                                            index: i as u64,
+                                            data: data.clone(),
+                                        }))
                                     }
-                                    node.elements.push(HoliumCborNode::NonLeaf(node_to_store));
+                                    // New non leaf containing all generated leaves
+                                    node.data
+                                        .as_mut()
+                                        .right()
+                                        .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
+                                        .push(HoliumCborNode::NonLeaf(RecursiveNode {
+                                            index: Some(explore_index.index),
+                                            data: Right(elements_to_store),
+                                        }));
                                 } else {
-                                    node.elements.push(HoliumCborNode::Leaf(ScalarNode {
-                                        index: explore_index.index,
-                                        data: data_set
-                                            .get(0)
-                                            .ok_or(WriteError::NoDataInDataSet)?
-                                            .clone(),
-                                    }))
+                                    node.data
+                                        .as_mut()
+                                        .right()
+                                        .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
+                                        .push(HoliumCborNode::Leaf(ScalarNode {
+                                            index: explore_index.index,
+                                            data: data_set
+                                                .get(0)
+                                                .ok_or(WriteError::NoDataInDataSet)?
+                                                .clone(),
+                                        }))
                                 }
                             }
                             Selector::ExploreIndex(_) | Selector::ExploreRange(_) => {
                                 // If node does not exist then create it
                                 if !node
-                                    .elements
+                                    .data
+                                    .as_mut()
+                                    .right()
+                                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
                                     .iter()
                                     .any(|e| e.get_index().unwrap() == explore_index.index)
                                 {
-                                    node.elements.push(HoliumCborNode::NonLeaf(RecursiveNode {
-                                        index: Some(explore_index.index),
-                                        data: None,
-                                        elements: vec![],
-                                    }));
+                                    node.data
+                                        .as_mut()
+                                        .right()
+                                        .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
+                                        .push(HoliumCborNode::NonLeaf(RecursiveNode {
+                                            index: Some(explore_index.index),
+                                            data: Right(vec![]),
+                                        }));
                                 }
                                 let mut next_node: Vec<&mut HoliumCborNode> = node
-                                    .elements
+                                    .data
+                                    .as_mut()
+                                    .right()
+                                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
                                     .iter_mut()
                                     .filter(|e| e.get_index().unwrap() == explore_index.index)
                                     .collect::<Vec<&mut HoliumCborNode>>();
@@ -381,16 +405,23 @@ impl HoliumCborNode {
                         {
                             // Making sure index is not already taken
                             if node
-                                .elements
+                                .data
+                                .as_ref()
+                                .right()
+                                .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
                                 .iter()
                                 .any(|e| e.get_index().unwrap() == to_set_index)
                             {
                                 return Err(WriteError::IndexAlreadyTaken.into());
                             }
-                            node.elements.push(HoliumCborNode::Leaf(ScalarNode {
-                                index: to_set_index,
-                                data: data_set[i].clone(),
-                            }))
+                            node.data
+                                .as_mut()
+                                .right()
+                                .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
+                                .push(HoliumCborNode::Leaf(ScalarNode {
+                                    index: to_set_index,
+                                    data: data_set[i].clone(),
+                                }))
                         }
                     }
                     _ => return Err(WriteError::RangeSelectionOnLeaf.into()),
@@ -405,13 +436,13 @@ impl HoliumCborNode {
                         // If one element then it is our data
                         // Otherwise we build an array out of dataset and use it as data
                         if data_set.len() == 1usize {
-                            node.data = Some(data_set[0].clone());
+                            node.data = Left(data_set[0].clone());
                         } else {
                             let mut buff = generate_array_cbor_header(data_set.len() as u64);
                             for mut data in data_set.iter_mut() {
                                 buff.append(data);
                             }
-                            node.data = Some(buff);
+                            node.data = Left(buff);
                         }
                         return Ok(());
                     }
@@ -427,17 +458,26 @@ impl HoliumCborNode {
         match self {
             HoliumCborNode::Leaf(leaf) => Ok(leaf.data.clone()),
             HoliumCborNode::NonLeaf(node) => {
-                // Check if root has data, if so then it is our object
-                if node.data.is_some() {
-                    return Ok(node.data.clone().unwrap());
+                // Check if root has cbor data instead of children, if so then it is our object
+                if node.data.is_left() {
+                    return Ok(node
+                        .data
+                        .as_ref()
+                        .left()
+                        .ok_or(WriteError::ExpectedCborDataForRecursiveType)?
+                        .clone());
                 }
 
                 // Otherwise lets create it recursively
-                let mut node_data: Vec<u8> = vec![];
-                for i in 0..node.elements.len() {
+                let elements = node
+                    .data
+                    .as_ref()
+                    .right()
+                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?;
+                let mut node_data: Vec<u8> = Vec::with_capacity(elements.len());
+                for i in 0..elements.len() {
                     // Find node with index
-                    let mut next_node: Vec<&HoliumCborNode> = node
-                        .elements
+                    let mut next_node: Vec<&HoliumCborNode> = elements
                         .iter()
                         .filter(|e| e.get_index().unwrap() == i as u64)
                         .collect::<Vec<&HoliumCborNode>>();
@@ -449,7 +489,7 @@ impl HoliumCborNode {
                             .generate_cbor()?,
                     );
                 }
-                let mut buff: Vec<u8> = generate_array_cbor_header(node.elements.len() as u64);
+                let mut buff: Vec<u8> = generate_array_cbor_header(elements.len() as u64);
 
                 buff.append(&mut node_data);
                 return Ok(buff);
@@ -520,8 +560,7 @@ pub trait WriteHoliumCbor {
 
         let mut holium_cbor_constructor: HoliumCborNode = HoliumCborNode::NonLeaf(RecursiveNode {
             index: None,
-            data: None,
-            elements: vec![],
+            data: Right(vec![]),
         });
         // If head selector a union, check that tail selector is also one with the same number of
         // selectors
