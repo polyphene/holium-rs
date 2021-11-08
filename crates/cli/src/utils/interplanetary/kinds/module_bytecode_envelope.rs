@@ -10,24 +10,42 @@ use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
 use crate::utils::interplanetary::kinds::link::Link;
 
-static DISCRIMINANT_KEY_V0: &str = "mbe_0";
-
-pub struct ModuleBytecodeEnvelope<'a> {
-    module_bytecode_cid: &'a Cid,
+#[derive(thiserror::Error, Debug)]
+enum Error {
+    #[error("failed to manipulate module bytecode envelope kind")]
+    FailedToManipulate,
 }
 
-impl<'a> ModuleBytecodeEnvelope<'a> {
-    pub fn new(module_bytecode_cid: &'a Cid) -> Self {
+static DISCRIMINANT_KEY_V0: &str = "mbe_0";
+
+pub struct ModuleBytecodeEnvelope {
+    pub module_bytecode_cid: Cid,
+}
+
+impl ModuleBytecodeEnvelope {
+    pub fn new(module_bytecode_cid: Cid) -> Self {
         ModuleBytecodeEnvelope{module_bytecode_cid}
     }
 }
 
-impl From<ModuleBytecodeEnvelope<'_>> for sk_cbor::Value {
-    fn from(o: ModuleBytecodeEnvelope<'_>) -> Self {
+impl From<ModuleBytecodeEnvelope> for sk_cbor::Value {
+    fn from(o: ModuleBytecodeEnvelope) -> Self {
         let content: Value = Link(o.module_bytecode_cid).into();
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => content,
         }
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for ModuleBytecodeEnvelope {
+    type Error = AnyhowError;
+    fn try_from(value: Value) -> Result<Self> {
+        if let sk_cbor::Value::Map(tuples) = value {
+            let (_, module_bytecode_cid_value) = tuples.get(0).ok_or(Error::FailedToManipulate)?;
+            let Link(module_bytecode_cid) = Link::try_from(module_bytecode_cid_value.clone())?;
+            return Ok(ModuleBytecodeEnvelope{ module_bytecode_cid })
+        }
+        Err(Error::FailedToManipulate.into())
     }
 }

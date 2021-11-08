@@ -39,8 +39,8 @@ type PortationSet = HashMap<String, Portation>;
 
 /// Type used in the context handler.
 pub struct Portations {
-    path: PathBuf,
-    set: PortationSet,
+    pub path: PathBuf,
+    pub set: PortationSet,
 }
 
 impl Portations {

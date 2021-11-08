@@ -18,13 +18,15 @@ use sk_cbor::cbor_array;
 enum Error {
     #[error("failed to create pipeline vertex")]
     FailedToCreatePipelineVertex,
+    #[error("failed to manipulate pipeline kind")]
+    FailedToManipulate,
 }
 
 static DISCRIMINANT_KEY_V0: &str = "pl_0";
 
 pub struct Pipeline {
-    vertices: Vec<PipelineVertex>,
-    edges: Vec<PipelineEdge>,
+    pub vertices: Vec<PipelineVertex>,
+    pub edges: Vec<PipelineEdge>,
 }
 
 impl Pipeline {
@@ -55,5 +57,36 @@ impl From<Pipeline> for sk_cbor::Value {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => cbor_array![ vertices, edges ],
         }
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for Pipeline {
+    type Error = AnyhowError;
+    fn try_from(value: Value) -> Result<Self> {
+        if let Value::Map(map) = value {
+            if map.get(0).is_some() {
+                let (k, content) = &map[0];
+                if let Value::Array(tuple) = content {
+                    if tuple.get(0..2).is_some() {
+                        if let Value::Array(vertices_value) = &tuple[0] {
+                            let vertices: Result<Vec<PipelineVertex>> = vertices_value
+                                .iter()
+                                .map(|v| -> Result<PipelineVertex> { v.clone().try_into() })
+                                .collect();
+                            let vertices = vertices?;
+                            if let Value::Array(edges_value) = &tuple[1] {
+                                let edges: Result<Vec<PipelineEdge>> = edges_value
+                                    .iter()
+                                    .map(|v| -> Result<PipelineEdge> { v.clone().try_into() })
+                                    .collect();
+                                let edges = edges?;
+                                return Ok(Pipeline{ vertices, edges })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Err(Error::FailedToManipulate.into())
     }
 }

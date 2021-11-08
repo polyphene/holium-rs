@@ -35,11 +35,14 @@ pub fn print_delete_success(key: &str) {
 
 /// Print success message for methods checking the health of the transformation pipeline currently
 /// in the local area.
-pub fn print_pipeline_health_success() {
-    println!(
-        "{}",
-        style("current project holds a healthy transformation pipeline").green()
-    )
+pub fn print_local_pipeline_health_success() {
+    println!("{}", style("current local project holds a healthy transformation pipeline").green())
+}
+
+/// Print success message for methods checking the ability to parse the pipeline currently in the
+/// interplanetary area
+pub fn print_interplanetary_health_success() {
+    println!("{}", style("interplanetary area holds a healthy transformation pipeline").green())
 }
 
 /// Print project EXPORT success message.
@@ -55,4 +58,9 @@ pub fn print_project_export_success(cid: &Cid) {
         ))
         .green()
     )
+}
+
+/// Print project IMPORT success message.
+pub fn print_project_import_success() {
+    println!("{}", style(format!("project imported to local area")).green())
 }

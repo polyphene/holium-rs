@@ -16,6 +16,7 @@ use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::local::helpers::jsonschema::{validate_transformation_json_schema};
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
+use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -106,7 +107,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .compare_and_swap(object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create transformation with name: {}", name))?;
+        .context(StructureCreationError("transformation".to_string(), name.to_string()))?;
     print_create_success(name);
     Ok(())
 }
