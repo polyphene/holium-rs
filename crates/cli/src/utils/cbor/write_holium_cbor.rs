@@ -8,15 +8,21 @@ use std::borrow::Borrow;
 use std::io::Cursor;
 
 pub trait WriteHoliumCbor {
-    // To implement to define cursor on reader
+    // To implement to define cursor on writer
     fn as_cursor(&self) -> Cursor<&[u8]>;
 
-    fn copy_cbor<H: AsHoliumCbor>(
-        &self,
-        source_data: H,
+    // To implement to know how to translate bytes to self type
+    fn from_bytes(cbor_bytes: &[u8]) -> Self;
+
+    fn copy_cbor<T: AsHoliumCbor>(
+        &mut self,
+        source_data: T,
         tail_selector: &SelectorEnvelope,
         head_selector: &SelectorEnvelope,
-    ) -> Result<Vec<u8>> {
+    ) -> Result<()>
+    where
+        Self: Sized,
+    {
         let mut selected_cbor = source_data.select_cbor(tail_selector)?;
 
         let mut holium_cbor_constructor: HoliumCborNode = HoliumCborNode::NonLeaf(RecursiveNode {
@@ -48,7 +54,8 @@ pub trait WriteHoliumCbor {
             }
         }
 
-        Ok(holium_cbor_constructor.generate_cbor()?)
+        *self = Self::from_bytes(&holium_cbor_constructor.generate_cbor()?);
+        Ok(())
     }
 }
 
