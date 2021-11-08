@@ -14,7 +14,7 @@ use sk_cbor::cbor_text;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate pipeline vertex kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 /// [ PipelineVertex ] holds the Map used as an attribute of vertices of a pipeline graph.
@@ -60,6 +60,6 @@ impl TryFrom<sk_cbor::Value> for PipelineVertex {
             }
             return Ok(vertex)
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

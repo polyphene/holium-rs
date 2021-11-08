@@ -13,7 +13,7 @@ use crate::utils::interplanetary::kinds::link::Link;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate module bytecode envelope kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 static DISCRIMINANT_KEY_V0: &str = "mbe_0";
@@ -42,10 +42,10 @@ impl TryFrom<sk_cbor::Value> for ModuleBytecodeEnvelope {
     type Error = AnyhowError;
     fn try_from(value: Value) -> Result<Self> {
         if let sk_cbor::Value::Map(tuples) = value {
-            let (_, module_bytecode_cid_value) = tuples.get(0).ok_or(Error::FailedToManipulated)?;
+            let (_, module_bytecode_cid_value) = tuples.get(0).ok_or(Error::FailedToManipulate)?;
             let Link(module_bytecode_cid) = Link::try_from(module_bytecode_cid_value.clone())?;
             return Ok(ModuleBytecodeEnvelope{ module_bytecode_cid })
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

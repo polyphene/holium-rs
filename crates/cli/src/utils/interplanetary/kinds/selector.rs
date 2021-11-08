@@ -22,7 +22,7 @@ enum Error {
     #[error("failed to parse json selector literal")]
     FailedToParseJsonLiteral,
     #[error("failed to manipulate selector kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 /****************
@@ -58,7 +58,7 @@ impl TryFrom<sk_cbor::Value> for SelectorEnvelope {
                 return Ok(SelectorEnvelope(selector));
             }
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -124,7 +124,7 @@ impl TryFrom<sk_cbor::Value> for Selector {
                 }
             }
         };
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -185,7 +185,7 @@ impl TryFrom<sk_cbor::Value> for Matcher {
             }
             return Ok(Matcher { label: None });
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -271,7 +271,7 @@ impl TryFrom<sk_cbor::Value> for ExploreIndex {
                 }
             }
         };
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -355,7 +355,7 @@ impl TryFrom<sk_cbor::Value> for ExploreRange {
                 }
             }
         };
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -413,6 +413,6 @@ impl TryFrom<sk_cbor::Value> for ExploreUnion {
             let selectors = selectors_res?;
             return Ok(ExploreUnion(selectors))
         };
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

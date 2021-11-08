@@ -14,7 +14,7 @@ use sk_cbor::cbor_array;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate connection kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 static DISCRIMINANT_KEY_V0: &str = "cx_0";
@@ -60,6 +60,6 @@ impl TryFrom<sk_cbor::Value> for Connection {
                 }
             }
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
