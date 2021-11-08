@@ -2,7 +2,6 @@ use anyhow::{Context, Result};
 use std::borrow::Borrow;
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
 use serde_cbor::to_vec;
 
 use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
@@ -201,11 +200,11 @@ impl MajorType {
                 // if some elements are already written then return offset after the last element
                 Some(&recursive.elements[index as usize])
             }
-            MajorType::Unsigned(scalar)
-            | MajorType::Negative(scalar)
-            | MajorType::Bytes(scalar)
-            | MajorType::String(scalar)
-            | MajorType::SimpleValues(scalar) => None,
+            MajorType::Unsigned(_)
+            | MajorType::Negative(_)
+            | MajorType::Bytes(_)
+            | MajorType::String(_)
+            | MajorType::SimpleValues(_) => None,
         };
     }
 
@@ -444,7 +443,7 @@ impl HoliumCborNode {
                             node.data = Left(data_set[0].clone());
                         } else {
                             let mut buff = generate_array_cbor_header(data_set.len() as u64);
-                            for mut data in data_set.iter_mut() {
+                            for data in data_set.iter_mut() {
                                 buff.append(data);
                             }
                             node.data = Left(buff);
@@ -479,24 +478,23 @@ impl HoliumCborNode {
                     .as_ref()
                     .right()
                     .ok_or(WriteError::ExpectedChildrenForRecursiveType)?;
-                let mut node_data: Vec<u8> = Vec::with_capacity(elements.len());
+
+                let mut buff: Vec<u8> = generate_array_cbor_header(elements.len() as u64);
                 for i in 0..elements.len() {
                     // Find node with index
-                    let mut next_node: Vec<&HoliumCborNode> = elements
+                    let next_node: Vec<&HoliumCborNode> = elements
                         .iter()
                         .filter(|e| e.get_index().unwrap() == i as u64)
                         .collect::<Vec<&HoliumCborNode>>();
 
-                    node_data.append(
+                    buff.append(
                         &mut next_node
                             .get(0)
                             .ok_or(WriteError::NoNodeAtIndex)?
                             .generate_cbor()?,
                     );
                 }
-                let mut buff: Vec<u8> = generate_array_cbor_header(elements.len() as u64);
 
-                buff.append(&mut node_data);
                 return Ok(buff);
             }
         }
