@@ -3,12 +3,14 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey};
+use crate::utils::errors::Error::{
+    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey,
+};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::models::transformation::{OptionalTransformation, Transformation};
 use crate::utils::local::helpers::jsonschema::{validate_transformation_json_schema};
 use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
+use crate::utils::local::models::transformation::{OptionalTransformation, Transformation};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -49,21 +51,28 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // get argument values
-    let name = matches.value_of("name")
+    let name = matches
+        .value_of("name")
         .context(MissingRequiredArgument("name".to_string()))?;
     let bytecode_path_os_string = matches.value_of("bytecode");
     let handle = matches.value_of("handle");
     let json_schema_in = matches.value_of("json-schema-in");
     let json_schema_out = matches.value_of("json-schema-out");
     // check that the object exists
-    if !local_context.transformations.contains_key(name).context(DbOperationFailed)? {
+    if !local_context
+        .transformations
+        .contains_key(name)
+        .context(DbOperationFailed)?
+    {
         return Err(NoObjectForGivenKey(name.to_string()).into());
     }
     // validate the bytecode file path, if any
-    let bytecode = bytecode_path_os_string.map(|path_os_string| {
-        let bytecode_path = PathBuf::from(path_os_string);
-        read_all_wasm_module(&bytecode_path)
-    }).transpose()?;
+    let bytecode = bytecode_path_os_string
+        .map(|path_os_string| {
+            let bytecode_path = PathBuf::from(path_os_string);
+            read_all_wasm_module(&bytecode_path)
+        })
+        .transpose()?;
     // validate JSON schemata, if any
     if let Some(json_schema_in) = json_schema_in {
         validate_transformation_json_schema(json_schema_in)?;
@@ -79,9 +88,11 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         json_schema_in: json_schema_in.map(|s| s.to_string()),
         json_schema_out: json_schema_out.map(|s| s.to_string()),
     };
-    let merge_transformation_encoded = bincode::serialize(&merge_transformation)
-        .context(BinCodeSerializeFailed)?;
-    local_context.transformations.merge(name, merge_transformation_encoded)
+    let merge_transformation_encoded =
+        bincode::serialize(&merge_transformation).context(BinCodeSerializeFailed)?;
+    local_context
+        .transformations
+        .merge(name, merge_transformation_encoded)
         .context(DbOperationFailed)?;
     print_update_success(name);
     Ok(())

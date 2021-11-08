@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
@@ -5,12 +6,15 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, ObjectAlreadyExistsForGivenKey};
+use crate::utils::errors::Error::{
+    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument,
+    ObjectAlreadyExistsForGivenKey,
+};
+use crate::utils::local::context::helpers::validate_node_name;
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::local::helpers::jsonschema::{validate_transformation_json_schema};
-use crate::utils::local::helpers::keys::validate_node_name;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 
 /// command
@@ -56,18 +60,27 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // get argument values
-    let name = matches.value_of("name")
+    let name = matches
+        .value_of("name")
         .context(MissingRequiredArgument("name".to_string()))?;
-    let bytecode_path_os_string = matches.value_of("bytecode")
+    let bytecode_path_os_string = matches
+        .value_of("bytecode")
         .context(MissingRequiredArgument("bytecode".to_string()))?;
-    let handle = matches.value_of("handle")
+    let handle = matches
+        .value_of("handle")
         .context(MissingRequiredArgument("handle".to_string()))?;
-    let json_schema_in = matches.value_of("json-schema-in")
+    let json_schema_in = matches
+        .value_of("json-schema-in")
         .context(MissingRequiredArgument("json-schema-in".to_string()))?;
-    let json_schema_out = matches.value_of("json-schema-out")
+    let json_schema_out = matches
+        .value_of("json-schema-out")
         .context(MissingRequiredArgument("json-schema-out".to_string()))?;
     // check that the object does not already exist
-    if local_context.transformations.contains_key(name).context(DbOperationFailed)? {
+    if local_context
+        .transformations
+        .contains_key(name)
+        .context(DbOperationFailed)?
+    {
         return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
     }
     // validate the node name
@@ -87,9 +100,9 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         json_schema_out: json_schema_out.to_string(),
     };
     // store new object
-    let encoded: Vec<u8> = bincode::serialize(&object)
-        .context(BinCodeSerializeFailed)?;
-    local_context.transformations
+    let encoded: Vec<u8> = bincode::serialize(&object).context(BinCodeSerializeFailed)?;
+    local_context
+        .transformations
         .compare_and_swap(object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
