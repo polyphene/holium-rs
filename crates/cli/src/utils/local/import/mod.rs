@@ -66,7 +66,7 @@ pub fn import_project(ip_context: &InterplanetaryContext, tmp_local_context: &Lo
     Ok(())
 }
 
-// Find and import the pipeline structure.
+/// Find and import the pipeline structure.
 fn import_pipeline(ip_context: &InterplanetaryContext) -> Result<Pipeline> {
     // quickly find the Pipeline block in the interplanetary area, and get its cid
     let pipeline_cid = find_pipeline_block(&ip_context)?;
@@ -92,7 +92,7 @@ fn is_pipeline_block(path: &PathBuf) -> Result<bool> {
     Ok(buffer == *PIPELINE_BLOC_SUFFIX)
 }
 
-// Find the first Pipeline block in an interplanetary area
+/// Find the first Pipeline block in an interplanetary area
 fn find_pipeline_block(ip_context: &InterplanetaryContext) -> Result<Cid> {
     let ip_area_path = &ip_context.ip_area_path;
     if ip_area_path.is_dir() {
@@ -115,6 +115,9 @@ fn find_pipeline_block(ip_context: &InterplanetaryContext) -> Result<Cid> {
     Err(Error::FindToFindPipelineBlock.into())
 }
 
+/// Use the interplanetary context to import a pipeline vertices into the local area.
+/// Returns a mapping from the interplanetary vertex index to its typed name, used as an index in
+/// the local area.
 fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalContext, pipeline: &Pipeline) -> Result<VerticesImportKeyMap> {
     // loop through vertices to import sources, shapers and transformations
     let mut vertex_idx_mapping = VerticesImportKeyMap::new();
@@ -139,6 +142,7 @@ fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalCont
     Ok(vertex_idx_mapping)
 }
 
+/// Use the interplanetary context to import a pipeline edges into the local area.
 fn import_edges(
     ip_context: &InterplanetaryContext,
     local_context: &LocalContext,
@@ -170,6 +174,7 @@ fn import_edges(
     Ok(())
 }
 
+/// Find and read a Selector from its CID in the interplanetary area and parse it to a String.
 fn parse_selector(selector_cid: &Cid, ip_context: &InterplanetaryContext) -> Result<String> {
     let selector_block = sk_cbor::Value::read_from_ip_area(selector_cid, &ip_context)?;
     let selector = SelectorEnvelope::try_from(*selector_block)?.0;
@@ -177,6 +182,8 @@ fn parse_selector(selector_cid: &Cid, ip_context: &InterplanetaryContext) -> Res
         .context(Error::FailedToParseSelector)
 }
 
+/// Use the interplanetary context to import a transformation, including its bytecode, into the
+/// local area.
 fn import_transformation(ip_context: &InterplanetaryContext, local_context: &LocalContext, metadata: &Metadata, node_name: &String, vertex: &PipelineVertex) -> Result<()> {
     // fetch and parse dry transformation
     let dry_transformation_cid = &vertex.dry_transformation.ok_or(Error::NoTransformationInNode)?;
@@ -210,6 +217,7 @@ fn import_transformation(ip_context: &InterplanetaryContext, local_context: &Loc
     Ok(())
 }
 
+/// Use the interplanetary context to import a source pipeline node into the local area.
 fn import_source(local_context: &LocalContext, metadata: &Metadata, node_name: &String) -> Result<()> {
     // create new object
     let json_schema= metadata.json_schema.as_ref().ok_or(Error::MissingSchemaInMetadata)?;
@@ -228,6 +236,7 @@ fn import_source(local_context: &LocalContext, metadata: &Metadata, node_name: &
     Ok(())
 }
 
+/// Use the interplanetary context to a import shaper pipeline node into the local area.
 fn import_shaper(local_context: &LocalContext, metadata: &Metadata, node_name: &String) -> Result<()> {
     // create new object
     let json_schema= metadata.json_schema.as_ref().ok_or(Error::MissingSchemaInMetadata)?;
