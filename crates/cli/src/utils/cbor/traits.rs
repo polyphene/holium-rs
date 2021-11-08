@@ -66,6 +66,10 @@ enum WriteError {
     ExpectedChildrenForRecursiveType,
     #[error("expected cbor data for recursive type")]
     ExpectedCborDataForRecursiveType,
+    #[error("all children of a recursive node should have an index")]
+    NoIndexOnChild,
+    #[error("index not allocated to one child")]
+    IndexNotAllocatedToOneChild,
 }
 
 /**************************************************
@@ -264,6 +268,48 @@ struct RecursiveNode {
     data: Either<Vec<u8>, Vec<HoliumCborNode>>,
 }
 
+impl RecursiveNode {
+    fn has_child(&self, index: usize) -> Result<bool> {
+        match &self.data {
+            Right(children) => {
+                let mut has_child = false;
+                for c in children.iter() {
+                    if c.get_index().ok_or(WriteError::NoIndexOnChild)? as usize == index {
+                        has_child = true;
+                    }
+                }
+                Ok(has_child)
+            }
+            _ => Err(WriteError::ExpectedChildrenForRecursiveType.into()),
+        }
+    }
+
+    fn child_as_mut(&mut self, index: usize) -> Result<&mut HoliumCborNode> {
+        match self.data.as_mut() {
+            Right(children) => {
+                for c in children.iter_mut() {
+                    if c.get_index().ok_or(WriteError::NoIndexOnChild)? as usize == index {
+                        return Ok(c);
+                    }
+                }
+                Err(WriteError::NoNodeAtIndex.into())
+            }
+            _ => Err(WriteError::ExpectedChildrenForRecursiveType.into()),
+        }
+    }
+
+    fn push_child(&mut self, child: HoliumCborNode) -> Result<()> {
+        // Making sure index is not already taken
+        if self.has_child(child.get_index().ok_or(WriteError::NoIndexOnChild)? as usize)? {
+            return Err(WriteError::IndexAlreadyTaken.into());
+        }
+        match self.data.as_mut() {
+            Right(children) => Ok(children.push(child)),
+            _ => Err(WriteError::ExpectedChildrenForRecursiveType.into()),
+        }
+    }
+}
+
 /// [HoliumCborConstructor] is a utility structure to create a HoliumCbor object at a later time
 #[derive(Clone, Debug)]
 enum HoliumCborNode {
@@ -304,14 +350,7 @@ impl HoliumCborNode {
                         match explore_index.next.borrow() {
                             Selector::Matcher(_) => {
                                 // Making sure index is not already taken
-                                if node
-                                    .data
-                                    .as_ref()
-                                    .right()
-                                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                    .iter()
-                                    .any(|e| e.get_index().unwrap() == explore_index.index)
-                                {
+                                if node.has_child(explore_index.index as usize)? {
                                     return Err(WriteError::IndexAlreadyTaken.into());
                                 }
                                 // If multiple object in dataset, create a Node object that will
@@ -329,57 +368,32 @@ impl HoliumCborNode {
                                         }))
                                     }
                                     // New non leaf containing all generated leaves
-                                    node.data
-                                        .as_mut()
-                                        .right()
-                                        .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                        .push(HoliumCborNode::NonLeaf(RecursiveNode {
-                                            index: Some(explore_index.index),
-                                            data: Right(elements_to_store),
-                                        }));
+                                    node.push_child(HoliumCborNode::NonLeaf(RecursiveNode {
+                                        index: Some(explore_index.index),
+                                        data: Right(elements_to_store),
+                                    }));
                                 } else {
-                                    node.data
-                                        .as_mut()
-                                        .right()
-                                        .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                        .push(HoliumCborNode::Leaf(ScalarNode {
-                                            index: explore_index.index,
-                                            data: data_set
-                                                .get(0)
-                                                .ok_or(WriteError::NoDataInDataSet)?
-                                                .clone(),
-                                        }))
+                                    node.push_child(HoliumCborNode::Leaf(ScalarNode {
+                                        index: explore_index.index,
+                                        data: data_set
+                                            .get(0)
+                                            .ok_or(WriteError::NoDataInDataSet)?
+                                            .clone(),
+                                    }));
                                 }
                             }
                             Selector::ExploreIndex(_) | Selector::ExploreRange(_) => {
                                 // If node does not exist then create it
-                                if !node
-                                    .data
-                                    .as_mut()
-                                    .right()
-                                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                    .iter()
-                                    .any(|e| e.get_index().unwrap() == explore_index.index)
-                                {
-                                    node.data
-                                        .as_mut()
-                                        .right()
-                                        .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                        .push(HoliumCborNode::NonLeaf(RecursiveNode {
-                                            index: Some(explore_index.index),
-                                            data: Right(vec![]),
-                                        }));
+                                if !node.has_child(explore_index.index as usize)? {
+                                    node.push_child(HoliumCborNode::NonLeaf(RecursiveNode {
+                                        index: Some(explore_index.index),
+                                        data: Right(vec![]),
+                                    }));
                                 }
-                                let mut next_node: Vec<&mut HoliumCborNode> = node
-                                    .data
-                                    .as_mut()
-                                    .right()
-                                    .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                    .iter_mut()
-                                    .filter(|e| e.get_index().unwrap() == explore_index.index)
-                                    .collect::<Vec<&mut HoliumCborNode>>();
 
-                                return next_node[0].ingest(&explore_index.next, data_set);
+                                return node
+                                    .child_as_mut(explore_index.index as usize)?
+                                    .ingest(&explore_index.next, data_set);
                             }
                             Selector::ExploreUnion(_) => {
                                 return Err(SelectorError::UnionOnlyAtRoot.into())
@@ -404,24 +418,13 @@ impl HoliumCborNode {
                             (explore_range.start..explore_range.end).enumerate()
                         {
                             // Making sure index is not already taken
-                            if node
-                                .data
-                                .as_ref()
-                                .right()
-                                .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                .iter()
-                                .any(|e| e.get_index().unwrap() == to_set_index)
-                            {
+                            if node.has_child(to_set_index as usize)? {
                                 return Err(WriteError::IndexAlreadyTaken.into());
                             }
-                            node.data
-                                .as_mut()
-                                .right()
-                                .ok_or(WriteError::ExpectedChildrenForRecursiveType)?
-                                .push(HoliumCborNode::Leaf(ScalarNode {
-                                    index: to_set_index,
-                                    data: data_set[i].clone(),
-                                }))
+                            node.push_child(HoliumCborNode::Leaf(ScalarNode {
+                                index: to_set_index,
+                                data: data_set[i].clone(),
+                            }));
                         }
                     }
                     _ => return Err(WriteError::RangeSelectionOnLeaf.into()),
@@ -824,4 +827,65 @@ fn generate_array_cbor_header(size: u64) -> Vec<u8> {
     }
 
     buff
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::utils::local::models::data::HoliumCbor;
+    use serde_cbor::Value as CborValue;
+    use serde_json::{json, Value as JsonValue};
+    use std::collections::BTreeMap;
+
+    pub trait Importable {
+        /// Convert an object to a valid CBOR value.
+        fn to_cbor(&self) -> CborValue;
+    }
+
+    impl Importable for JsonValue {
+        fn to_cbor(&self) -> CborValue {
+            match self {
+                JsonValue::Null => CborValue::Null,
+                JsonValue::Bool(v) => CborValue::Bool(*v),
+                JsonValue::Number(v) if { v.is_i64() } => {
+                    CborValue::Integer(v.as_i64().unwrap() as i128)
+                }
+                JsonValue::Number(v) if { v.is_u64() } => {
+                    CborValue::Integer(v.as_u64().unwrap() as i128)
+                }
+                JsonValue::Number(v) if { v.is_f64() } => CborValue::Float(v.as_f64().unwrap()),
+                JsonValue::String(v) => CborValue::Text(v.to_string()),
+                JsonValue::Array(v) => {
+                    CborValue::Array(v.iter().map(|v| v.to_owned().to_cbor()).collect())
+                }
+                JsonValue::Object(v) => {
+                    let mut cbor_map: BTreeMap<CborValue, CborValue> = BTreeMap::new();
+                    for (key, value) in v {
+                        cbor_map.insert(CborValue::Text(key.to_string()), value.to_cbor());
+                    }
+                    CborValue::Map(cbor_map)
+                }
+                JsonValue::Number(_) => unreachable!(),
+            }
+        }
+    }
+    #[test]
+    fn testing() {
+        let json_value: JsonValue = json!([0, 1, 2]);
+        let cbor_value = json_value.to_cbor();
+        let cbor: HoliumCbor = to_vec(&cbor_value).unwrap();
+
+        let matcher_selector = "{\".\": {}}";
+        let index_selector = "{\"i\": {\"i\": 1, \">\": { \".\": {}}}}";
+        let range_selector = "{\"r\": {\"^\": 1,\"$\": 3,\">\": {\".\": {}}}}";
+
+        let tail_selector = SelectorEnvelope::new(index_selector).unwrap();
+        let head_selector = SelectorEnvelope::new(matcher_selector).unwrap();
+
+        let mut new_data: HoliumCbor = Vec::new();
+
+        dbg!(new_data
+            .copy_cbor(cbor, &tail_selector, &head_selector)
+            .unwrap());
+    }
 }
