@@ -319,7 +319,7 @@ enum HoliumCborNode {
 }
 
 impl HoliumCborNode {
-    fn root() -> Self {
+    fn new() -> Self {
         HoliumCborNode::NonLeaf(RecursiveNode {
             index: Default::default(),
             data: Right(vec![]),
