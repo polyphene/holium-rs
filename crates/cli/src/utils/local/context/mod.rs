@@ -8,11 +8,12 @@ use crate::utils::local::models;
 use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR};
 use crate::utils::repo::helpers::get_root_path;
 use crate::utils::local::context::helpers::NodeType;
+use crate::utils::repo::models::portation::Portations;
 use tempfile::{tempdir, TempDir};
 use std::fs;
 
-pub mod constants;
 pub mod helpers;
+pub mod constants;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -55,7 +56,6 @@ impl LocalContext {
         let holium_root_path = root_path
             .join(HOLIUM_DIR);
         if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context(Error::FailedToInit)? }
-        // create the local area directory if it does not exist
         let local_area_path = holium_root_path.join(LOCAL_DIR);
         if !local_area_path.exists() { fs::create_dir(&local_area_path).context(Error::FailedToInit)? }
         // initialize database handle

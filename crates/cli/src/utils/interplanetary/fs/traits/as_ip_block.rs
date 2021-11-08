@@ -20,6 +20,13 @@ enum Error {
     FailedCreationFromContent,
 }
 
+/// Trait helping with filesystem operations on InterPlanetary blocks
+/// The [ ContentType ] is a type suitable to manipulate the content of the block.
+/// It supertraits the following traits:
+/// - [ `std::io::Read` ] to read the content and write it in a block.
+/// - [ `std::io::Write` ] to read a block and write parts of its content in the rust structure.
+/// - [ `std::io::Seek` ] to ease successive read and/or write operations.
+/// - [ `core::default::Default` ] to ease the creation of a new structure.
 pub trait AsInterplanetaryBlock<ContentType: Read + Write + Seek + Default> {
     /// Returns the multicodec used for the interplanetary block.
     fn codec() -> BlockMulticodec;

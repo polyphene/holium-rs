@@ -15,7 +15,7 @@ use sk_cbor::cbor_unsigned;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate pipeline edge kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 /// [ PipelineEdge ] holds the data used as an attribute of edges of a pipeline graph.
@@ -54,6 +54,6 @@ impl TryFrom<sk_cbor::Value> for PipelineEdge {
                 return Ok(edge)
             }
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

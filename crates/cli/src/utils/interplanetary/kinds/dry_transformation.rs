@@ -13,7 +13,7 @@ use crate::utils::interplanetary::kinds::link::Link;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate dry transformation kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 static DISCRIMINANT_KEY_V0: &str = "dt_0";
@@ -44,13 +44,13 @@ impl TryFrom<sk_cbor::Value> for DryTransformation {
     type Error = AnyhowError;
     fn try_from(value: Value) -> Result<Self> {
         if let sk_cbor::Value::Map(tuples) = value {
-            let (_, bytecode_value) = tuples.get(1).ok_or(Error::FailedToManipulated)?;
+            let (_, bytecode_value) = tuples.get(1).ok_or(Error::FailedToManipulate)?;
             let Link(module_bytecode_envelope_cid) = Link::try_from(bytecode_value.clone())?;
-            let (_, handle_value) = tuples.get(0).ok_or(Error::FailedToManipulated)?;
+            let (_, handle_value) = tuples.get(0).ok_or(Error::FailedToManipulate)?;
             if let sk_cbor::Value::TextString(handle) = handle_value.clone() {
                 return Ok(DryTransformation{ module_bytecode_envelope_cid, handle })
             }
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

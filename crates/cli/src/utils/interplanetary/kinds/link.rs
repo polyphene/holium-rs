@@ -10,7 +10,7 @@ use std::io::Cursor;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate link kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 /// CBOR Tag ID registered to identify IPLD content identifiers.
@@ -34,10 +34,10 @@ impl TryFrom<sk_cbor::Value> for Link {
     fn try_from(value: Value) -> Result<Self> {
         if let Value::Tag(_, boxed_bytes) = value {
             if let Value::ByteString(cid_bytes) = *boxed_bytes {
-                let cid = Cid::read_bytes(Cursor::new(cid_bytes)).context(Error::FailedToManipulated)?;
+                let cid = Cid::read_bytes(Cursor::new(cid_bytes)).context(Error::FailedToManipulate)?;
                 return Ok(Link(cid))
             }
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

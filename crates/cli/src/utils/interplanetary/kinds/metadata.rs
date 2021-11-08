@@ -17,7 +17,7 @@ use std::convert::TryFrom;
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to manipulate metadata kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 static DISCRIMINANT_KEY_V0: &str = "meta_0";
@@ -109,6 +109,6 @@ impl TryFrom<sk_cbor::Value> for Metadata {
             }
             return Ok(metadata)
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }
