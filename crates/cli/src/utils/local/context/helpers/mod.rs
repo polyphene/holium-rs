@@ -136,8 +136,15 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
     Ok(name.to_string())
 }
 
+
+#[cfg(test)]
 mod test {
     use super::*;
+
+    /*************************************
+     * Parsing of portation IDs
+     *************************************/
+
     // test the parsing of an invalid portation id
     #[test]
     fn test_parse_invalid_portation_id() {
@@ -163,4 +170,40 @@ mod test {
         assert_eq!(node_typed_name, "source:source-name");
     }
 
+    /*************************************
+     * Validate node name
+     *************************************/
+
+    #[test]
+    fn cannot_validate_node_name_with_arrow_character() {
+        let name = "my→name";
+
+        let res = validate_node_name(name);
+
+        assert!(res.is_err());
+        assert!(res
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("a node name cannot contain the '→' character"))
+    }
+
+    #[test]
+    fn can_validate_node_name() {
+        let name = "node_name";
+
+        validate_node_name(name).unwrap();
+    }
+
+    /*************************************
+     * Build node typed name
+     *************************************/
+    #[test]
+    fn can_build_node_typed_name() {
+        let name = "node_name";
+        let expected_node_typed_name = format!("source:{}", name);
+
+        let res = build_node_typed_name(&NodeType::source, name);
+        assert_eq!(expected_node_typed_name, res);
+    }
 }
