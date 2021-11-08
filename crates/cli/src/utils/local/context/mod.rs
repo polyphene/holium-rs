@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context, Result};
 use sled::Db;
 
+use crate::utils::local::context::helpers::NodeType;
 use crate::utils::local::models;
 use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
 use crate::utils::repo::helpers::get_root_path;
@@ -24,6 +25,7 @@ enum Error {
 /// Context structure helping accessing the local store in a consistent way throughout the CLI
 /// commands.
 pub struct LocalContext {
+    pub data: sled::Tree,
     pub root_path: PathBuf,
     pub db: sled::Db,
     pub sources: sled::Tree,
@@ -57,6 +59,7 @@ impl LocalContext {
             .join(HOLIUM_DIR);
         if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context(Error::FailedToInit)? }
         // create the local area directory if it does not exist
+        let holium_root_path = root_path.join(HOLIUM_DIR);
         let local_area_path = holium_root_path.join(LOCAL_DIR);
         if !local_area_path.exists() { fs::create_dir(&local_area_path).context(Error::FailedToInit)? }
         // initialize database handle
@@ -78,6 +81,7 @@ impl LocalContext {
     /// and the path of the portations file.
     fn from_db_and_conf_files(root_path: &PathBuf, db: sled::Db, portations_file_path: PathBuf) -> Result<Self> {
         // Get trees from the DB
+        let data: sled::Tree = db.open_tree(models::data::TREE_NAME)?;
         let sources: sled::Tree = db.open_tree(models::source::TREE_NAME)?;
         sources.set_merge_operator(models::source::merge);
         let shapers: sled::Tree = db.open_tree(models::shaper::TREE_NAME)?;
@@ -89,7 +93,7 @@ impl LocalContext {
         // Get portations handler from the configuration file
         let portations = Portations::from_path(portations_file_path)?;
         // Return the context handler
-        Ok(LocalContext { root_path: root_path.clone(), db, sources, shapers, transformations, connections, portations })
+        Ok(LocalContext { data, root_path: root_path.clone(), db, sources, shapers, transformations, connections, portations })
     }
 
     /// Move local area from a context to another.

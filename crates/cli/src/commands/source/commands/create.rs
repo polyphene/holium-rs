@@ -5,11 +5,14 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, ObjectAlreadyExistsForGivenKey};
+use crate::utils::errors::Error::{
+    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument,
+    ObjectAlreadyExistsForGivenKey,
+};
+use crate::utils::local::context::helpers::validate_node_name;
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::helpers::jsonschema::validate_json_schema;
-use crate::utils::local::context::helpers::validate_node_name;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 use crate::utils::local::models::source::Source;
 use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
@@ -37,12 +40,18 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // get argument values
-    let name = matches.value_of("name")
+    let name = matches
+        .value_of("name")
         .context(MissingRequiredArgument("name".to_string()))?;
-    let json_schema = matches.value_of("json-schema")
+    let json_schema = matches
+        .value_of("json-schema")
         .context(MissingRequiredArgument("json-schema".to_string()))?;
     // check that the object does not already exist
-    if local_context.sources.contains_key(name).context(DbOperationFailed)? {
+    if local_context
+        .sources
+        .contains_key(name)
+        .context(DbOperationFailed)?
+    {
         return Err(ObjectAlreadyExistsForGivenKey(name.to_string()).into());
     }
     // validate the node name
@@ -55,9 +64,9 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         json_schema: json_schema.to_string(),
     };
     // store new object
-    let encoded: Vec<u8> = bincode::serialize(&object)
-        .context(BinCodeSerializeFailed)?;
-    local_context.sources
+    let encoded: Vec<u8> = bincode::serialize(&object).context(BinCodeSerializeFailed)?;
+    local_context
+        .sources
         .compare_and_swap(object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()

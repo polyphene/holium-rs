@@ -1,21 +1,21 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
-use anyhow::{Error as AnyhowError, Context};
-use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::{cbor_map, cbor_unsigned, cbor_array, cbor_array_vec};
-use serde_json::value::Value as JsonValue;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
 use crate::utils::interplanetary::kinds::link::Link;
-use std::option::Option::Some;
+use anyhow::Result;
+use anyhow::{Context, Error as AnyhowError};
+use cid::Cid;
+use serde_json::value::Value as JsonValue;
 use sk_cbor::values::IntoCborValue;
+use sk_cbor::{cbor_array, cbor_array_vec, cbor_map, cbor_unsigned};
 use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use serde_json::map::Map;
 use serde_json::Number;
+use std::option::Option::Some;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -26,15 +26,16 @@ enum Error {
 }
 
 /****************
- SelectorEnvelope
- ****************/
+SelectorEnvelope
+****************/
 
+#[derive(Debug)]
 pub struct SelectorEnvelope(pub Selector);
 
 impl SelectorEnvelope {
     pub fn new(selector_str: &str) -> Result<Self> {
-        let v: JsonValue = serde_json::from_str(&selector_str)
-            .context(Error::FailedToParseJsonLiteral)?;
+        let v: JsonValue =
+            serde_json::from_str(&selector_str).context(Error::FailedToParseJsonLiteral)?;
         let selector = Selector::try_from(v)?;
         Ok(SelectorEnvelope { 0: selector })
     }
@@ -63,9 +64,10 @@ impl TryFrom<sk_cbor::Value> for SelectorEnvelope {
 }
 
 /****************
- Selector
- ****************/
+Selector
+****************/
 
+#[derive(Debug)]
 pub enum Selector {
     Matcher(Matcher),
     ExploreIndex(Box<ExploreIndex>),
@@ -73,13 +75,22 @@ pub enum Selector {
     ExploreUnion(Box<ExploreUnion>),
 }
 
+impl Selector {
+    pub fn is_matcher(&self) -> bool {
+        match self {
+            Selector::Matcher(_) => true,
+            _ => false,
+        }
+    }
+}
+
 impl From<Selector> for sk_cbor::Value {
     fn from(o: Selector) -> Self {
         let (key, child_selector): (&str, sk_cbor::Value) = match o {
             Selector::Matcher(child) => (".", child.into()),
-            Selector::ExploreIndex(child) => ("i", {*child}.into()),
-            Selector::ExploreRange(child) => ("r", {*child}.into()),
-            Selector::ExploreUnion(child) => ("|", {*child}.into()),
+            Selector::ExploreIndex(child) => ("i", { *child }.into()),
+            Selector::ExploreRange(child) => ("r", { *child }.into()),
+            Selector::ExploreUnion(child) => ("|", { *child }.into()),
         };
         cbor_map! {
             key => child_selector
@@ -147,11 +158,12 @@ impl TryFrom<JsonValue> for Selector {
 }
 
 /****************
- Matcher
- ****************/
+Matcher
+****************/
 
+#[derive(Debug)]
 pub struct Matcher {
-    label: Option<String>,
+    pub label: Option<String>,
 }
 
 impl From<Matcher> for sk_cbor::Value {
@@ -195,7 +207,9 @@ impl TryFrom<JsonValue> for Matcher {
         if let JsonValue::Object(map) = json_value {
             if let Some(label_value) = map.get("label") {
                 if let JsonValue::String(label) = label_value {
-                    return Ok(Matcher { label: Some(label.to_string()) });
+                    return Ok(Matcher {
+                        label: Some(label.to_string()),
+                    });
                 }
             }
             return Ok(Matcher { label: None });
@@ -204,14 +218,14 @@ impl TryFrom<JsonValue> for Matcher {
     }
 }
 
-
 /****************
- ExploreIndex
- ****************/
+ExploreIndex
+****************/
 
+#[derive(Debug)]
 pub struct ExploreIndex {
-    index: u64,
-    next: Box<Selector>,
+    pub index: u64,
+    pub next: Box<Selector>,
 }
 
 impl From<ExploreIndex> for sk_cbor::Value {
@@ -277,13 +291,14 @@ impl TryFrom<sk_cbor::Value> for ExploreIndex {
 
 
 /****************
- ExploreRange
- ****************/
+ExploreRange
+****************/
 
+#[derive(Debug)]
 pub struct ExploreRange {
-    start: u64,
-    end: u64,
-    next: Box<Selector>,
+    pub start: u64,
+    pub end: u64,
+    pub next: Box<Selector>,
 }
 
 impl From<ExploreRange> for sk_cbor::Value {
@@ -360,10 +375,10 @@ impl TryFrom<sk_cbor::Value> for ExploreRange {
 }
 
 /****************
- ExploreUnion
- ****************/
-
-pub struct ExploreUnion(Vec<Selector>);
+ExploreUnion
+****************/
+#[derive(Debug)]
+pub struct ExploreUnion(pub Vec<Selector>);
 
 impl From<ExploreUnion> for sk_cbor::Value {
     fn from(o: ExploreUnion) -> Self {
@@ -391,12 +406,10 @@ impl TryFrom<JsonValue> for ExploreUnion {
     type Error = AnyhowError;
     fn try_from(json_value: JsonValue) -> Result<Self> {
         if let JsonValue::Array(vec) = json_value {
-            let selectors_res: Result<Vec<Selector>> = vec
-                .iter()
-                .map(|v| { v.clone().try_into() })
-                .collect();
+            let selectors_res: Result<Vec<Selector>> =
+                vec.iter().map(|v| v.clone().try_into()).collect();
             let selectors = selectors_res?;
-            return Ok(ExploreUnion(selectors))
+            return Ok(ExploreUnion(selectors));
         };
         Err(Error::FailedToParseJsonLiteral.into())
     }

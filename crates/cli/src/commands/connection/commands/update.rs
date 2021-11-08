@@ -3,12 +3,14 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey};
+use crate::utils::errors::Error::{
+    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey,
+};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::models::connection::{OptionalConnection, Connection};
 use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
 use crate::utils::local::helpers::selector::validate_selector;
+use crate::utils::local::models::connection::{Connection, OptionalConnection};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -39,12 +41,17 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // get argument values
-    let id = matches.value_of("id")
+    let id = matches
+        .value_of("id")
         .context(MissingRequiredArgument("id".to_string()))?;
     let tail_selector = matches.value_of("tail-selector");
     let head_selector = matches.value_of("head-selector");
     // check that the object exists
-    if !local_context.connections.contains_key(id).context(DbOperationFailed)? {
+    if !local_context
+        .connections
+        .contains_key(id)
+        .context(DbOperationFailed)?
+    {
         return Err(NoObjectForGivenKey(id.to_string()).into());
     }
     // validate selectors, if any
@@ -60,9 +67,11 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         tail_selector: tail_selector.map(|s| s.to_string()),
         head_selector: head_selector.map(|s| s.to_string()),
     };
-    let merge_connection_encoded = bincode::serialize(&merge_connection)
-        .context(BinCodeSerializeFailed)?;
-    local_context.connections.merge(id, merge_connection_encoded)
+    let merge_connection_encoded =
+        bincode::serialize(&merge_connection).context(BinCodeSerializeFailed)?;
+    local_context
+        .connections
+        .merge(id, merge_connection_encoded)
         .context(DbOperationFailed)?;
     print_update_success(id);
     Ok(())
