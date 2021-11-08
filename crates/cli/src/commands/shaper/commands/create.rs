@@ -12,6 +12,7 @@ use crate::utils::local::helpers::jsonschema::validate_json_schema;
 use crate::utils::local::context::helpers::validate_node_name;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 use crate::utils::local::models::shaper::Shaper;
+use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -60,7 +61,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .compare_and_swap(object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create shaper with name: {}", name))?;
+        .context(StructureCreationError("shaper".to_string(), name.to_string()))?;
     print_create_success(name);
     Ok(())
 }

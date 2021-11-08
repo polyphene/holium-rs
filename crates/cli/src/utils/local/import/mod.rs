@@ -26,6 +26,7 @@ use crate::utils::local::models::transformation::Transformation;
 use crate::utils::interplanetary::kinds::dry_transformation::DryTransformation;
 use crate::utils::interplanetary::kinds::module_bytecode_envelope::ModuleBytecodeEnvelope;
 use crate::utils::interplanetary::kinds::module_bytecode::ModuleBytecode;
+use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
 
 
 /// Ending bytes of any Pipeline interplanetary block
@@ -169,7 +170,7 @@ fn import_edges(
             .compare_and_swap(&object.id, None as Option<&[u8]>, Some(encoded))
             .context(DbOperationFailed)?
             .ok()
-            .context(anyhow!("cannot create connection: {}", &object.id))?;
+            .context(StructureCreationError("connection".to_string(), object.id))?;
     }
     Ok(())
 }
@@ -213,7 +214,7 @@ fn import_transformation(ip_context: &InterplanetaryContext, local_context: &Loc
         .compare_and_swap(&object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create transformation with name: {}", &object.name))?;
+        .context(StructureCreationError("transformation".to_string(), object.name))?;
     Ok(())
 }
 
@@ -232,7 +233,7 @@ fn import_source(local_context: &LocalContext, metadata: &Metadata, node_name: &
         .compare_and_swap(&object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create source with name: {}", &object.name))?;
+        .context(StructureCreationError("source".to_string(), object.name))?;
     Ok(())
 }
 
@@ -251,6 +252,6 @@ fn import_shaper(local_context: &LocalContext, metadata: &Metadata, node_name: &
         .compare_and_swap(&object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create shaper with name: {}", &object.name))?;
+        .context(StructureCreationError("shaper".to_string(), object.name))?;
     Ok(())
 }

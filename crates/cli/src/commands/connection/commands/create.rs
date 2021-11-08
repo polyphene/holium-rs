@@ -14,6 +14,7 @@ use crate::utils::local::helpers::prints::commands_outputs::print_create_success
 use crate::utils::local::models::connection::Connection;
 use crate::utils::local::context::helpers::{validate_pipeline_node_existence, NodeType};
 use crate::utils::local::helpers::selector::validate_selector;
+use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -113,7 +114,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .compare_and_swap(object.id, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create connection: {}", &id))?;
+        .context(StructureCreationError("connection".to_string(), id.clone()))?;
     print_create_success(&id);
     Ok(())
 }
