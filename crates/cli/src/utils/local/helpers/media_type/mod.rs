@@ -32,3 +32,8 @@ pub fn validate_mimetype_coherence(file_path: &str, file_format: &PortationFileF
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+
+}
