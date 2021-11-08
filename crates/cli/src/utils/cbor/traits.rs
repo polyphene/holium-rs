@@ -287,6 +287,7 @@ impl RecursiveNode {
     fn child_as_mut(&mut self, index: usize) -> Result<&mut HoliumCborNode> {
         match self.data.as_mut() {
             Right(children) => {
+                // Not using find() as to propagate error on get_index()
                 for c in children.iter_mut() {
                     if c.get_index().ok_or(WriteError::NoIndexOnChild)? as usize == index {
                         return Ok(c);
