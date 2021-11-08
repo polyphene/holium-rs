@@ -1,9 +1,10 @@
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
-use crate::utils::cbor::helpers::WriteError;
+use crate::utils::cbor::helpers::{generate_array_cbor_header, SelectorError, WriteError};
 use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
 use anyhow::Result;
 use either::Either;
-use either::Either::Right;
+use either::Either::{Left, Right};
+use std::borrow::Borrow;
 use std::io::Cursor;
 
 pub trait WriteHoliumCbor {
