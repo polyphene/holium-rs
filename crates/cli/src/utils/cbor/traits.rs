@@ -358,20 +358,21 @@ impl HoliumCborNode {
                                 // contain our leaves, and set it at given index.
                                 // Otherwise lets store the data in a leaf
                                 if data_set.len() > 1usize {
-                                    // Initialize vec with capacity of data set
-                                    let mut elements_to_store: Vec<HoliumCborNode> =
-                                        Vec::with_capacity(data_set.len());
-                                    // New leaf for each data
-                                    for (i, data) in data_set.iter().enumerate() {
-                                        elements_to_store.push(HoliumCborNode::Leaf(ScalarNode {
-                                            index: i as u64,
-                                            data: data.clone(),
-                                        }))
-                                    }
                                     // New non leaf containing all generated leaves
                                     node.push_child(HoliumCborNode::NonLeaf(RecursiveNode {
                                         index: Some(explore_index.index),
-                                        data: Right(elements_to_store),
+                                        data: Right(
+                                            data_set
+                                                .iter()
+                                                .enumerate()
+                                                .map(|(i, data)| {
+                                                    HoliumCborNode::Leaf(ScalarNode {
+                                                        index: i as u64,
+                                                        data: data.clone(),
+                                                    })
+                                                })
+                                                .collect(),
+                                        ),
                                     }));
                                 } else {
                                     node.push_child(HoliumCborNode::Leaf(ScalarNode {
