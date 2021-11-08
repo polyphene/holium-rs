@@ -1,4 +1,4 @@
-use crate::utils::cbor::traits::{ParseHoliumCbor, WriteHoliumCbor};
+use crate::utils::cbor::traits::{AsHoliumCbor, WriteHoliumCbor};
 use anyhow::Context;
 use humansize::{file_size_opts, FileSize};
 use optional_struct::OptionalStruct;
