@@ -129,7 +129,7 @@ fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalCont
         let node_typed_name = metadata.name.as_ref().ok_or(Error::NoNameInMetadata)?;
         // map index in the list of vertices to this typed name
         vertex_idx_mapping.insert(idx as u64, node_typed_name.clone());
-        // get untyped name and node type
+        // get node type and untyped name
         let (node_type, untyped_node_name) = parse_node_typed_name(&node_typed_name)?;
         // import node according to its type
         match node_type {
