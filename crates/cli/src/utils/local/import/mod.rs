@@ -97,8 +97,7 @@ fn find_pipeline_block(ip_context: &InterplanetaryContext) -> Result<Cid> {
     let ip_area_path = &ip_context.ip_area_path;
     if ip_area_path.is_dir() {
         for first_level_entry in fs::read_dir(ip_area_path)? {
-            let first_level_entry = first_level_entry?;
-            let first_level_path = first_level_entry.path();
+            let first_level_path = first_level_entry?.path();
             if first_level_path.is_dir() {
                 for second_level_entry in fs::read_dir(first_level_path)? {
                     let second_level_entry = second_level_entry?;
