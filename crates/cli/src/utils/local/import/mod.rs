@@ -100,8 +100,7 @@ fn find_pipeline_block(ip_context: &InterplanetaryContext) -> Result<Cid> {
             let first_level_path = first_level_entry?.path();
             if first_level_path.is_dir() {
                 for second_level_entry in fs::read_dir(first_level_path)? {
-                    let second_level_entry = second_level_entry?;
-                    let second_level_path = second_level_entry.path();
+                    let second_level_path = second_level_entry?.path();
                     if second_level_path.is_file() {
                         if is_pipeline_block(&second_level_path)? {
                             // compute related block path
