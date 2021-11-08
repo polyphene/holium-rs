@@ -9,7 +9,6 @@ use crate::utils::local::models;
 use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, PORTATIONS_FILE};
 use crate::utils::repo::helpers::get_root_path;
 use crate::utils::repo::models::portation::Portations;
-use crate::utils::local::context::helpers::NodeType;
 use tempfile::{tempdir, TempDir};
 use std::fs;
 
