@@ -14,7 +14,7 @@ use crate::utils::local::context::helpers::validate_node_name;
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
 use crate::utils::local::models::transformation::Transformation;
-use crate::utils::local::helpers::jsonschema::{validate_transformation_json_schema};
+use crate::utils::local::helpers::jsonschema::{validate_pipeline_node_json_schema};
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 
 /// command
@@ -89,8 +89,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     let bytecode_path = PathBuf::from(bytecode_path_os_string);
     let bytecode = read_all_wasm_module(&bytecode_path)?;
     // validate JSON schemata
-    validate_transformation_json_schema(json_schema_in)?;
-    validate_transformation_json_schema(json_schema_out)?;
+    validate_pipeline_node_json_schema(json_schema_in)?;
+    validate_pipeline_node_json_schema(json_schema_out)?;
     // create new object
     let object = Transformation {
         name: name.to_string(),

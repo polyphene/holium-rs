@@ -8,7 +8,7 @@ use clap::{arg_enum, App, Arg, ArgMatches, SubCommand};
 use crate::utils::errors::Error::{BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, ObjectAlreadyExistsForGivenKey};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::helpers::jsonschema::validate_json_schema;
+use crate::utils::local::helpers::jsonschema::validate_pipeline_node_json_schema;
 use crate::utils::local::context::helpers::{validate_node_name, PortationDirectionType, build_portation_id};
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 use crate::utils::repo::models::portation::{Portation, PortationFileFormat};

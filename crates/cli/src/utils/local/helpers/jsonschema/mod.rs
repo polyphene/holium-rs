@@ -39,6 +39,8 @@ enum Error {
     PrefixItemsFieldShouldHoldArrayValue,
     #[error("invalid json schema type field value: {0}")]
     InvalidTypeFieldValue(String),
+    #[error(r#"json schema of a pipeline node should hold an array of tuples ({{ "type" : "array" , "prefixItems" : … }}) at its root"#)]
+    InvalidSchemaForPipelineNode,
 }
 
 
@@ -58,39 +60,36 @@ pub enum HoliumJsonSchemaType {
 }
 
 /// Validate that a JSON literal is a valid JSON Schema, ready to be used as a feature of local
-/// Holium objects.
-pub fn validate_json_schema(literal: &str) -> Result<()> {
+/// Holium pipeline nodes.
+pub fn validate_pipeline_node_json_schema(literal: &str) -> Result<()> {
     // parse the string of data into serde_json::Value
     let schema: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
-    // validate it against JSON schema meta schema
+    // fastly validate it against JSON schema meta schema
     META_SCHEMA
         .validate(&schema)
         .ok()
         .context(Error::InvalidJsonSchema)?;
+    // check that the root element has the right *tuples array* type
+    validate_has_tuple_array_root(&schema)?;
     // recursively check that all expected fields are present in the schema for it to be used in the
     // local Holium area
     parse_root_json_schema(&schema)?;
     Ok(())
 }
 
-// TODO
-/// Validate that a JSON literal is a valid JSON Schema, ready to be used as a feature of local
-/// Holium objects. Add one more verification, making sure that the root object is of type `array`
-pub fn validate_transformation_json_schema(literal: &str) -> Result<()> {
-    // parse the string of data into serde_json::Value
-    let schema: Value = serde_json::from_str(literal).context(Error::StringNotParsableToJSON)?;
-    // validate it against JSON schema meta schema
-    META_SCHEMA
-        .validate(&schema)
-        .ok()
-        .context(Error::InvalidJsonSchema)?;
-    // recursively check that all expected fields are present in the schema for it to be used in the
-    // local Holium area
-    check_transformation_expected_fields(&schema)?;
+/// Check that the root element of a JSON schema is an array of *tuples*.
+fn validate_has_tuple_array_root(schema: &Value)  -> Result<()> {
+    // get type of the root schema
+    let (type_name, schema_map) = get_schema_details(schema)?;
+    // check that it is of *tuples array* type
+    if type_name != "array" || !is_tuples_array(schema_map) {
+        return Err(Error::InvalidSchemaForPipelineNode.into());
+    }
     Ok(())
 }
 
-/// Parse a JSON schema from a JSON Value into a HoliumJsonSchema.
+/// Parse a JSON schema from a JSON Value into a HoliumJsonSchema. The `root` term refers to the fact
+/// that the schema itself is freed from any attached name, as a root JSON schema would.
 pub fn parse_root_json_schema(schema: &Value)  -> Result<HoliumJsonSchema> {
     parse_json_schema(HoliumJsonSchemaName(None), schema)
 }
@@ -99,26 +98,8 @@ pub fn parse_root_json_schema(schema: &Value)  -> Result<HoliumJsonSchema> {
 /// and parse them into a HoliumJsonSchema.
 /// This function fails iff this condition is not satisfied.
 fn parse_json_schema(schema_name: HoliumJsonSchemaName, schema: &Value) -> Result<HoliumJsonSchema> {
-    /// TODO BEGINNING
-    /// // get type field value
-    /// let (schema_map, type_name) = get_type_field_value(schema)?;
-    // check that the value is an object
-    let schema_map = match schema {
-        Value::Object(schema_map) => schema_map,
-        _ => {
-            return Err(Error::SchemaShouldBeJsonObject.into());
-        }
-    };
-    // check for the presence of a `type` field
-    let type_value = schema_map.get("type")
-        .ok_or(Error::MissingTypeField)?;
-    let type_name = match type_value {
-        Value::String(type_name) => type_name,
-        _ => {
-            return Err(Error::TypeFieldShouldHoldStringValue.into());
-        }
-    };
-    /// TODO END
+    // get type of the root schema
+    let (type_name, schema_map) = get_schema_details(schema)?;
     // match scalar and recursive types
     match type_name.as_str() {
         "null" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Null))),
@@ -148,19 +129,6 @@ fn parse_json_schema(schema_name: HoliumJsonSchemaName, schema: &Value) -> Resul
                 ))
             }
         },
-        invalid_type => Err(Error::InvalidTypeFieldValue(invalid_type.to_string()).into()),
-    }
-}
-
-/// TODO
-/// Check for a transformation that the base object is an array. Then follows the same pattern as
-/// [check_expected_fields]
-fn check_transformation_expected_fields(schema: &Value) -> Result<()> {
-    // get type field value
-    let (schema_map, type_name) = get_type_field_value(schema)?;
-    // match scalar and recursive types
-    match type_name.as_str() {
-        "array" => check_expected_fields_in_array_typed_value(schema_map),
         invalid_type => Err(Error::InvalidTypeFieldValue(invalid_type.to_string()).into()),
     }
 }
@@ -204,37 +172,12 @@ fn parse_items_array_item(schema_map: &Map<String, Value>) -> Result<HoliumJsonS
     if !items_field.is_object() {
         return Err(Error::ItemsFieldShouldHoldObjectValue.into());
     }
+    parse_root_json_schema(items_field)
 }
 
-// TODO
-fn check_expected_fields_in_array_typed_value(schema_map: &Map<String, Value>) -> Result<()> {
-    // check for the presence of an `items` or `prefixItems` field
-    if let Some(items_value) = schema_map.get("items") {
-        // recursively check the items' schema
-        if !items_value.is_object() {
-            // this test may run twice (here and in the recursive call)
-            return Err(Error::ItemsFieldShouldHoldObjectValue.into());
-        }
-        check_expected_fields(items_value)
-    } else if let Some(prefix_items_value) = schema_map.get("prefixItems") {
-        // recursively check the items' schemata
-        let prefix_items = match prefix_items_value {
-            Value::Array(prefix_items) => prefix_items,
-            _ => return Err(Error::PrefixItemsFieldShouldHoldArrayValue.into()),
-        };
-        prefix_items
-            .into_iter()
-            .map(|v| check_expected_fields(v))
-            .collect()
-    } else {
-        return Err(Error::MissingItemsField.into());
-    }
-}
-
-// TODO
-/// Checks that a [serde_json::Value] is a JSON object and returns the value of the `type` field in
-/// it
-fn get_type_field_value(schema: &Value) -> Result<(&Map<String, Value>, &String)> {
+/// Checks that a [serde_json::Value] is a JSON object coding for a schema, and returns the
+/// corresponding the type of the schema, as a String, and the corresponding map of fields.
+fn get_schema_details(schema: &Value) -> Result<(&String, &Map<String, Value>)> {
     // check that the value is an object
     let schema_map = match schema {
         Value::Object(schema_map) => schema_map,
@@ -243,7 +186,7 @@ fn get_type_field_value(schema: &Value) -> Result<(&Map<String, Value>, &String)
     // check for the presence of a `type` field
     let type_value = schema_map.get("type").ok_or(Error::MissingTypeField)?;
     match type_value {
-        Value::String(type_name) => Ok((schema_map, type_name)),
+        Value::String(type_name) => Ok((type_name, schema_map)),
         _ => return Err(Error::TypeFieldShouldHoldStringValue.into()),
     }
 }
@@ -260,7 +203,7 @@ mod test {
     fn cannot_validate_if_not_object() {
         let no_type_json = json!("only string");
 
-        let res = check_expected_fields(&no_type_json);
+        let res = parse_root_json_schema(&no_type_json);
 
         assert!(res.is_err());
         assert!(res
@@ -274,7 +217,7 @@ mod test {
     fn cannot_validate_if_type_is_not_string() {
         let no_type_json = json!({ "type": 0 });
 
-        let res = check_expected_fields(&no_type_json);
+        let res = parse_root_json_schema(&no_type_json);
 
         assert!(res.is_err());
         assert!(res
@@ -289,7 +232,7 @@ mod test {
         let non_valid_type = "non_valid";
         let no_type_json = json!({ "type": non_valid_type });
 
-        let res = check_expected_fields(&no_type_json);
+        let res = parse_root_json_schema(&no_type_json);
 
         assert!(res.is_err());
         assert!(res.err().unwrap().to_string().contains(
@@ -304,7 +247,7 @@ mod test {
         for valid_type in valid_types {
             let json = json!({ "type": valid_type });
 
-            check_expected_fields(&json).unwrap();
+            parse_root_json_schema(&json).unwrap();
         }
     }
 
@@ -313,12 +256,12 @@ mod test {
         // Validate on object
         let object_json = json!({ "type": "object", "properties": { "id": { "type": "string" }}});
 
-        check_expected_fields(&object_json).unwrap();
+        parse_root_json_schema(&object_json).unwrap();
 
         // Validate on array
         let object_json = json!({ "type": "array", "prefixItems": [{ "type": "string" }]});
 
-        check_expected_fields(&object_json).unwrap();
+        parse_root_json_schema(&object_json).unwrap();
     }
 
     /*******************************************
@@ -330,7 +273,7 @@ mod test {
         let non_valid_json = json!({ "type": "object" });
 
         let res = match &non_valid_json {
-            Value::Object(map) => check_expected_fields_in_object_typed_value(map),
+            Value::Object(map) => parse_object_properties(map),
             _ => unreachable!(),
         };
 
@@ -347,7 +290,7 @@ mod test {
         let non_valid_json = json!({ "type": "object", "properties": "string" });
 
         let res = match &non_valid_json {
-            Value::Object(map) => check_expected_fields_in_object_typed_value(map),
+            Value::Object(map) => parse_object_properties(map),
             _ => unreachable!(),
         };
 
@@ -364,7 +307,7 @@ mod test {
         let non_valid_json = json!({ "type": "object", "properties": { "id": {"type": "string"}} });
 
         let res = match &non_valid_json {
-            Value::Object(map) => check_expected_fields_in_object_typed_value(map).unwrap(),
+            Value::Object(map) => parse_object_properties(map).unwrap(),
             _ => unreachable!(),
         };
     }
@@ -378,7 +321,7 @@ mod test {
         let invalid_json = json!({"type": "array"});
 
         let res = match &invalid_json {
-            Value::Object(map) => check_expected_fields_in_array_typed_value(map),
+            Value::Object(map) => parse_items_array_item(map),
             _ => unreachable!(),
         };
 
@@ -395,7 +338,7 @@ mod test {
         let invalid_json = json!({"type": "array", "items": "string"});
 
         let res = match &invalid_json {
-            Value::Object(map) => check_expected_fields_in_array_typed_value(map),
+            Value::Object(map) => parse_items_array_item(map),
             _ => unreachable!(),
         };
 
@@ -412,7 +355,7 @@ mod test {
         let invalid_json = json!({"type": "array", "prefixItems": "string"});
 
         let res = match &invalid_json {
-            Value::Object(map) => check_expected_fields_in_array_typed_value(map),
+            Value::Object(map) => parse_tuples_array_items(map),
             _ => unreachable!(),
         };
 
@@ -429,7 +372,7 @@ mod test {
         let invalid_json = json!({"type": "array", "items": {"type": "string"}});
 
         let res = match &invalid_json {
-            Value::Object(map) => check_expected_fields_in_array_typed_value(map).unwrap(),
+            Value::Object(map) => parse_items_array_item(map).unwrap(),
             _ => unreachable!(),
         };
     }
@@ -439,7 +382,7 @@ mod test {
         let invalid_json = json!({"type": "array", "prefixItems": [{"type": "string"}]});
 
         let res = match &invalid_json {
-            Value::Object(map) => check_expected_fields_in_array_typed_value(map).unwrap(),
+            Value::Object(map) => parse_tuples_array_items(map).unwrap(),
             _ => unreachable!(),
         };
     }
@@ -452,7 +395,7 @@ mod test {
     fn cannot_validate_non_json_string() {
         let non_json = "i am not a json";
 
-        let res = validate_json_schema(non_json);
+        let res = validate_pipeline_node_json_schema(non_json);
 
         assert!(res.is_err());
         assert!(res
