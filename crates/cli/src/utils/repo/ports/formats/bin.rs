@@ -32,15 +32,13 @@ impl FormatPorter for BinPorter {
 }
 
 fn validate_json_schema_for_bin_porter(json_schema: &HoliumJsonSchema) -> Result<()> {
-    let boxed_schema = &json_schema.1;
-    let schema: &HoliumJsonSchemaType = boxed_schema.as_ref();
+    let schema: &HoliumJsonSchemaType = &json_schema.1.as_ref();
     let tuples_array = match schema {
         HoliumJsonSchemaType::TupleArray(tuples_array) => tuples_array,
         _ => return Err(Error::IncompatibleSchemaAndValue.into())
     };
     let sub_schema = tuples_array.get(0).ok_or(Error::IncompatibleSchemaAndValue)?;
-    let boxed_sub_schema = &sub_schema.1;
-    let sub_schema: &HoliumJsonSchemaType = boxed_sub_schema.as_ref();
+    let sub_schema: &HoliumJsonSchemaType = &sub_schema.1.as_ref();
     match sub_schema {
         HoliumJsonSchemaType::ByteString => {}
         _ => return Err(Error::IncompatibleSchemaAndValue.into())
