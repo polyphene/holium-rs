@@ -6,11 +6,11 @@ extern crate prettytable;
 
 use std::env;
 
-use clap::{App, AppSettings, crate_authors, crate_version};
+use clap::{crate_authors, crate_version, App, AppSettings};
 use console::style;
 
-mod utils;
 mod commands;
+mod utils;
 
 fn main() {
     // Create CLI matches
@@ -28,6 +28,7 @@ fn main() {
             commands::connection::cmd(),
             commands::portation::cmd(),
             commands::project::cmd(),
+            commands::run::cmd(),
         ])
         .get_matches();
 
@@ -40,6 +41,7 @@ fn main() {
         ("connection", Some(matches)) => commands::connection::handle_cmd(matches),
         ("portation", Some(matches)) => commands::portation::handle_cmd(matches),
         ("project", Some(matches)) => commands::project::handle_cmd(matches),
+        ("run", Some(matches)) => commands::run::handle_cmd(matches),
         _ => unreachable!(), // If all subcommands are defined above, anything else should be unreachable!()
     };
 
