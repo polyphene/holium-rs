@@ -16,7 +16,7 @@ use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Portation {
     #[serde(skip)]
     pub id: String,

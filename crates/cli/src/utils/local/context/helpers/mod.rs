@@ -15,6 +15,8 @@ enum Error {
     InvalidNodeName(String, String),
     #[error("invalid connection id: {0}")]
     InvalidConnectionId(String),
+    #[error("invalid portation id: {0}")]
+    InvalidPortationId(String),
     #[error("invalid node typed name: {0}")]
     InvalidNodeTypedName(String),
     #[error("invalid pipeline node type: {0}")]
@@ -113,6 +115,21 @@ pub fn build_portation_id(direction: &PortationDirectionType, node_typed_name: &
     format!("{}{}{}", direction_prefix, PORTATION_PREFIX_SEPARATOR, node_typed_name)
 }
 
+/// Parse a portation id (*eg* `from:transformation:my-transformation`) and return a tuple holding the direction of the
+/// portation (from Holium or to Holium) and the typed name of the node (*eg* `transformation:my-transformation`).
+pub fn parse_portation_id(portation_id: &str) -> Result<(PortationDirectionType, &str)> {
+    // split string at first occurrence character
+    let (direction_str, node_typed_name) = portation_id
+        .split_once(PORTATION_PREFIX_SEPARATOR)
+        .ok_or(Error::InvalidPortationId(portation_id.to_string()))?;
+    let direction = match direction_str {
+        PORTATION_FROM_HOLIUM_PREFIX => PortationDirectionType::fromHolium,
+        PORTATION_TO_HOLIUM_PREFIX => PortationDirectionType::toHolium,
+        _ => return Err(Error::InvalidPortationId(portation_id.to_string()).into()),
+    };
+    Ok((direction, node_typed_name))
+}
+
 /// Helper method parsing a vectorized key name from the DB into its string version.
 pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
     let name = from_utf8(k.as_ref())?;
@@ -123,6 +140,35 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    /*************************************
+     * Parsing of portation IDs
+     *************************************/
+
+    // test the parsing of an invalid portation id
+    #[test]
+    fn test_parse_invalid_portation_id() {
+        let invalid_portation_id = "invalid";
+        let result = parse_portation_id(invalid_portation_id);
+        assert!(result.is_err());
+    }
+
+    // test the parsing of a portation id with wrong direction field
+    #[test]
+    fn test_parse_invalid_direction_portation_id() {
+        let invalid_direction_portation_id = "invalid-direction:source:source-name";
+        let result = parse_portation_id(invalid_direction_portation_id);
+        assert!(result.is_err());
+    }
+
+    // test the parsing of a portation id
+    #[test]
+    fn test_parse_valid_portation_id() {
+        let valid_direction_portation_id = "from:source:source-name";
+        let (direction, node_typed_name) = parse_portation_id(valid_direction_portation_id).unwrap();
+        assert_eq!(direction, PortationDirectionType::fromHolium);
+        assert_eq!(node_typed_name, "source:source-name");
+    }
 
     /*************************************
      * Validate node name

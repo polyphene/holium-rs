@@ -102,7 +102,7 @@ fn cannot_create_source_with_non_valid_json_schema() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("invalid json schema"));
+        .stderr(predicate::str::contains("json schema"));
 }
 
 #[test]

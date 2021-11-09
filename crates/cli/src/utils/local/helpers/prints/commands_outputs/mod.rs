@@ -1,36 +1,24 @@
-use crate::utils::interplanetary::multiformats::DEFAULT_MULTIBASE;
-use anyhow::{Context, Result};
-use cid::Cid;
 use console::style;
-use std::io::Write;
-use thiserror::Error;
+use cid::Cid;
+use crate::utils::interplanetary::multiformats::DEFAULT_MULTIBASE;
 
 /*
-Success messages
-*/
+ Success messages
+ */
 
 /// Print CREATE method success message.
 pub fn print_create_success(key: &str) {
-    println!(
-        "{}",
-        style(format!("new object created: {}", style(key).bold())).green()
-    )
+    println!("{}", style(format!("new object created: {}", style(key).bold())).green())
 }
 
 /// Print UPDATE method success message.
 pub fn print_update_success(key: &str) {
-    println!(
-        "{}",
-        style(format!("object updated: {}", style(key).bold())).green()
-    )
+    println!("{}", style(format!("object updated: {}", style(key).bold())).green())
 }
 
 /// Print DELETE method success message.
 pub fn print_delete_success(key: &str) {
-    println!(
-        "{}",
-        style(format!("object deleted: {}", style(key).bold())).green()
-    )
+    println!("{}", style(format!("object deleted: {}", style(key).bold())).green())
 }
 
 /// Print success message for methods checking the health of the transformation pipeline currently
