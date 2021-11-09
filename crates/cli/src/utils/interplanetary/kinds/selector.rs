@@ -65,6 +65,13 @@ impl Selector {
             _ => false,
         }
     }
+
+    pub fn is_union(&self) -> bool {
+        match self {
+            Selector::ExploreUnion(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl From<Selector> for sk_cbor::Value {
