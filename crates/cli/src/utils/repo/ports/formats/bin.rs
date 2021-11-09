@@ -13,7 +13,8 @@ use crate::utils::repo::ports::formats::{FormatPorter, Error};
 pub struct BinPorter;
 
 impl FormatPorter for BinPorter {
-    fn import_to_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()> {// read the CBOR contents
+    fn import_to_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()> {
+        // read the binary contents
         let mut contents = Vec::new();
         reader.read_to_end(&mut contents)?;
         // check that the json schema is coherent
