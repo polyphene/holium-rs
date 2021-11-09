@@ -441,7 +441,7 @@ fn can_create_connection() {
     for (tail_node_type, tail_node_name) in node_type_name_pairs.iter() {
         for (head_node_type, head_node_name) in node_type_name_pairs.iter() {
             if tail_node_name != head_node_name {
-                // try to create connection with non valid tail type
+                // try to create connection
                 let assert = build_connection_create_cmd(
                     repo_path,
                     tail_node_type,
