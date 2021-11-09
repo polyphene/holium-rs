@@ -46,8 +46,7 @@ impl FormatPorter for JsonPorter {
 }
 
 fn import_value_to_holium(json_schema: &HoliumJsonSchema, v: &JsonValue) -> Result<CborValue> {
-    let boxed_schema = &json_schema.1;
-    let schema: &HoliumJsonSchemaType = boxed_schema.as_ref();
+    let schema: &HoliumJsonSchemaType = &json_schema.1.as_ref();
     match (schema, v) {
         (HoliumJsonSchemaType::Null, _) => Ok(cbor_null!()),
         (HoliumJsonSchemaType::Boolean, JsonValue::Bool(v)) => Ok(cbor_bool!(*v)),

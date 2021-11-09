@@ -18,7 +18,7 @@ enum Error {
     FailedToInit,
 }
 
-/// Context structure helping accessing the interplanetary area in a consistent way throughout the CLI
+/// Context structure helping accessing the repository area in a consistent way throughout the CLI
 /// commands.
 pub struct RepositoryContext {
     pub portations: Portations,

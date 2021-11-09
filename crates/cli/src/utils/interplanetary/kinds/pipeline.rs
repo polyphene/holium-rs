@@ -19,7 +19,7 @@ enum Error {
     #[error("failed to create pipeline vertex")]
     FailedToCreatePipelineVertex,
     #[error("failed to manipulate pipeline kind")]
-    FailedToManipulated,
+    FailedToManipulate,
 }
 
 static DISCRIMINANT_KEY_V0: &str = "pl_0";
@@ -87,6 +87,6 @@ impl TryFrom<sk_cbor::Value> for Pipeline {
                 }
             }
         }
-        Err(Error::FailedToManipulated.into())
+        Err(Error::FailedToManipulate.into())
     }
 }

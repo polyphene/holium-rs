@@ -14,7 +14,7 @@ use crate::utils::local::import::import_project;
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import")
-        .about("Replace current local project with the content of the interplanetary area ")
+        .about("Replace current local project with the content of the interplanetary area")
         .arg(
             Arg::with_name("no-write")
                 .help("Check ability to import without replacing current local project")

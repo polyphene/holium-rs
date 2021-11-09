@@ -26,6 +26,7 @@ use crate::utils::local::models::transformation::Transformation;
 use crate::utils::interplanetary::kinds::dry_transformation::DryTransformation;
 use crate::utils::interplanetary::kinds::module_bytecode_envelope::ModuleBytecodeEnvelope;
 use crate::utils::interplanetary::kinds::module_bytecode::ModuleBytecode;
+use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
 
 
 /// Ending bytes of any Pipeline interplanetary block
@@ -66,7 +67,7 @@ pub fn import_project(ip_context: &InterplanetaryContext, tmp_local_context: &Lo
     Ok(())
 }
 
-// Find and import the pipeline structure.
+/// Find and import the pipeline structure.
 fn import_pipeline(ip_context: &InterplanetaryContext) -> Result<Pipeline> {
     // quickly find the Pipeline block in the interplanetary area, and get its cid
     let pipeline_cid = find_pipeline_block(&ip_context)?;
@@ -92,17 +93,15 @@ fn is_pipeline_block(path: &PathBuf) -> Result<bool> {
     Ok(buffer == *PIPELINE_BLOC_SUFFIX)
 }
 
-// Find the first Pipeline block in an interplanetary area
+/// Find the first Pipeline block in an interplanetary area
 fn find_pipeline_block(ip_context: &InterplanetaryContext) -> Result<Cid> {
     let ip_area_path = &ip_context.ip_area_path;
     if ip_area_path.is_dir() {
         for first_level_entry in fs::read_dir(ip_area_path)? {
-            let first_level_entry = first_level_entry?;
-            let first_level_path = first_level_entry.path();
+            let first_level_path = first_level_entry?.path();
             if first_level_path.is_dir() {
                 for second_level_entry in fs::read_dir(first_level_path)? {
-                    let second_level_entry = second_level_entry?;
-                    let second_level_path = second_level_entry.path();
+                    let second_level_path = second_level_entry?.path();
                     if second_level_path.is_file() {
                         if is_pipeline_block(&second_level_path)? {
                             // compute related block path
@@ -117,6 +116,9 @@ fn find_pipeline_block(ip_context: &InterplanetaryContext) -> Result<Cid> {
     Err(Error::FindToFindPipelineBlock.into())
 }
 
+/// Use the interplanetary context to import a pipeline vertices into the local area.
+/// Returns a mapping from the interplanetary vertex index to its typed name, used as an index in
+/// the local area.
 fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalContext, pipeline: &Pipeline) -> Result<VerticesImportKeyMap> {
     // loop through vertices to import sources, shapers and transformations
     let mut vertex_idx_mapping = VerticesImportKeyMap::new();
@@ -129,7 +131,7 @@ fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalCont
         let node_typed_name = metadata.name.as_ref().ok_or(Error::NoNameInMetadata)?;
         // map index in the list of vertices to this typed name
         vertex_idx_mapping.insert(idx as u64, node_typed_name.clone());
-        // get untyped name and node type
+        // get node type and untyped name
         let (node_type, untyped_node_name) = parse_node_typed_name(&node_typed_name)?;
         // import node according to its type
         match node_type {
@@ -141,6 +143,7 @@ fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalCont
     Ok(vertex_idx_mapping)
 }
 
+/// Use the interplanetary context to import a pipeline edges into the local area.
 fn import_edges(
     ip_context: &InterplanetaryContext,
     local_context: &LocalContext,
@@ -167,11 +170,12 @@ fn import_edges(
             .compare_and_swap(&object.id, None as Option<&[u8]>, Some(encoded))
             .context(DbOperationFailed)?
             .ok()
-            .context(anyhow!("cannot create connection: {}", &object.id))?;
+            .context(StructureCreationError("connection".to_string(), object.id))?;
     }
     Ok(())
 }
 
+/// Find and read a Selector from its CID in the interplanetary area and parse it to a String.
 fn parse_selector(selector_cid: &Cid, ip_context: &InterplanetaryContext) -> Result<String> {
     let selector_block = sk_cbor::Value::read_from_ip_area(selector_cid, &ip_context)?;
     let selector = SelectorEnvelope::try_from(*selector_block)?.0;
@@ -179,6 +183,8 @@ fn parse_selector(selector_cid: &Cid, ip_context: &InterplanetaryContext) -> Res
         .context(Error::FailedToParseSelector)
 }
 
+/// Use the interplanetary context to import a transformation, including its bytecode, into the
+/// local area.
 fn import_transformation(ip_context: &InterplanetaryContext, local_context: &LocalContext, metadata: &Metadata, node_name: &String, vertex: &PipelineVertex) -> Result<()> {
     // fetch and parse dry transformation
     let dry_transformation_cid = &vertex.dry_transformation.ok_or(Error::NoTransformationInNode)?;
@@ -208,10 +214,11 @@ fn import_transformation(ip_context: &InterplanetaryContext, local_context: &Loc
         .compare_and_swap(&object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create transformation with name: {}", &object.name))?;
+        .context(StructureCreationError("transformation".to_string(), object.name))?;
     Ok(())
 }
 
+/// Use the interplanetary context to import a source pipeline node into the local area.
 fn import_source(local_context: &LocalContext, metadata: &Metadata, node_name: &String) -> Result<()> {
     // create new object
     let json_schema= metadata.json_schema.as_ref().ok_or(Error::MissingSchemaInMetadata)?;
@@ -226,10 +233,11 @@ fn import_source(local_context: &LocalContext, metadata: &Metadata, node_name: &
         .compare_and_swap(&object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create source with name: {}", &object.name))?;
+        .context(StructureCreationError("source".to_string(), object.name))?;
     Ok(())
 }
 
+/// Use the interplanetary context to a import shaper pipeline node into the local area.
 fn import_shaper(local_context: &LocalContext, metadata: &Metadata, node_name: &String) -> Result<()> {
     // create new object
     let json_schema= metadata.json_schema.as_ref().ok_or(Error::MissingSchemaInMetadata)?;
@@ -244,6 +252,6 @@ fn import_shaper(local_context: &LocalContext, metadata: &Metadata, node_name: &
         .compare_and_swap(&object.name, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create shaper with name: {}", &object.name))?;
+        .context(StructureCreationError("shaper".to_string(), object.name))?;
     Ok(())
 }
