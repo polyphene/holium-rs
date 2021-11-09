@@ -41,7 +41,7 @@ fn cannot_update_connection_without_id() {
 }
 
 #[test]
-fn cannot_update_connection_witn_non_valid_tail_selector() {
+fn cannot_update_connection_with_non_valid_tail_selector() {
     // initialize a repository
     let repo = setup_repo_with_connection();
     let repo_path = repo.path();
@@ -65,7 +65,7 @@ fn cannot_update_connection_witn_non_valid_tail_selector() {
 }
 
 #[test]
-fn cannot_update_connection_witn_non_valid_head_selector() {
+fn cannot_update_connection_with_non_valid_head_selector() {
     // initialize a repository
     let repo = setup_repo_with_connection();
     let repo_path = repo.path();

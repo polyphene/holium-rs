@@ -334,7 +334,7 @@ fn cannot_create_connection_with_non_existent_head_node() {
 }
 
 #[test]
-fn cannot_create_connection_witn_non_valid_tail_selector() {
+fn cannot_create_connection_with_non_valid_tail_selector() {
     // initialize a repository
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
@@ -358,7 +358,7 @@ fn cannot_create_connection_witn_non_valid_tail_selector() {
 }
 
 #[test]
-fn cannot_create_connection_witn_non_valid_head_selector() {
+fn cannot_create_connection_with_non_valid_head_selector() {
     // initialize a repository
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
