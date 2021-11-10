@@ -127,11 +127,14 @@ impl PipelineDag {
         runtime: &mut Runtime,
         local_context: &LocalContext,
         repo_context: &RepositoryContext,
-    ) -> Result<()> {
+    ) -> Result<Vec<(String, String)>> {
         // create pipeline dag
         let dag = PipelineDag::from_local_context(local_context)?;
         // check if the dag is healthy for export
         let ordered_node_list = dag.is_valid_pipeline()?;
+
+        // Initialize Vec to return with node typed name and portation file path
+        let mut node_portation_pairs: Vec<(String, String)> = Vec::new();
 
         for node_index in ordered_node_list.into_iter() {
             let node_typed_name = dag.node_typed_name(&node_index)?;
@@ -230,10 +233,17 @@ impl PipelineDag {
             }
 
             // Store data in local context
-            store_node_output(local_context, repo_context, node_typed_name, &data)?;
+            let portation_file_path =
+                store_node_output(local_context, repo_context, node_typed_name, &data)?;
+            match portation_file_path {
+                Some(file_path) => {
+                    node_portation_pairs.push((node_typed_name.clone(), file_path.clone()));
+                }
+                None => {}
+            }
         }
 
-        Ok(())
+        Ok(node_portation_pairs)
     }
 
     fn node_typed_name(&self, index: &NodeIndex) -> Result<&String> {

@@ -168,7 +168,6 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
 }
 
 /// Helper to get data for a node from a local context
-/// TODO when portation implemented, add a first step to use the portation first
 pub fn node_data(
     local_context: &LocalContext,
     repo_context: &RepositoryContext,
@@ -202,13 +201,16 @@ pub fn node_data(
     }
 }
 
+/// [store_node_output] will first try to export the data by using a portation and then store data in
+/// local context. If some data have been exported then the path to the file written is returned.
 pub fn store_node_output(
     local_context: &LocalContext,
     repo_context: &RepositoryContext,
     node_typed_name: &str,
     mut data: &HoliumCbor,
-) -> Result<()> {
+) -> Result<Option<String>> {
     // Try to export with portation
+    let mut portation_file_path: Option<String> = None;
     let portation = repo_context.portations.get(&build_portation_id(
         &PortationDirectionType::fromHolium,
         node_typed_name,
@@ -220,6 +222,7 @@ pub fn store_node_output(
 
             export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
                 .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
+            portation_file_path = Some(portation.file_path.clone());
         }
         None => {}
     }
@@ -229,7 +232,7 @@ pub fn store_node_output(
         .insert(node_typed_name, data.to_vec())
         .context(DbOperationFailed)?;
 
-    Ok(())
+    Ok(portation_file_path)
 }
 
 #[cfg(test)]

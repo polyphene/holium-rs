@@ -78,3 +78,22 @@ pub fn print_pipeline_run_success() {
         style("successfully ran the transformation pipeline").green()
     )
 }
+
+/// Print project RUN export success message. Parameter is a vector of tuples containing the node
+/// type name and the file written.
+pub fn print_pipeline_export_success(node_exports: &[(String, String)]) {
+    println!(
+        "{}",
+        style(format!(
+            "{} successful export(s) during execution:",
+            node_exports.len()
+        ))
+        .green()
+    );
+    for (node_typed_name, file_path) in node_exports.iter() {
+        println!(
+            "{}",
+            style(format!("{} → {}", node_typed_name, file_path)).green()
+        )
+    }
+}
