@@ -1,11 +1,12 @@
 //! Module related to the organisation of a transformation pipeline as a Directed Acyclic Graph (DAG).
 
+use std::convert::TryFrom;
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
 use crate::utils::errors::Error::{
     BinCodeDeserializeFailed, DbOperationFailed, NoDataForObject, NoObjectForGivenKey,
 };
-use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
+use crate::utils::interplanetary::kinds::selector::Selector;
 use crate::utils::local::context::helpers::{
     build_connection_id, build_node_typed_name, db_key_to_str, node_data, parse_connection_id,
     parse_node_typed_name, NodeType,
@@ -175,7 +176,7 @@ impl PipelineDag {
                     .graph
                     .edges_directed(node_index, Direction::Incoming)
                     .map(|edge_reference| dag.edge_details(local_context, &edge_reference))
-                    .collect::<Result<Vec<(HoliumCbor, SelectorEnvelope, SelectorEnvelope)>>>()?;
+                    .collect::<Result<Vec<(HoliumCbor, Selector, Selector)>>>()?;
 
                 // Select data
                 data.copy_cbor(&connections_details);
@@ -230,7 +231,7 @@ impl PipelineDag {
         &self,
         local_context: &LocalContext,
         edge_reference: &EdgeReference<()>,
-    ) -> Result<(HoliumCbor, SelectorEnvelope, SelectorEnvelope)> {
+    ) -> Result<(HoliumCbor, Selector, Selector)> {
         // Get tail and head typed name
         let tail_typed_name = self.node_typed_name(&edge_reference.source())?;
         let head_typed_name = self.node_typed_name(&edge_reference.target())?;
@@ -248,8 +249,8 @@ impl PipelineDag {
             .context(BinCodeDeserializeFailed)?;
 
         // Build selectors
-        let tail_selector = SelectorEnvelope::new(&decoded_connection.tail_selector)?;
-        let head_selector = SelectorEnvelope::new(&decoded_connection.head_selector)?;
+        let tail_selector = Selector::try_from(decoded_connection.tail_selector.as_str())?;
+        let head_selector = Selector::try_from(decoded_connection.head_selector.as_str())?;
 
         // Arrange data to fit head selector
         let source_data = node_data(local_context, tail_typed_name)?;

@@ -1,6 +1,6 @@
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::helpers::{generate_array_cbor_header, SelectorError, WriteError};
-use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
+use crate::utils::interplanetary::kinds::selector::{Selector};
 use anyhow::Result;
 use either::Either;
 use either::Either::{Left, Right};
@@ -19,7 +19,7 @@ pub trait WriteHoliumCbor {
     // and head selector
     fn copy_cbor<T: AsHoliumCbor + Debug>(
         &mut self,
-        connections: &Vec<(T, SelectorEnvelope, SelectorEnvelope)>,
+        connections: &Vec<(T, Selector, Selector)>,
     ) -> Result<()>
     where
         Self: Sized,
@@ -34,8 +34,8 @@ pub trait WriteHoliumCbor {
 
             // If head selector a union, check that tail selector is also one with the same number of
             // selectors
-            match &head_selector.0 {
-                Selector::ExploreUnion(receiver_union) => match &tail_selector.0 {
+            match &head_selector {
+                Selector::ExploreUnion(receiver_union) => match &tail_selector {
                     Selector::ExploreUnion(source_union) => {
                         if source_union.0.len() != receiver_union.0.len() {
                             return Err(WriteError::DifferentUnionLength.into());
@@ -49,7 +49,7 @@ pub trait WriteHoliumCbor {
                 },
                 _ => {
                     holium_cbor_constructor.ingest(
-                        &head_selector.0,
+                        &head_selector,
                         &mut selected_cbor
                             .get_mut(0)
                             .ok_or(WriteError::NoDataInDataSet)?,
