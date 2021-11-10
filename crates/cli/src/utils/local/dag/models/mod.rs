@@ -156,7 +156,7 @@ impl PipelineDag {
             }
 
             // Initialize data for head connected node
-            let mut selected_data: HoliumCbor = Vec::new();
+            let mut data: HoliumCbor = Vec::new();
 
             // If we have no incoming connection then we set selected data as either the one in local
             // context or as the one coming from a portation
@@ -167,7 +167,7 @@ impl PipelineDag {
                 .len()
                 == 0usize
             {
-                selected_data = node_data(local_context, node_typed_name)?;
+                data = node_data(local_context, node_typed_name)?;
             } else {
                 // Retrieve all information about connections so that we are able to form our selected
                 // data
@@ -178,10 +178,9 @@ impl PipelineDag {
                     .collect::<Result<Vec<(HoliumCbor, SelectorEnvelope, SelectorEnvelope)>>>()?;
 
                 // Select data
-                selected_data.copy_cbor(&connections);
+                data.copy_cbor(&connections);
             }
 
-            let mut final_data = selected_data;
             // If transformation then execute bytecode otherwise do nothing
             match node_type {
                 NodeType::transformation => {
@@ -201,8 +200,8 @@ impl PipelineDag {
                         .context(Error::TransformationInstantiationFailed(node_name.clone()))?;
 
                     // run transformation
-                    final_data = runtime
-                        .run(&decoded_transformation.handle, &final_data)
+                    data = runtime
+                        .run(&decoded_transformation.handle, &data)
                         .unwrap();
                 }
                 _ => {}
@@ -211,7 +210,7 @@ impl PipelineDag {
             // Store data in local context
             local_context
                 .data
-                .insert(node_typed_name, final_data)
+                .insert(node_typed_name, data)
                 .context(DbOperationFailed)?;
         }
 
