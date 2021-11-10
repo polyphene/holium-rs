@@ -10,6 +10,7 @@ use crate::utils::errors::Error::{
 use crate::utils::local::context::helpers::build_connection_id;
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::dag::models::PipelineDag;
+use crate::utils::local::helpers::prints::commands_outputs::print_pipeline_run_success;
 use crate::utils::local::models::connection::Connection;
 use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
@@ -36,17 +37,10 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create runtime
     let mut runtime = Runtime::new()?;
 
-    local_context.data.insert(
-        "source:hello",
-        serde_cbor::to_vec(&serde_json::json!([1000, 100])).unwrap(),
-    );
-    local_context.data.insert(
-        "source:hello_bis",
-        serde_cbor::to_vec(&serde_json::json!([200])).unwrap(),
-    );
-
     // Run Pipeline dag from local context
     PipelineDag::run(&mut runtime, &local_context)?;
+
+    print_pipeline_run_success();
 
     Ok(())
 }
