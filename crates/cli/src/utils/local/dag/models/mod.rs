@@ -40,8 +40,6 @@ pub(crate) enum Error {
     UnconnectedGraphNodes,
     #[error("connection between unknown nodes: {0}")]
     ConnectionBetweenUnknownNodes(String),
-    #[error("endpoint node not found in transformation graph key mapping")]
-    EdgeEndpointNotFoundInKeyMapping,
     #[error("instantiation failed for transformation: {0}")]
     TransformationInstantiationFailed(String),
     #[error("execution failed for transformation: {0}")]
@@ -211,7 +209,7 @@ impl PipelineDag {
     fn node_typed_name(&self, index: &NodeIndex) -> Result<&String> {
         self.key_mapping
             .get_by_right(index)
-            .ok_or(Error::EdgeEndpointNotFoundInKeyMapping.into())
+            .ok_or(Error::DagOperationFailed.into())
     }
 
     /// [edge_details] will return connection details based on an edge in our dag. The information
