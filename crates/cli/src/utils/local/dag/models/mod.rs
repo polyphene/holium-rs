@@ -8,15 +8,16 @@ use crate::utils::errors::Error::{
 };
 use crate::utils::interplanetary::kinds::selector::Selector;
 use crate::utils::local::context::helpers::{
-    build_connection_id, build_node_typed_name, db_key_to_str, node_data, parse_connection_id,
-    parse_node_typed_name, NodeType,
+    build_connection_id, build_node_typed_name, build_portation_id, db_key_to_str, node_data,
+    parse_connection_id, parse_node_typed_name, NodeType, PortationDirectionType,
 };
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::models::connection::Connection;
 use crate::utils::local::models::data::HoliumCbor;
 use crate::utils::local::models::transformation::Transformation;
+use crate::utils::repo::context::RepositoryContext;
 use crate::utils::run::runtime::Runtime;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Error as AnyhowError, Result};
 use bimap::BiMap;
 use holium::data::data_tree::Node;
 use itertools::Itertools;
@@ -121,7 +122,11 @@ impl PipelineDag {
     }
 
     /// Check the a [PipelineDg] is healthy then runs the ordered list of node that it contains
-    pub fn run(runtime: &mut Runtime, local_context: &LocalContext) -> Result<()> {
+    pub fn run(
+        runtime: &mut Runtime,
+        local_context: &LocalContext,
+        repo_context: &RepositoryContext,
+    ) -> Result<()> {
         // create pipeline dag
         let dag = PipelineDag::from_local_context(local_context)?;
         // check if the dag is healthy for export
@@ -133,12 +138,18 @@ impl PipelineDag {
 
             // Check that if the node input is connected to no head selector then there are either
             // a portation or some data in local context. Otherwise error.
-            // TODO add portation check
-            if local_context
-                .data
-                .get(node_typed_name)
-                .context(DbOperationFailed)?
+            if repo_context
+                .portations
+                .get(&build_portation_id(
+                    &PortationDirectionType::toHolium,
+                    &node_typed_name,
+                ))
                 .is_none()
+                && local_context
+                    .data
+                    .get(node_typed_name)
+                    .context(DbOperationFailed)?
+                    .is_none()
                 && dag
                     .graph
                     .edges_directed(node_index, Direction::Incoming)
@@ -161,14 +172,16 @@ impl PipelineDag {
                 .len()
                 == 0usize
             {
-                data = node_data(local_context, node_typed_name)?;
+                data = node_data(local_context, repo_context, node_typed_name)?;
             } else {
                 // Retrieve all information about connections so that we are able to form our selected
                 // data
                 let connections_details = dag
                     .graph
                     .edges_directed(node_index, Direction::Incoming)
-                    .map(|edge_reference| dag.edge_details(local_context, &edge_reference))
+                    .map(|edge_reference| {
+                        dag.edge_details(local_context, repo_context, &edge_reference)
+                    })
                     .collect::<Result<Vec<(String, HoliumCbor, Selector, Selector)>>>()
                     .context(Error::ConnectionsDetailsCollectionFailed(node_name.clone()))?;
 
@@ -237,6 +250,7 @@ impl PipelineDag {
     fn edge_details(
         &self,
         local_context: &LocalContext,
+        repo_context: &RepositoryContext,
         edge_reference: &EdgeReference<()>,
     ) -> Result<(String, HoliumCbor, Selector, Selector)> {
         // Get tail and head typed name
@@ -260,7 +274,7 @@ impl PipelineDag {
         let head_selector = Selector::try_from(decoded_connection.head_selector.as_str())?;
 
         // Arrange data to fit head selector
-        let data_at_tail = node_data(local_context, tail_typed_name)?;
+        let data_at_tail = node_data(local_context, repo_context, tail_typed_name)?;
 
         Ok((connection_id, data_at_tail, tail_selector, head_selector))
     }

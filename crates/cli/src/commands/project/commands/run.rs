@@ -19,6 +19,7 @@ use petgraph::prelude::EdgeRef;
 use thiserror::Error;
 
 use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR, LOCAL_DIR, PORTATIONS_FILE};
+use crate::utils::repo::context::RepositoryContext;
 use crate::utils::run::runtime::Runtime;
 
 /// command
@@ -28,13 +29,14 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
 
 /// handler
 pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
-    // create local context
+    // create contexts
     let local_context = LocalContext::new()?;
+    let repo_context = RepositoryContext::new()?;
     // create runtime
     let mut runtime = Runtime::new()?;
 
     // Run Pipeline dag from local context
-    PipelineDag::run(&mut runtime, &local_context)?;
+    PipelineDag::run(&mut runtime, &local_context, &repo_context)?;
 
     print_pipeline_run_success();
     // TODO when portation integrated, print all successful export
