@@ -131,8 +131,8 @@ impl PipelineDag {
             let node_typed_name = dag.node_typed_name(&node_index)?;
             let (node_type, node_name) = parse_node_typed_name(node_typed_name)?;
 
-            // Check that if the node only has a tail selector then there are either a portation
-            // or some data in local context. Otherwise error.
+            // Check that if the node input is connected to no head selector then there are either
+            // a portation or some data in local context. Otherwise error.
             // TODO add portation check
             if local_context
                 .data
