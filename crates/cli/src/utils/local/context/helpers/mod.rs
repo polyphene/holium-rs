@@ -6,7 +6,7 @@ use std::io::{Read, Seek};
 use thiserror;
 
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
-use crate::utils::errors::Error::{DbOperationFailed, NoDataForObject};
+use crate::utils::errors::Error::{DbOperationFailed, NoDataForNodeInput};
 use crate::utils::local::context::constants::{
     CONNECTION_ID_SEPARATOR, PORTATION_FROM_HOLIUM_PREFIX, PORTATION_PREFIX_SEPARATOR,
     PORTATION_TO_HOLIUM_PREFIX, TYPED_NODE_NAME_SEPARATOR,
@@ -165,7 +165,7 @@ pub fn node_data(local_context: &LocalContext, node_typed_name: &str) -> Result<
         .data
         .get(node_typed_name)
         .context(DbOperationFailed)?
-        .ok_or(NoDataForObject(node_typed_name.to_string().into()))?
+        .ok_or(NoDataForNodeInput(node_typed_name.to_string().into()))?
         .as_ref()
         .to_vec())
 }

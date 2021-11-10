@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 use crate::utils::errors::Error::{
-    BinCodeDeserializeFailed, DbOperationFailed, NoDataForObject, NoObjectForGivenKey,
+    BinCodeDeserializeFailed, DbOperationFailed, NoDataForNodeInput, NoObjectForGivenKey,
 };
 use crate::utils::local::context::helpers::build_connection_id;
 use crate::utils::local::context::LocalContext;

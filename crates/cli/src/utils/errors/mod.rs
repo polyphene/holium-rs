@@ -22,6 +22,6 @@ pub(crate) enum Error {
     #[error("failed to operate on local database")]
     DbOperationFailed,
     /// This error is thrown when an object has no data, either by portation or locally stored.
-    #[error("missing data for object: {0}")]
-    NoDataForObject(String),
+    #[error("no data available at pipeline node: {0}")]
+    NoDataForNodeInput(String),
 }

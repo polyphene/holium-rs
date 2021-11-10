@@ -3,7 +3,7 @@
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
 use crate::utils::errors::Error::{
-    BinCodeDeserializeFailed, DbOperationFailed, NoDataForObject, NoObjectForGivenKey,
+    BinCodeDeserializeFailed, DbOperationFailed, NoDataForNodeInput, NoObjectForGivenKey,
 };
 use crate::utils::interplanetary::kinds::selector::Selector;
 use crate::utils::local::context::helpers::{
@@ -141,7 +141,7 @@ impl PipelineDag {
                     .len()
                     == 0usize
             {
-                return Err(NoDataForObject(node_typed_name.to_string()).into());
+                return Err(NoDataForNodeInput(node_typed_name.to_string()).into());
             }
 
             // Initialize data for head connected node
