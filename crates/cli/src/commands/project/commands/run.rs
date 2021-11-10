@@ -23,7 +23,7 @@ use crate::utils::run::runtime::Runtime;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("run").about("Run local transformation pipeline is it is valid")
+    SubCommand::with_name("run").about("Run local transformation pipeline if it is valid")
 }
 
 /// handler
