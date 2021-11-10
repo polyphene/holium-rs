@@ -59,7 +59,7 @@ pub trait WriteHoliumCbor {
                     holium_cbor_constructor.ingest(
                         &head_selector,
                         &mut selected_cbor.get_mut(0).ok_or(
-                            WriteError::ResultDataSetEmptyAfterSelection(connection_id.clone()),
+                            SelectorError::ResultDataSetEmptyAfterSelection(connection_id.clone()),
                         )?,
                     )?;
                 }
