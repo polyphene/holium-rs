@@ -14,6 +14,7 @@ use crate::utils::local::context::constants::{
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::models::data::HoliumCbor;
 use crate::utils::repo::context::RepositoryContext;
+use crate::utils::repo::ports::export_from_holium::export_from_holium;
 use crate::utils::repo::ports::import_to_holium::import_to_holium;
 use sled::Serialize;
 use std::str::{from_utf8, FromStr};
@@ -34,6 +35,10 @@ enum Error {
     NoPipelineNodeWithName(String, String),
     #[error("portation data is invalid for node: {0}")]
     PortationDataInvalid(String),
+    #[error("import via portation failed for node: {0}")]
+    PortationImportFailed(String),
+    #[error("export via portation failed for node: {0}")]
+    PortationExportFailed(String),
 }
 
 arg_enum! {
@@ -178,7 +183,8 @@ pub fn node_data(
         Some(portation) => {
             let mut portation_data: HoliumCbor = Vec::new();
 
-            import_to_holium(local_context, portation, &mut portation_data)?;
+            import_to_holium(local_context, portation, &mut portation_data)
+                .context(Error::PortationImportFailed(node_typed_name.to_string()))?;
 
             if portation_data.len() == 0usize {
                 return Err(Error::PortationDataInvalid(node_typed_name.to_string()).into());
@@ -194,6 +200,36 @@ pub fn node_data(
             .as_ref()
             .to_vec()),
     }
+}
+
+pub fn store_node_output(
+    local_context: &LocalContext,
+    repo_context: &RepositoryContext,
+    node_typed_name: &str,
+    mut data: &HoliumCbor,
+) -> Result<()> {
+    // Try to export with portation
+    let portation = repo_context.portations.get(&build_portation_id(
+        &PortationDirectionType::fromHolium,
+        node_typed_name,
+    ));
+
+    match portation {
+        Some(portation) => {
+            let mut portation_data: HoliumCbor = Vec::new();
+
+            export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
+                .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
+        }
+        None => {}
+    }
+
+    local_context
+        .data
+        .insert(node_typed_name, data.to_vec())
+        .context(DbOperationFailed)?;
+
+    Ok(())
 }
 
 #[cfg(test)]

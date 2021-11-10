@@ -9,7 +9,8 @@ use crate::utils::errors::Error::{
 use crate::utils::interplanetary::kinds::selector::Selector;
 use crate::utils::local::context::helpers::{
     build_connection_id, build_node_typed_name, build_portation_id, db_key_to_str, node_data,
-    parse_connection_id, parse_node_typed_name, NodeType, PortationDirectionType,
+    parse_connection_id, parse_node_typed_name, store_node_output, NodeType,
+    PortationDirectionType,
 };
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::models::connection::Connection;
@@ -229,10 +230,7 @@ impl PipelineDag {
             }
 
             // Store data in local context
-            local_context
-                .data
-                .insert(node_typed_name, data)
-                .context(DbOperationFailed)?;
+            store_node_output(local_context, repo_context, node_typed_name, &data)?;
         }
 
         Ok(())
