@@ -21,10 +21,6 @@ use thiserror::Error;
 use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR, LOCAL_DIR, PORTATIONS_FILE};
 use crate::utils::run::runtime::Runtime;
 
-#[derive(Error, Debug)]
-/// errors
-enum CmdError {}
-
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("run").about("Run local transformation pipeline is it is valid")
