@@ -30,8 +30,6 @@ enum Error {
     InvalidNodeType(String),
     #[error("no {0} node found with name: {1}")]
     NoPipelineNodeWithName(String, String),
-    #[error("invalid typed name: {0}")]
-    InvalidTypedName(String),
 }
 
 arg_enum! {
