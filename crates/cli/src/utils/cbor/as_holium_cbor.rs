@@ -47,7 +47,6 @@ pub trait AsHoliumCbor {
 
     fn select_cbor(&self, selector_envelope: &SelectorEnvelope) -> Result<Vec<Vec<Vec<u8>>>> {
         let select_cbor_structure = self.select_cbor_structure(selector_envelope)?;
-
         let mut buff = self.as_cursor();
 
         retrieve_cbor_in_reader(&mut buff, &select_cbor_structure)
@@ -185,7 +184,7 @@ impl MajorType {
             },
             Selector::ExploreRange(explore_range) => {
                 // After a range we expect a matcher, otherwise error
-                if explore_range.next.is_matcher() {
+                if !explore_range.next.is_matcher() {
                     return Err(SelectorError::NonValidSelectorStructure.into());
                 }
 

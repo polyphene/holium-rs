@@ -36,11 +36,15 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create runtime
     let mut runtime = Runtime::new()?;
 
-    dbg!(serde_cbor::to_vec(&serde_json::json!([1000, 100])).unwrap());
     local_context.data.insert(
         "source:hello",
         serde_cbor::to_vec(&serde_json::json!([1000, 100])).unwrap(),
     );
+    local_context.data.insert(
+        "source:hello_bis",
+        serde_cbor::to_vec(&serde_json::json!([200])).unwrap(),
+    );
+
     // Run Pipeline dag from local context
     PipelineDag::run(&mut runtime, &local_context)?;
 

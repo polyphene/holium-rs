@@ -123,7 +123,7 @@ impl PipelineDag {
     /// Check the a [PipelineDg] is healthy then runs the ordered list of node that it contains
     pub fn run(runtime: &mut Runtime, local_context: &LocalContext) -> Result<()> {
         // create pipeline dag
-        let dag = PipelineDag::from_local_context(&local_context)?;
+        let dag = PipelineDag::from_local_context(local_context)?;
         // check if the dag is healthy for export
         let ordered_node_list = dag.is_valid_pipeline()?;
 
@@ -167,34 +167,18 @@ impl PipelineDag {
                 .len()
                 == 0usize
             {
-                selected_data = node_data(&local_context, node_typed_name)?;
-            }
+                selected_data = node_data(local_context, node_typed_name)?;
+            } else {
+                // Retrieve all information about connections so that we are able to form our selected
+                // data
+                let connections = dag
+                    .graph
+                    .edges_directed(node_index, Direction::Incoming)
+                    .map(|edge_reference| dag.edge_details(local_context, &edge_reference))
+                    .collect::<Result<Vec<(HoliumCbor, SelectorEnvelope, SelectorEnvelope)>>>()?;
 
-            for edge_reference in dag.graph.edges_directed(node_index, Direction::Incoming) {
-                // Get tail and head typed name
-                let tail_typed_name = dag.node_typed_name(&edge_reference.source())?;
-                let head_typed_name = dag.node_typed_name(&edge_reference.target())?;
-
-                // Build connection id
-                let connection_id = build_connection_id(tail_typed_name, head_typed_name);
-                // Retrieve connection object
-                let encoded_connection = local_context
-                    .connections
-                    .get(&connection_id)
-                    .context(DbOperationFailed)?
-                    .ok_or(NoObjectForGivenKey(connection_id))?;
-                let mut decoded_connection: Connection =
-                    bincode::deserialize(&encoded_connection[..])
-                        .ok()
-                        .context(BinCodeDeserializeFailed)?;
-
-                // Build selectors
-                let tail_selector = SelectorEnvelope::new(&decoded_connection.tail_selector)?;
-                let head_selector = SelectorEnvelope::new(&decoded_connection.head_selector)?;
-
-                // Arrange data to fit head selector
-                let source_data = node_data(&local_context, tail_typed_name)?;
-                selected_data.copy_cbor(source_data, &tail_selector, &head_selector);
+                // Select data
+                selected_data.copy_cbor(&connections);
             }
 
             let mut final_data = selected_data;
@@ -238,5 +222,36 @@ impl PipelineDag {
         self.key_mapping
             .get_by_right(index)
             .ok_or(Error::EdgeEndpointNotFoundInKeyMapping.into())
+    }
+
+    fn edge_details(
+        &self,
+        local_context: &LocalContext,
+        edge_reference: &EdgeReference<()>,
+    ) -> Result<(HoliumCbor, SelectorEnvelope, SelectorEnvelope)> {
+        // Get tail and head typed name
+        let tail_typed_name = self.node_typed_name(&edge_reference.source())?;
+        let head_typed_name = self.node_typed_name(&edge_reference.target())?;
+
+        // Build connection id
+        let connection_id = build_connection_id(tail_typed_name, head_typed_name);
+        // Retrieve connection object
+        let encoded_connection = local_context
+            .connections
+            .get(&connection_id)
+            .context(DbOperationFailed)?
+            .ok_or(NoObjectForGivenKey(connection_id))?;
+        let mut decoded_connection: Connection = bincode::deserialize(&encoded_connection[..])
+            .ok()
+            .context(BinCodeDeserializeFailed)?;
+
+        // Build selectors
+        let tail_selector = SelectorEnvelope::new(&decoded_connection.tail_selector)?;
+        let head_selector = SelectorEnvelope::new(&decoded_connection.head_selector)?;
+
+        // Arrange data to fit head selector
+        let source_data = node_data(local_context, tail_typed_name)?;
+
+        Ok((source_data, tail_selector, head_selector))
     }
 }
