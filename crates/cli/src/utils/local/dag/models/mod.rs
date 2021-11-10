@@ -42,8 +42,6 @@ pub(crate) enum Error {
     ConnectionBetweenUnknownNodes(String),
     #[error("endpoint node not found in transformation graph key mapping")]
     EdgeEndpointNotFoundInKeyMapping,
-    #[error("node not found in transformation graph key mapping")]
-    NodeNotFoundInKeyMapping,
     #[error("instantiation failed for transformation: {0}")]
     TransformationInstantiationFailed(String),
     #[error("execution failed for transformation: {0}")]
