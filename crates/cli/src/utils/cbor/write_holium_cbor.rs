@@ -29,8 +29,8 @@ pub trait WriteHoliumCbor {
             data: Right(vec![]),
         });
 
-        for (source_data, tail_selector, head_selector) in connections.iter() {
-            let mut selected_cbor = source_data.select_cbor(tail_selector)?;
+        for (data_at_tail, tail_selector, head_selector) in connections.iter() {
+            let mut selected_cbor = data_at_tail.select_cbor(tail_selector)?;
 
             // If head selector a union, check that tail selector is also one with the same number of
             // selectors

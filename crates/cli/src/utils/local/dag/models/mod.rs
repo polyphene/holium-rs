@@ -225,7 +225,7 @@ impl PipelineDag {
     }
 
     /// [edge_details] will return connection details based on an edge in our dag. The information
-    /// are returned in a triplet containing the source data, the selector for the source data and
+    /// are returned in a triplet containing the data at tail, the selector for the said data and
     /// the selector to re organize data for our receiving node
     fn edge_details(
         &self,
@@ -253,8 +253,8 @@ impl PipelineDag {
         let head_selector = Selector::try_from(decoded_connection.head_selector.as_str())?;
 
         // Arrange data to fit head selector
-        let source_data = node_data(local_context, tail_typed_name)?;
+        let data_at_tail = node_data(local_context, tail_typed_name)?;
 
-        Ok((source_data, tail_selector, head_selector))
+        Ok((data_at_tail, tail_selector, head_selector))
     }
 }
