@@ -44,8 +44,6 @@ pub(crate) enum Error {
     EdgeEndpointNotFoundInKeyMapping,
     #[error("node not found in transformation graph key mapping")]
     NodeNotFoundInKeyMapping,
-    #[error("no data associated to node: {0}")]
-    NoDataForNode(String),
     #[error("instantiation failed for transformation: {0}")]
     TransformationInstantiationFailed(String),
     #[error("run failed for transformation: {0}")]
@@ -147,7 +145,7 @@ impl PipelineDag {
                     .len()
                     == 0usize
             {
-                return Err(Error::NoDataForNode(node_typed_name.to_string()).into());
+                return Err(NoDataForObject(node_typed_name.to_string()).into());
             }
 
             // Initialize data for head connected node
