@@ -18,7 +18,7 @@ lazy_static::lazy_static! {
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
-    #[error("invalid string can not be passed to json")]
+    #[error("invalid string can not be parsed to json")]
     StringNotParsableToJSON,
     #[error("invalid holium selector")]
     InvalidHoliumSelector,
@@ -53,7 +53,7 @@ mod test {
             .err()
             .unwrap()
             .to_string()
-            .contains("invalid string can not be passed to json"));
+            .contains("invalid string can not be parsed to json"));
     }
 
     #[test]

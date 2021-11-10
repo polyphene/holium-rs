@@ -8,6 +8,7 @@ edition = "2018"
 holium = { path = "../api" }
 holium-utils = { path = "../utils" }
 anyhow = "^1.0.42"
+base64 = "^0.13.0"
 bimap = "^0.6.1"
 bincode = "^1.3.3"
 blake3 = "^1.0.0"

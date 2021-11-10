@@ -13,9 +13,10 @@ use crate::utils::local::context::helpers::{build_connection_id, validate_node_n
 use crate::utils::local::context::helpers::{validate_pipeline_node_existence, NodeType};
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::helpers::jsonschema::validate_json_schema;
+use crate::utils::local::helpers::jsonschema::validate_pipeline_node_json_schema;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
 use crate::utils::local::helpers::selector::validate_selector;
+use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
 use crate::utils::local::models::connection::Connection;
 
 /// command
@@ -130,7 +131,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
         .compare_and_swap(object.id, None as Option<&[u8]>, Some(encoded))
         .context(DbOperationFailed)?
         .ok()
-        .context(anyhow!("cannot create connection: {}", &id))?;
+        .context(StructureCreationError("connection".to_string(), id.clone()))?;
     print_create_success(&id);
     Ok(())
 }

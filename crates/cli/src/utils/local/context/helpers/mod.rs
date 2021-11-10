@@ -14,7 +14,7 @@ use crate::utils::local::context::constants::{
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::models::data::HoliumCbor;
 use sled::Serialize;
-use std::str::from_utf8;
+use std::str::{from_utf8, FromStr};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -22,6 +22,10 @@ enum Error {
     InvalidNodeName(String, String),
     #[error("invalid connection id: {0}")]
     InvalidConnectionId(String),
+    #[error("invalid portation id: {0}")]
+    InvalidPortationId(String),
+    #[error("invalid node typed name: {0}")]
+    InvalidNodeTypedName(String),
     #[error("invalid pipeline node type: {0}")]
     InvalidNodeType(String),
     #[error("no {0} node found with name: {1}")]
@@ -71,19 +75,15 @@ pub fn build_node_typed_name(node_type: &NodeType, node_name: &str) -> String {
     )
 }
 
-/// Parse a type name for a node and returns its type along with its name
-pub fn parse_node_typed_name(typed_name: &str) -> Result<(NodeType, String)> {
-    use std::str::FromStr;
-
-    let splits: Vec<&str> = typed_name.split(TYPED_NODE_NAME_SEPARATOR).collect();
+/// Parse a node typed name (*eg* `transformation:my-transformation`) into its type (*eg* `transformation`)
+/// and untyped name (*eg* `my-transformation`).
+pub fn parse_node_typed_name(node_typed_name: &str) -> Result<(NodeType, String)> {
+    let splits: Vec<&str> = node_typed_name.split(TYPED_NODE_NAME_SEPARATOR).collect();
     if splits.len() != 2 {
-        return Err(Error::InvalidTypedName(typed_name.to_string()).into());
+        return Err(Error::InvalidNodeTypedName(node_typed_name.to_string()).into());
     }
-    Ok((
-        NodeType::from_str(splits[0])
-            .or(Err(Error::InvalidNodeType(splits[0].to_string().into())))?,
-        splits[1].to_string(),
-    ))
+    let node_type = NodeType::from_str(splits[0]).map_err(AnyhowError::msg)?;
+    Ok((node_type, splits[1].to_string()))
 }
 
 /// Check from a node type string and a node name that a pipeline node does exist in the local Holium area.
@@ -139,6 +139,21 @@ pub fn build_portation_id(direction: &PortationDirectionType, node_typed_name: &
     )
 }
 
+/// Parse a portation id (*eg* `from:transformation:my-transformation`) and return a tuple holding the direction of the
+/// portation (from Holium or to Holium) and the typed name of the node (*eg* `transformation:my-transformation`).
+pub fn parse_portation_id(portation_id: &str) -> Result<(PortationDirectionType, &str)> {
+    // split string at first occurrence character
+    let (direction_str, node_typed_name) = portation_id
+        .split_once(PORTATION_PREFIX_SEPARATOR)
+        .ok_or(Error::InvalidPortationId(portation_id.to_string()))?;
+    let direction = match direction_str {
+        PORTATION_FROM_HOLIUM_PREFIX => PortationDirectionType::fromHolium,
+        PORTATION_TO_HOLIUM_PREFIX => PortationDirectionType::toHolium,
+        _ => return Err(Error::InvalidPortationId(portation_id.to_string()).into()),
+    };
+    Ok((direction, node_typed_name))
+}
+
 /// Helper method parsing a vectorized key name from the DB into its string version.
 pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
     let name = from_utf8(k.as_ref())?;
@@ -160,6 +175,36 @@ pub fn node_data(local_context: &LocalContext, node_typed_name: &str) -> Result<
 #[cfg(test)]
 mod test {
     use super::*;
+
+    /*************************************
+     * Parsing of portation IDs
+     *************************************/
+
+    // test the parsing of an invalid portation id
+    #[test]
+    fn test_parse_invalid_portation_id() {
+        let invalid_portation_id = "invalid";
+        let result = parse_portation_id(invalid_portation_id);
+        assert!(result.is_err());
+    }
+
+    // test the parsing of a portation id with wrong direction field
+    #[test]
+    fn test_parse_invalid_direction_portation_id() {
+        let invalid_direction_portation_id = "invalid-direction:source:source-name";
+        let result = parse_portation_id(invalid_direction_portation_id);
+        assert!(result.is_err());
+    }
+
+    // test the parsing of a portation id
+    #[test]
+    fn test_parse_valid_portation_id() {
+        let valid_direction_portation_id = "from:source:source-name";
+        let (direction, node_typed_name) =
+            parse_portation_id(valid_direction_portation_id).unwrap();
+        assert_eq!(direction, PortationDirectionType::fromHolium);
+        assert_eq!(node_typed_name, "source:source-name");
+    }
 
     /*************************************
      * Validate node name

@@ -13,12 +13,16 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Cursor;
 use std::marker::PhantomData;
 use std::ops::Deref;
+use serde_json::map::Map;
+use serde_json::Number;
 use std::option::Option::Some;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
     #[error("failed to parse json selector literal")]
     FailedToParseJsonLiteral,
+    #[error("failed to manipulate selector kind")]
+    FailedToManipulate,
 }
 
 /****************
@@ -43,6 +47,19 @@ impl From<SelectorEnvelope> for sk_cbor::Value {
         cbor_map! {
             "selector" => selector
         }
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for SelectorEnvelope {
+    type Error = AnyhowError;
+    fn try_from(value: sk_cbor::Value) -> Result<Self> {
+        if let sk_cbor::Value::Map(tuples) = value {
+            if let Some((_, selector_value)) = tuples.get(0) {
+                let selector = Selector::try_from(selector_value.clone())?;
+                return Ok(SelectorEnvelope(selector));
+            }
+        }
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -88,6 +105,47 @@ impl From<Selector> for sk_cbor::Value {
     }
 }
 
+impl From<Selector> for JsonValue {
+    fn from(o: Selector) -> Self {
+        let (key, child_selector): (&str, JsonValue) = match o {
+            Selector::Matcher(child) => (".", child.into()),
+            Selector::ExploreIndex(child) => ("i", {*child}.into()),
+            Selector::ExploreRange(child) => ("r", {*child}.into()),
+            Selector::ExploreUnion(child) => ("|", {*child}.into()),
+        };
+        let mut map = Map::new();
+        map.insert(key.to_string(), child_selector);
+        JsonValue::Object(map)
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for Selector {
+    type Error = AnyhowError;
+    fn try_from(value: sk_cbor::Value) -> Result<Self> {
+        if let sk_cbor::Value::Map(tuples) = value {
+            if tuples.get(0).is_some() {
+                let (k, v) = &tuples[0];
+                if let sk_cbor::Value::TextString(k) = k {
+                    if k == "." {
+                        let child = Matcher::try_from(v.clone())?;
+                        return Ok(Selector::Matcher(child));
+                    } else if k == "i" {
+                        let child = ExploreIndex::try_from(v.clone())?;
+                        return Ok(Selector::ExploreIndex(Box::new(child)));
+                    } else if k == "r" {
+                        let child = ExploreRange::try_from(v.clone())?;
+                        return Ok(Selector::ExploreRange(Box::new(child)));
+                    } else if k == "|" {
+                        let child = ExploreUnion::try_from(v.clone())?;
+                        return Ok(Selector::ExploreUnion(Box::new(child)));
+                    }
+                }
+            }
+        };
+        Err(Error::FailedToManipulate.into())
+    }
+}
+
 impl TryFrom<JsonValue> for Selector {
     type Error = AnyhowError;
     fn try_from(json_value: JsonValue) -> Result<Self> {
@@ -122,6 +180,31 @@ impl From<Matcher> for sk_cbor::Value {
         } else {
             cbor_map! {}
         }
+    }
+}
+
+impl From<Matcher> for JsonValue {
+    fn from(o: Matcher) -> Self {
+        let mut map = Map::new();
+        if let Some(label) = o.label {
+            map.insert("label".to_string(), JsonValue::String(label));
+        }
+        JsonValue::Object(map)
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for Matcher {
+    type Error = AnyhowError;
+    fn try_from(value: sk_cbor::Value) -> Result<Self> {
+        if let sk_cbor::Value::Map(tuples) = value {
+            if let Some((_, label_value)) = tuples.get(0) {
+                if let sk_cbor::Value::TextString(label) = label_value {
+                    return Ok(Matcher { label: Some(label.clone()) });
+                }
+            }
+            return Ok(Matcher { label: None });
+        }
+        Err(Error::FailedToManipulate.into())
     }
 }
 
@@ -162,6 +245,16 @@ impl From<ExploreIndex> for sk_cbor::Value {
     }
 }
 
+impl From<ExploreIndex> for JsonValue {
+    fn from(o: ExploreIndex) -> Self {
+        let selector: JsonValue = { *o.next }.into();
+        let mut map = Map::new();
+        map.insert("i".to_string(), JsonValue::Number(Number::from_f64(o.index as f64).unwrap()));
+        map.insert(">".to_string(), selector);
+        JsonValue::Object(map)
+    }
+}
+
 impl TryFrom<JsonValue> for ExploreIndex {
     type Error = AnyhowError;
     fn try_from(json_value: JsonValue) -> Result<Self> {
@@ -180,6 +273,29 @@ impl TryFrom<JsonValue> for ExploreIndex {
         Err(Error::FailedToParseJsonLiteral.into())
     }
 }
+
+impl TryFrom<sk_cbor::Value> for ExploreIndex {
+    type Error = AnyhowError;
+    fn try_from(value: sk_cbor::Value) -> Result<Self> {
+        if let sk_cbor::Value::Map(tuples) = value {
+            if let Some((_, index_value)) = tuples.get(1) {
+                if let sk_cbor::Value::Unsigned(index) = index_value {
+                    // check key is "i"
+                    if let Some((_, next_value)) = tuples.get(0) {
+                        // check key is ">"
+                        return Ok(ExploreIndex {
+                            index: *index,
+                            next: Box::new(next_value.clone().try_into()?),
+                        });
+                    }
+
+                }
+            }
+        };
+        Err(Error::FailedToManipulate.into())
+    }
+}
+
 
 /****************
 ExploreRange
@@ -200,6 +316,17 @@ impl From<ExploreRange> for sk_cbor::Value {
             "$" => cbor_unsigned!( o.end ),
             ">" => selector,
         }
+    }
+}
+
+impl From<ExploreRange> for JsonValue {
+    fn from(o: ExploreRange) -> Self {
+        let selector: JsonValue = { *o.next }.into();
+        let mut map = Map::new();
+        map.insert("^".to_string(), JsonValue::Number(Number::from_f64(o.start as f64).unwrap()));
+        map.insert("$".to_string(), JsonValue::Number(Number::from_f64(o.end as f64).unwrap()));
+        map.insert(">".to_string(), selector);
+        JsonValue::Object(map)
     }
 }
 
@@ -227,6 +354,33 @@ impl TryFrom<JsonValue> for ExploreRange {
     }
 }
 
+impl TryFrom<sk_cbor::Value> for ExploreRange {
+    type Error = AnyhowError;
+    fn try_from(value: sk_cbor::Value) -> Result<Self> {
+        if let sk_cbor::Value::Map(tuples) = value {
+            if let Some((_, start_value)) = tuples.get(2) {
+                if let sk_cbor::Value::Unsigned(start) = start_value {
+                    // check key is "^"
+                    if let Some((_, end_value)) = tuples.get(0) {
+                        if let sk_cbor::Value::Unsigned(end) = end_value {
+                            // check key is "$"
+                            if let Some((_, next_value)) = tuples.get(1) {
+                                // check key is ">"
+                                return Ok(ExploreRange {
+                                    start: *start,
+                                    end: *end,
+                                    next: Box::new(next_value.clone().try_into()?),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        Err(Error::FailedToManipulate.into())
+    }
+}
+
 /****************
 ExploreUnion
 ****************/
@@ -244,6 +398,17 @@ impl From<ExploreUnion> for sk_cbor::Value {
     }
 }
 
+impl From<ExploreUnion> for JsonValue {
+    fn from(o: ExploreUnion) -> Self {
+        let mut selectors = Vec::with_capacity(o.0.len());
+        for s in o.0 {
+            let cbor_selector: JsonValue = s.into();
+            selectors.push(cbor_selector);
+        }
+        JsonValue::Array(selectors)
+    }
+}
+
 impl TryFrom<JsonValue> for ExploreUnion {
     type Error = AnyhowError;
     fn try_from(json_value: JsonValue) -> Result<Self> {
@@ -254,5 +419,21 @@ impl TryFrom<JsonValue> for ExploreUnion {
             return Ok(ExploreUnion(selectors));
         };
         Err(Error::FailedToParseJsonLiteral.into())
+    }
+}
+
+
+impl TryFrom<sk_cbor::Value> for ExploreUnion {
+    type Error = AnyhowError;
+    fn try_from(value: sk_cbor::Value) -> Result<Self> {
+        if let sk_cbor::Value::Array(vec) = value {
+            let selectors_res: Result<Vec<Selector>> = vec
+                .iter()
+                .map(|v| { v.clone().try_into() })
+                .collect();
+            let selectors = selectors_res?;
+            return Ok(ExploreUnion(selectors))
+        };
+        Err(Error::FailedToManipulate.into())
     }
 }

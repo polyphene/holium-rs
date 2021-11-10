@@ -1,45 +1,36 @@
-use crate::utils::interplanetary::multiformats::DEFAULT_MULTIBASE;
-use anyhow::{Context, Result};
-use cid::Cid;
 use console::style;
-use std::io::Write;
-use thiserror::Error;
+use cid::Cid;
+use crate::utils::interplanetary::multiformats::DEFAULT_MULTIBASE;
 
 /*
-Success messages
-*/
+ Success messages
+ */
 
 /// Print CREATE method success message.
 pub fn print_create_success(key: &str) {
-    println!(
-        "{}",
-        style(format!("new object created: {}", style(key).bold())).green()
-    )
+    println!("{}", style(format!("new object created: {}", style(key).bold())).green())
 }
 
 /// Print UPDATE method success message.
 pub fn print_update_success(key: &str) {
-    println!(
-        "{}",
-        style(format!("object updated: {}", style(key).bold())).green()
-    )
+    println!("{}", style(format!("object updated: {}", style(key).bold())).green())
 }
 
 /// Print DELETE method success message.
 pub fn print_delete_success(key: &str) {
-    println!(
-        "{}",
-        style(format!("object deleted: {}", style(key).bold())).green()
-    )
+    println!("{}", style(format!("object deleted: {}", style(key).bold())).green())
 }
 
 /// Print success message for methods checking the health of the transformation pipeline currently
 /// in the local area.
-pub fn print_pipeline_health_success() {
-    println!(
-        "{}",
-        style("current project holds a healthy transformation pipeline").green()
-    )
+pub fn print_local_pipeline_health_success() {
+    println!("{}", style("current local project holds a healthy transformation pipeline").green())
+}
+
+/// Print success message for methods checking the ability to parse the pipeline currently in the
+/// interplanetary area
+pub fn print_interplanetary_health_success() {
+    println!("{}", style("interplanetary area holds a healthy transformation pipeline").green())
 }
 
 /// Print project EXPORT success message.
@@ -55,4 +46,9 @@ pub fn print_project_export_success(cid: &Cid) {
         ))
         .green()
     )
+}
+
+/// Print project IMPORT success message.
+pub fn print_project_import_success() {
+    println!("{}", style(format!("project imported to local area")).green())
 }

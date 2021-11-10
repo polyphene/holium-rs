@@ -11,8 +11,8 @@ use crate::helpers::repo::setup_repo;
 pub(crate) const SOURCE_NAME: &'static str = "source";
 pub(crate) const SOURCE_ALTERNATIVE_NAME: &'static str = "alternative_source";
 
-pub(crate) const JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
-pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = "{\"type\": \"number\"}";
+pub(crate) const JSON_SCHEMA: &'static str = r#"{ "type" : "array", "prefixItems" : [ {"type" : "string"} ] }"#;
+pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = r#"{ "type" : "array", "prefixItems" : [ {"type" : "number"} ] }"#;
 pub(crate) const NON_VALID_JSON_SCHEMA: &'static str = "{\"type\": \"wrong_type\"}";
 
 /// Same as [setup_repo] but with a source already created

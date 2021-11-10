@@ -11,21 +11,27 @@ use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticod
 use crate::utils::interplanetary::kinds::link::Link;
 use sk_cbor::cbor_array;
 
-static DISCRIMINANT_KEY_V0: &str = "cx_0";
-
-pub struct Connection<'a> {
-    tail_selector: &'a Cid,
-    head_selector: &'a Cid,
+#[derive(thiserror::Error, Debug)]
+enum Error {
+    #[error("failed to manipulate connection kind")]
+    FailedToManipulate,
 }
 
-impl<'a> Connection<'a> {
-    pub fn new(tail_selector: &'a Cid, head_selector: &'a Cid) -> Self {
+static DISCRIMINANT_KEY_V0: &str = "cx_0";
+
+pub struct Connection {
+    pub tail_selector: Cid,
+    pub head_selector: Cid,
+}
+
+impl Connection {
+    pub fn new(tail_selector: Cid, head_selector: Cid) -> Self {
         Connection { tail_selector, head_selector }
     }
 }
 
-impl From<&Connection<'_>> for sk_cbor::Value {
-    fn from(o: &Connection<'_>) -> Self {
+impl From<Connection> for sk_cbor::Value {
+    fn from(o: Connection) -> Self {
         let tail_selector_link: Value = Link(o.tail_selector).into();
         let head_selector_link: Value = Link(o.head_selector).into();
         let content = cbor_array![
@@ -36,5 +42,24 @@ impl From<&Connection<'_>> for sk_cbor::Value {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => content,
         }
+    }
+}
+
+impl TryFrom<sk_cbor::Value> for Connection {
+    type Error = AnyhowError;
+    fn try_from(value: Value) -> Result<Self> {
+        if let Value::Map(map) = value {
+            if map.get(0).is_some() {
+                let (k, content) = &map[0];
+                if let Value::Array(tuple) = content {
+                    if tuple.get(0..2).is_some() {
+                        let Link(tail_selector) = Link::try_from(tuple[0].clone())?;
+                        let Link(head_selector) = Link::try_from(tuple[1].clone())?;
+                        return Ok(Connection{ tail_selector, head_selector })
+                    }
+                }
+            }
+        }
+        Err(Error::FailedToManipulate.into())
     }
 }

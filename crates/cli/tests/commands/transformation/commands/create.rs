@@ -224,7 +224,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_in() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("invalid json schema"));
+        .stderr(predicate::str::contains("json schema"));
 }
 
 #[test]
@@ -244,7 +244,7 @@ fn cannot_create_transformation_with_incorrect_json_schema_out() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("invalid json schema"));
+        .stderr(predicate::str::contains("json schema"));
 }
 
 #[test]
