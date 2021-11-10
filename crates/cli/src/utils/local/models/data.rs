@@ -2,6 +2,7 @@ use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
 use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
 use std::io::Cursor;
+use sled::IVec;
 
 pub const TREE_NAME: &[u8] = b"data";
 
@@ -19,5 +20,11 @@ impl WriteHoliumCbor for HoliumCbor {
     }
     fn from_bytes(cbor_bytes: &[u8]) -> Self {
         HoliumCbor::from(cbor_bytes)
+    }
+}
+
+impl AsHoliumCbor for IVec {
+    fn as_cursor(&self) -> Cursor<&[u8]> {
+        Cursor::new(self)
     }
 }
