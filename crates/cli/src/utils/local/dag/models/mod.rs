@@ -171,14 +171,14 @@ impl PipelineDag {
             } else {
                 // Retrieve all information about connections so that we are able to form our selected
                 // data
-                let connections = dag
+                let connections_details = dag
                     .graph
                     .edges_directed(node_index, Direction::Incoming)
                     .map(|edge_reference| dag.edge_details(local_context, &edge_reference))
                     .collect::<Result<Vec<(HoliumCbor, SelectorEnvelope, SelectorEnvelope)>>>()?;
 
                 // Select data
-                data.copy_cbor(&connections);
+                data.copy_cbor(&connections_details);
             }
 
             // If transformation then execute bytecode otherwise do nothing
