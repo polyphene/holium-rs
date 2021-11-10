@@ -223,6 +223,9 @@ impl PipelineDag {
             .ok_or(Error::EdgeEndpointNotFoundInKeyMapping.into())
     }
 
+    /// [edge_details] will return connection details based on an edge in our dag. The information
+    /// are returned in a triplet containing the source data, the selector for the source data and
+    /// the selector to re organize data for our receiving node
     fn edge_details(
         &self,
         local_context: &LocalContext,
