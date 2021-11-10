@@ -202,7 +202,7 @@ impl PipelineDag {
                     // run transformation
                     data = runtime
                         .run(&decoded_transformation.handle, &data)
-                        .unwrap();
+                        .context(Error::TransformationRunFailed(node_name.clone()))?;
                 }
                 _ => {}
             }
