@@ -48,7 +48,7 @@ pub(crate) enum Error {
     NoDataForNode(String),
     #[error("instantiation failed for transformation: {0}")]
     TransformationInstantiationFailed(String),
-    #[error("run failed for transformation: {0}")]
+    #[error("execution failed for transformation: {0}")]
     TransformationRunFailed(String),
 }
 
