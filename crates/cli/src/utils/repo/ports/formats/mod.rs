@@ -10,12 +10,16 @@ pub mod bin;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("failed to read HoliumCBOR data")]
+    FailedToReadHoliumCborData,
     #[error("failed to read json data")]
     FailedToReadJsonData,
     #[error("failed to read cbor data")]
     FailedToReadCborData,
     #[error("float value not handled yet in HoliumCBOR data")]
     UnhandledFloat,
+    #[error("failed to convert number from HoliumCBOR to JSON")]
+    FailedToConvertNumberFromHoliumCborToJson,
     #[error("base64 decode error")]
     Base64DecodeError,
     #[error("invalid schema: missing key in schema of object type")]
@@ -26,9 +30,16 @@ pub enum Error {
     IncompatibleSchemaAndValue,
     #[error("failed to write HoliumCBOR data")]
     FailedToWriteHoliumCbor,
+    #[error("failed to write bin data")]
+    FailedToWriteBinData,
+    #[error("failed to write cbor data")]
+    FailedToWriteCborData,
+    #[error("failed to write json data")]
+    FailedToWriteJsonData,
 }
 
-// trait FormatPorter with import_to_holium and export_from_holium
+/// Trait FormatPorter with [ import_to_holium ] and [ export_from_holium ]
 pub trait FormatPorter {
     fn import_to_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()>;
+    fn export_from_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()>;
 }

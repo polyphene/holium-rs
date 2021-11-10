@@ -1,6 +1,6 @@
 use anyhow::{bail, Result, Context};
 use crate::utils::repo::models::portation::{Portation, PortationFileFormat};
-use std::io::{Write, BufReader};
+use std::io::{Write, BufReader, Read};
 use crate::utils::repo::context::RepositoryContext;
 use std::path::Path;
 use serde_json::Value;
@@ -20,33 +20,30 @@ use crate::utils::repo::ports::helpers::get_portation_json_schema;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
-    #[error("failed to open file {0} for portation {1}")]
-    FailedToOpenFile(String, String),
-    #[error("portation in wrong direction")]
-    WrongPortationDirection,
+    #[error("failed to create file {0} for portation {1}")]
+    FailedToCreateFile(String, String),
 }
 
-/// Read data from a Portation and write it as HoliumCBOR data.
-pub fn import_to_holium<W: Write>(local_context: &LocalContext, portation: &Portation, writer: &mut W) -> Result<()> {
+/// Read Holium CBOR data from a Portation and write it in a file in the repository.
+pub fn export_from_holium<R: Read>(local_context: &LocalContext, portation: &Portation, reader: &mut R) -> Result<()> {
     // get json schema from the portation
     let json_schema = get_portation_json_schema(&local_context, &portation)?;
     // open file from its path
     let path = get_root_path()?.join(&portation.file_path);
-    let file = std::fs::File::open(&path)
-        .context(Error::FailedToOpenFile(
+    let mut file = std::fs::File::create(&path)
+        .context(Error::FailedToCreateFile(
             path
                 .file_name()
                 .map(|oss| oss.to_string_lossy().to_string())
                 .unwrap_or("".to_string()),
             portation.id.clone())
         )?;
-    let mut reader = BufReader::new(file);
-    // parse data in Holium CBOR format
+    // parse Holium CBOR data into the right format and write it
     match portation.file_format {
-        PortationFileFormat::bin => BinPorter::import_to_holium(&json_schema, &mut reader, writer),
-        PortationFileFormat::cbor => CborPorter::import_to_holium(&json_schema, &mut reader, writer),
-        PortationFileFormat::csv => bail!("import from CSV format is not supported yet"),
-        PortationFileFormat::json => JsonPorter::import_to_holium(&json_schema, &mut reader, writer),
+        PortationFileFormat::bin => BinPorter::export_from_holium(&json_schema, reader, &mut file),
+        PortationFileFormat::cbor => CborPorter::export_from_holium(&json_schema, reader, &mut file),
+        PortationFileFormat::csv => bail!("export to CSV format is not supported yet"),
+        PortationFileFormat::json => JsonPorter::export_from_holium(&json_schema, reader, &mut file),
     }?;
     Ok(())
 }
