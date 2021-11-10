@@ -91,6 +91,15 @@ impl Selector {
     }
 }
 
+impl TryFrom<&str> for Selector {
+    type Error = AnyhowError;
+    fn try_from(selector_str: &str) -> std::prelude::rust_2015::Result<Self, Self::Error> {
+        let v: JsonValue =
+            serde_json::from_str(&selector_str).context(Error::FailedToParseJsonLiteral)?;
+        Selector::try_from(v)
+    }
+}
+
 impl From<Selector> for sk_cbor::Value {
     fn from(o: Selector) -> Self {
         let (key, child_selector): (&str, sk_cbor::Value) = match o {

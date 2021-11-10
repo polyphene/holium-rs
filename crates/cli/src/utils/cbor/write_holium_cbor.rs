@@ -1,10 +1,11 @@
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::helpers::{generate_array_cbor_header, SelectorError, WriteError};
-use crate::utils::interplanetary::kinds::selector::{Selector, SelectorEnvelope};
-use anyhow::Result;
+use crate::utils::interplanetary::kinds::selector::Selector;
+use anyhow::{Context, Result};
 use either::Either;
 use either::Either::{Left, Right};
 use std::borrow::Borrow;
+use std::fmt::Debug;
 use std::io::Cursor;
 
 pub trait WriteHoliumCbor {
@@ -14,47 +15,62 @@ pub trait WriteHoliumCbor {
     // To implement to know how to translate bytes to self type
     fn from_bytes(cbor_bytes: &[u8]) -> Self;
 
-    fn copy_cbor<T: AsHoliumCbor>(
+    // Generates a cbor serialized value based on multiple connections quartets: connection id,
+    // source data, tail selector and head selector
+    fn copy_cbor<T: AsHoliumCbor + Debug>(
         &mut self,
-        source_data: T,
-        tail_selector: &SelectorEnvelope,
-        head_selector: &SelectorEnvelope,
+        connections: &Vec<(String, T, Selector, Selector)>,
     ) -> Result<()>
     where
         Self: Sized,
     {
-        let mut selected_cbor = source_data.select_cbor(tail_selector)?;
-
         let mut holium_cbor_constructor: HoliumCborNode = HoliumCborNode::NonLeaf(RecursiveNode {
             index: None,
             data: Right(vec![]),
         });
-        // If head selector a union, check that tail selector is also one with the same number of
-        // selectors
-        match &head_selector.0 {
-            Selector::ExploreUnion(receiver_union) => match &tail_selector.0 {
-                Selector::ExploreUnion(source_union) => {
-                    if source_union.0.len() != receiver_union.0.len() {
-                        return Err(WriteError::DifferentUnionLength.into());
-                    }
 
-                    for (i, data_set) in selected_cbor.iter_mut().enumerate() {
-                        holium_cbor_constructor.ingest(&source_union.0[i], data_set)?;
+        for (connection_id, data_at_tail, tail_selector, head_selector) in connections.iter() {
+            let mut selected_cbor = data_at_tail.select_cbor(tail_selector).context(
+                SelectorError::DataAtTailSelectionFailed(connection_id.clone()),
+            )?;
+
+            // If head selector a union, check that tail selector is also one with the same number of
+            // selectors
+            match &head_selector {
+                Selector::ExploreUnion(receiver_union) => match &tail_selector {
+                    Selector::ExploreUnion(source_union) => {
+                        if source_union.0.len() != receiver_union.0.len() {
+                            return Err(
+                                WriteError::DifferentUnionLength(connection_id.clone()).into()
+                            );
+                        }
+
+                        for (i, data_set) in selected_cbor.iter_mut().enumerate() {
+                            holium_cbor_constructor
+                                .ingest(&source_union.0[i], data_set)
+                                .context(WriteError::DataCopyFailed(connection_id.clone()))?;
+                        }
                     }
+                    _ => {
+                        return Err(WriteError::NonCompatibleSelectors(connection_id.clone()).into())
+                    }
+                },
+                _ => {
+                    holium_cbor_constructor.ingest(
+                        &head_selector,
+                        &mut selected_cbor.get_mut(0).ok_or(
+                            SelectorError::ResultDataSetEmptyAfterSelection(connection_id.clone()),
+                        )?,
+                    )?;
                 }
-                _ => return Err(WriteError::NonCompatibleSelectors.into()),
-            },
-            _ => {
-                holium_cbor_constructor.ingest(
-                    &head_selector.0,
-                    &mut selected_cbor
-                        .get_mut(0)
-                        .ok_or(WriteError::NoDataInDataSet)?,
-                )?;
             }
         }
 
-        *self = Self::from_bytes(&holium_cbor_constructor.generate_cbor()?);
+        *self = Self::from_bytes(
+            &holium_cbor_constructor
+                .generate_cbor()
+                .context(WriteError::CborGenerationFailed)?,
+        );
         Ok(())
     }
 }

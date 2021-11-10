@@ -6,11 +6,11 @@ extern crate prettytable;
 
 use std::env;
 
-use clap::{App, AppSettings, crate_authors, crate_version};
+use clap::{crate_authors, crate_version, App, AppSettings};
 use console::style;
 
-mod utils;
 mod commands;
+mod utils;
 
 fn main() {
     // Create CLI matches

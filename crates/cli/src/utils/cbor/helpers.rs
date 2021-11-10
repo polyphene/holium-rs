@@ -32,14 +32,18 @@ pub enum SelectorError {
     NoNodeFound,
     #[error("union can only be found at the root of a selector")]
     UnionOnlyAtRoot,
+    #[error("failed to select data at tail for connection: {0}")]
+    DataAtTailSelectionFailed(String),
+    #[error("result data set empty after tail selector is applied for connection: {0}")]
+    ResultDataSetEmptyAfterSelection(String),
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum WriteError {
-    #[error("non compatible selectors")]
-    NonCompatibleSelectors,
-    #[error("tail and head selectors union does not have the same number of elements")]
-    DifferentUnionLength,
+    #[error("non compatible selectors for connection: {0}")]
+    NonCompatibleSelectors(String),
+    #[error("tail and head selectors union does not have the same number of elements in connection: {0}")]
+    DifferentUnionLength(String),
     #[error("union should only be applied at root level for a Holium selector")]
     UnionOnlyAtRootLevel,
     #[error("tried to apply an index selection on a declared leaf in the tree")]
@@ -62,6 +66,10 @@ pub enum WriteError {
     NoIndexOnChild,
     #[error("index not allocated to one child")]
     IndexNotAllocatedToOneChild,
+    #[error("failed to copy data for connection: {0}")]
+    DataCopyFailed(String),
+    #[error("failed to generate valid cbor object")]
+    CborGenerationFailed,
 }
 
 fn get_cursor_position<R: Read + Seek>(reader: &mut R) -> Result<u64> {

@@ -21,4 +21,7 @@ pub(crate) enum Error {
     /// CompareAndSwapResult error for instance).
     #[error("failed to operate on local database")]
     DbOperationFailed,
+    /// This error is thrown when an object has no data, either by portation or locally stored.
+    #[error("no data available at pipeline node: {0}")]
+    NoDataForNodeInput(String),
 }
