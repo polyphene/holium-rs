@@ -1,6 +1,5 @@
 //! Module related to the organisation of a transformation pipeline as a Directed Acyclic Graph (DAG).
 
-use std::convert::TryFrom;
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
 use crate::utils::errors::Error::{
@@ -25,6 +24,7 @@ use petgraph::graph::{DiGraph, EdgeReference, NodeIndex};
 use petgraph::prelude::EdgeRef;
 use petgraph::{algo, Direction};
 use serde::Serialize;
+use std::convert::TryFrom;
 
 #[derive(thiserror::Error, Debug)]
 /// Errors related to the [ PipelineDag ] structure.
@@ -135,23 +135,23 @@ impl PipelineDag {
             // Check that if the node only has a tail selector then there are either a portation
             // or some data in local context. Otherwise error.
             // TODO add portation check
-            if dag
-                .graph
-                .edges_directed(node_index, Direction::Outgoing)
-                .collect::<Vec<EdgeReference<_, _>>>()
-                .len()
-                > 0usize
+            if local_context
+                .data
+                .get(node_typed_name)
+                .context(DbOperationFailed)?
+                .is_none()
+                && dag
+                    .graph
+                    .edges_directed(node_index, Direction::Outgoing)
+                    .collect::<Vec<EdgeReference<_, _>>>()
+                    .len()
+                    > 0usize
                 && dag
                     .graph
                     .edges_directed(node_index, Direction::Incoming)
                     .collect::<Vec<EdgeReference<_, _>>>()
                     .len()
                     == 0usize
-                && local_context
-                    .data
-                    .get(node_typed_name)
-                    .context(DbOperationFailed)?
-                    .is_none()
             {
                 return Err(Error::NoDataForNode(node_typed_name.to_string()).into());
             }
