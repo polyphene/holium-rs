@@ -37,6 +37,7 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     PipelineDag::run(&mut runtime, &local_context)?;
 
     print_pipeline_run_success();
+    // TODO when portation integrated, print all successful export
 
     Ok(())
 }
