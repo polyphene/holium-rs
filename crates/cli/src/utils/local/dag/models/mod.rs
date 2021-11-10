@@ -1,6 +1,7 @@
 //! Module related to the organisation of a transformation pipeline as a Directed Acyclic Graph (DAG).
 
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
+use crate::utils::cbor::helpers::WriteError;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
 use crate::utils::errors::Error::{
     BinCodeDeserializeFailed, DbOperationFailed, NoDataForNodeInput, NoObjectForGivenKey,
@@ -44,6 +45,10 @@ pub(crate) enum Error {
     TransformationInstantiationFailed(String),
     #[error("execution failed for transformation: {0}")]
     TransformationRunFailed(String),
+    #[error("could not collect connections details for node: {0}")]
+    ConnectionsDetailsCollectionFailed(String),
+    #[error("failed to copy selected data for connection: {0} ")]
+    DataCopyFailed(String),
 }
 
 /// Structure holing information useful to the management of a transformation pipeline as a DAG
@@ -164,10 +169,24 @@ impl PipelineDag {
                     .graph
                     .edges_directed(node_index, Direction::Incoming)
                     .map(|edge_reference| dag.edge_details(local_context, &edge_reference))
-                    .collect::<Result<Vec<(HoliumCbor, Selector, Selector)>>>()?;
+                    .collect::<Result<Vec<(String, HoliumCbor, Selector, Selector)>>>()
+                    .context(Error::ConnectionsDetailsCollectionFailed(node_name.clone()))?;
 
                 // Select data
-                data.copy_cbor(&connections_details);
+                let res_copy = data.copy_cbor(&connections_details);
+                match res_copy.err() {
+                    Some(err) => match err.downcast_ref::<WriteError>() {
+                        Some(WriteError::CborGenerationFailed) => {
+                            return Err(anyhow!(format!(
+                                "failed to generate cbor object for head data of node: {}",
+                                node_typed_name
+                            ))
+                            .into())
+                        }
+                        _ => return Err(err),
+                    },
+                    _ => {}
+                };
             }
 
             // If transformation then execute bytecode otherwise do nothing
@@ -213,13 +232,13 @@ impl PipelineDag {
     }
 
     /// [edge_details] will return connection details based on an edge in our dag. The information
-    /// are returned in a triplet containing the data at tail, the selector for the said data and
+    /// are returned in a quartet containing the connection name, data at tail, the selector for the said data and
     /// the selector to re organize data for our receiving node
     fn edge_details(
         &self,
         local_context: &LocalContext,
         edge_reference: &EdgeReference<()>,
-    ) -> Result<(HoliumCbor, Selector, Selector)> {
+    ) -> Result<(String, HoliumCbor, Selector, Selector)> {
         // Get tail and head typed name
         let tail_typed_name = self.node_typed_name(&edge_reference.source())?;
         let head_typed_name = self.node_typed_name(&edge_reference.target())?;
@@ -231,7 +250,7 @@ impl PipelineDag {
             .connections
             .get(&connection_id)
             .context(DbOperationFailed)?
-            .ok_or(NoObjectForGivenKey(connection_id))?;
+            .ok_or(NoObjectForGivenKey(connection_id.clone()))?;
         let mut decoded_connection: Connection = bincode::deserialize(&encoded_connection[..])
             .ok()
             .context(BinCodeDeserializeFailed)?;
@@ -243,6 +262,6 @@ impl PipelineDag {
         // Arrange data to fit head selector
         let data_at_tail = node_data(local_context, tail_typed_name)?;
 
-        Ok((data_at_tail, tail_selector, head_selector))
+        Ok((connection_id, data_at_tail, tail_selector, head_selector))
     }
 }
