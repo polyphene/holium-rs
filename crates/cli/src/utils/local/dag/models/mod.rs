@@ -142,12 +142,6 @@ impl PipelineDag {
                 .is_none()
                 && dag
                     .graph
-                    .edges_directed(node_index, Direction::Outgoing)
-                    .collect::<Vec<EdgeReference<_, _>>>()
-                    .len()
-                    > 0usize
-                && dag
-                    .graph
                     .edges_directed(node_index, Direction::Incoming)
                     .collect::<Vec<EdgeReference<_, _>>>()
                     .len()
