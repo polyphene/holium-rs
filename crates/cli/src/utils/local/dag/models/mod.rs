@@ -232,7 +232,7 @@ impl PipelineDag {
                 _ => {}
             }
 
-            // Store data in local context
+            // Store data in local context and execute *to-holium* portation if any.
             let portation_file_path =
                 store_node_output(local_context, repo_context, node_typed_name, &data)?;
             if let Some(file_path) = portation_file_path {
