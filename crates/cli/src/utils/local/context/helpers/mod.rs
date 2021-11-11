@@ -13,6 +13,9 @@ use crate::utils::local::context::constants::{
 };
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::models::data::HoliumCbor;
+use crate::utils::repo::context::RepositoryContext;
+use crate::utils::repo::ports::export_from_holium::export_from_holium;
+use crate::utils::repo::ports::import_to_holium::import_to_holium;
 use sled::Serialize;
 use std::str::{from_utf8, FromStr};
 
@@ -30,6 +33,12 @@ enum Error {
     InvalidNodeType(String),
     #[error("no {0} node found with name: {1}")]
     NoPipelineNodeWithName(String, String),
+    #[error("portation data is invalid for node: {0}")]
+    PortationDataInvalid(String),
+    #[error("import via portation failed for node: {0}")]
+    PortationImportFailed(String),
+    #[error("export via portation failed for node: {0}")]
+    PortationExportFailed(String),
 }
 
 arg_enum! {
@@ -159,15 +168,71 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
 }
 
 /// Helper to get data for a node from a local context
-/// TODO when portation implemented, add a first step to use the portation first
-pub fn node_data(local_context: &LocalContext, node_typed_name: &str) -> Result<HoliumCbor> {
-    Ok(local_context
+pub fn node_data(
+    local_context: &LocalContext,
+    repo_context: &RepositoryContext,
+    node_typed_name: &str,
+) -> Result<HoliumCbor> {
+    let portation = repo_context.portations.get(&build_portation_id(
+        &PortationDirectionType::toHolium,
+        node_typed_name,
+    ));
+
+    match portation {
+        Some(portation) => {
+            let mut portation_data: HoliumCbor = Vec::new();
+
+            import_to_holium(local_context, portation, &mut portation_data)
+                .context(Error::PortationImportFailed(node_typed_name.to_string()))?;
+
+            if portation_data.len() == 0usize {
+                return Err(Error::PortationDataInvalid(node_typed_name.to_string()).into());
+            }
+
+            Ok(portation_data)
+        }
+        None => Ok(local_context
+            .data
+            .get(node_typed_name)
+            .context(DbOperationFailed)?
+            .ok_or(NoDataForNodeInput(node_typed_name.to_string().into()))?
+            .as_ref()
+            .to_vec()),
+    }
+}
+
+/// [store_node_output] will first try to export the data by using a portation and then store data in
+/// local context. If some data have been exported then the path to the file written is returned.
+pub fn store_node_output(
+    local_context: &LocalContext,
+    repo_context: &RepositoryContext,
+    node_typed_name: &str,
+    mut data: &HoliumCbor,
+) -> Result<Option<String>> {
+    // Try to export with portation
+    let mut portation_file_path: Option<String> = None;
+    let portation = repo_context.portations.get(&build_portation_id(
+        &PortationDirectionType::fromHolium,
+        node_typed_name,
+    ));
+
+    match portation {
+        Some(portation) => {
+            let mut portation_data: HoliumCbor = Vec::new();
+
+            export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
+                .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
+            portation_file_path = Some(portation.file_path.clone());
+        }
+        None => {}
+    }
+
+    local_context
         .data
-        .get(node_typed_name)
-        .context(DbOperationFailed)?
-        .ok_or(NoDataForNodeInput(node_typed_name.to_string().into()))?
-        .as_ref()
-        .to_vec())
+        .insert(node_typed_name, data.to_vec())
+        .context(DbOperationFailed)?;
+
+    Ok(portation_file_path)
 }
 
 #[cfg(test)]
