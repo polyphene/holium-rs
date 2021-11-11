@@ -235,11 +235,8 @@ impl PipelineDag {
             // Store data in local context
             let portation_file_path =
                 store_node_output(local_context, repo_context, node_typed_name, &data)?;
-            match portation_file_path {
-                Some(file_path) => {
-                    node_portation_pairs.push((node_typed_name.clone(), file_path.clone()));
-                }
-                None => {}
+            if let Some(file_path) = portation_file_path {
+                node_portation_pairs.push((node_typed_name.clone(), file_path.clone()));
             }
         }
 
