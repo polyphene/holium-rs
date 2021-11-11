@@ -209,28 +209,24 @@ pub fn store_node_output(
     node_typed_name: &str,
     mut data: &HoliumCbor,
 ) -> Result<Option<String>> {
-    // Try to export with portation
-    let mut portation_file_path: Option<String> = None;
-    let portation = repo_context.portations.get(&build_portation_id(
-        &PortationDirectionType::fromHolium,
-        node_typed_name,
-    ));
-
-    match portation {
-        Some(portation) => {
-            let mut portation_data: HoliumCbor = Vec::new();
-
-            export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
-                .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
-            portation_file_path = Some(portation.file_path.clone());
-        }
-        None => {}
-    }
-
+    // Write data in local context
     local_context
         .data
         .insert(node_typed_name, data.to_vec())
         .context(DbOperationFailed)?;
+
+    // Try to export with portation
+    let mut portation_file_path: Option<String> = None;
+    let res_portation = repo_context.portations.get(&build_portation_id(
+        &PortationDirectionType::fromHolium,
+        node_typed_name,
+    ));
+
+    if let Some(portation) = res_portation {
+        export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
+            .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
+        portation_file_path = Some(portation.file_path.clone());
+    }
 
     Ok(portation_file_path)
 }
