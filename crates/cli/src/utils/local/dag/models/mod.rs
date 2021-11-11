@@ -8,7 +8,7 @@ use crate::utils::errors::Error::{
 };
 use crate::utils::interplanetary::kinds::selector::Selector;
 use crate::utils::local::context::helpers::{
-    build_connection_id, build_node_typed_name, build_portation_id, db_key_to_str, node_data,
+    build_connection_id, build_node_typed_name, build_portation_id, db_key_to_str, get_node_data,
     parse_connection_id, parse_node_typed_name, store_node_output, NodeType,
     PortationDirectionType,
 };
@@ -176,7 +176,7 @@ impl PipelineDag {
                 .len()
                 == 0usize
             {
-                data = node_data(local_context, repo_context, node_typed_name)?;
+                data = get_node_data(local_context, repo_context, node_typed_name)?;
             } else {
                 // Retrieve all information about connections so that we are able to form our selected
                 // data
@@ -279,7 +279,7 @@ impl PipelineDag {
         let head_selector = Selector::try_from(decoded_connection.head_selector.as_str())?;
 
         // Arrange data to fit head selector
-        let data_at_tail = node_data(local_context, repo_context, tail_typed_name)?;
+        let data_at_tail = get_node_data(local_context, repo_context, tail_typed_name)?;
 
         Ok((connection_id, data_at_tail, tail_selector, head_selector))
     }

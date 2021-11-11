@@ -168,7 +168,7 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
 }
 
 /// Helper to get data for a node from a local context
-pub fn node_data(
+pub fn get_node_data(
     local_context: &LocalContext,
     repo_context: &RepositoryContext,
     node_typed_name: &str,
