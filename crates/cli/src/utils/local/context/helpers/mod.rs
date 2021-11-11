@@ -35,9 +35,9 @@ enum Error {
     NoPipelineNodeWithName(String, String),
     #[error("portation data is invalid for node: {0}")]
     PortationDataInvalid(String),
-    #[error("import via portation failed for node: {0}")]
+    #[error("import to Holium via portation failed for node: {0}")]
     PortationImportFailed(String),
-    #[error("export via portation failed for node: {0}")]
+    #[error("export from Holium via portation failed for node: {0}")]
     PortationExportFailed(String),
 }
 
