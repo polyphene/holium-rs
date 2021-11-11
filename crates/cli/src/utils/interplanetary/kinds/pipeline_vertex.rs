@@ -21,6 +21,7 @@ enum Error {
 #[derive(Default, Clone)]
 pub struct PipelineVertex {
     pub dry_transformation: Option<Cid>,
+    pub data: Option<Cid>,
     pub metadata: Option<Cid>,
 }
 
@@ -31,6 +32,12 @@ impl From<PipelineVertex> for sk_cbor::Value {
             tuples.push((
                 cbor_text!("dt"),
                 Link(dry_transformation).into(),
+            ))
+        }
+        if let Some(data) = o.data {
+            tuples.push((
+                cbor_text!("rde"),
+                Link(data).into(),
             ))
         }
         if let Some(metadata) = o.metadata {
@@ -52,6 +59,10 @@ impl TryFrom<sk_cbor::Value> for PipelineVertex {
                 if *key == cbor_text!("dt") {
                     let Link(cid) = Link::try_from(value.clone())?;
                     vertex.dry_transformation = Some(cid);
+                }
+                if *key == cbor_text!("rde") {
+                    let Link(cid) = Link::try_from(value.clone())?;
+                    vertex.data = Some(cid);
                 }
                 if *key == cbor_text!("meta") {
                     let Link(cid) = Link::try_from(value.clone())?;

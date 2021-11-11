@@ -25,6 +25,7 @@ use crate::utils::interplanetary::kinds::pipeline::Pipeline;
 use crate::utils::interplanetary::kinds::connection::Connection as ConnectionBlock;
 use crate::utils::local::models::connection::Connection;
 use crate::utils::interplanetary::context::InterplanetaryContext;
+use crate::utils::interplanetary::kinds::helpers::holium_data::HoliumInterplanetaryNodeData;
 
 /// [ VerticesContentMap ] is used to map nodes' name to their content while constructing the
 /// interplanetary representation of a pipeline.
@@ -39,6 +40,8 @@ pub fn export_project(local_context: &LocalContext, ip_context: &InterplanetaryC
     let mut vertices_content = VerticesContentMap::new();
     // export dry transformations
     export_dry_transformations(&local_context, &ip_context, &mut vertices_content)?;
+    // export data
+    export_data(&local_context, &ip_context, &mut vertices_content)?;
     // export metadata
     export_metadata(&local_context, &ip_context, &mut vertices_content)?;
     // export connections
@@ -70,6 +73,22 @@ fn export_dry_transformations(local_context: &LocalContext, ip_context: &Interpl
         let typed_name = build_node_typed_name(&NodeType::transformation, name.as_str());
         let vertex_content = vertices_content.entry(typed_name).or_insert(PipelineVertex::default());
         vertex_content.dry_transformation = Some(dry_transformation_cid);
+    }
+    Ok(())
+}
+
+fn export_data(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
+    for o in local_context.data.iter() {
+        // decode the object
+        let (name_vec, data_vec) = o.context(DbOperationFailed)?;
+        let node_typed_name = db_key_to_str(name_vec)?;
+        let data = data_vec.to_vec();
+        // recursively build and write the data structure
+        let data_cid = HoliumInterplanetaryNodeData::new(data)?
+            .recursively_write_to_ip_area(&ip_context)?;
+        // add it to the vertices context map
+        let vertex_content = vertices_content.entry(node_typed_name).or_insert(PipelineVertex::default());
+        vertex_content.data = Some(data_cid);
     }
     Ok(())
 }
