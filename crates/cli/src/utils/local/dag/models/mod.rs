@@ -122,7 +122,9 @@ impl PipelineDag {
         Ok(sorted_nodes)
     }
 
-    /// Check the a [PipelineDg] is healthy then runs the ordered list of node that it contains
+    /// Check the a [PipelineDg] is healthy then runs the ordered list of node that it contains. It
+    /// returns a vector of tuples containing the node typed name and the writen file path of nodes
+    /// that had some export from Holium portation attached to them.
     pub fn run(
         runtime: &mut Runtime,
         local_context: &LocalContext,
