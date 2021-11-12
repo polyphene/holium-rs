@@ -19,8 +19,6 @@ pub enum Error {
     UnhandledFloat,
     #[error("failed to convert number from HoliumCBOR to JSON")]
     FailedToConvertNumberFromHoliumCborToJson,
-    #[error("base64 decode error")]
-    Base64DecodeError,
     #[error("invalid schema: missing key in schema of object type")]
     MissingKeyInObjectTypeSchema,
     #[error("missing key in imported object: {0}")]

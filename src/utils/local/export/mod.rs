@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::convert::TryFrom;
 
 use anyhow::{Context, Result};
 use cid::Cid;
@@ -8,7 +7,7 @@ use sk_cbor::Value;
 use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
 use crate::utils::interplanetary::context::InterplanetaryContext;
 use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::kinds;
+
 use crate::utils::interplanetary::kinds::connection::Connection as ConnectionBlock;
 use crate::utils::interplanetary::kinds::dry_transformation::DryTransformation;
 use crate::utils::interplanetary::kinds::helpers::holium_data::HoliumInterplanetaryNodeData;
@@ -24,10 +23,8 @@ use crate::utils::local::context::helpers::{
 };
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::models::connection::Connection;
-use crate::utils::local::models::shaper::Shaper;
-use crate::utils::local::models::source::Source;
+
 use crate::utils::local::models::transformation::Transformation;
-use bimap::BiMap;
 
 /// [ VerticesContentMap ] is used to map nodes' name to their content while constructing the
 /// interplanetary representation of a pipeline.

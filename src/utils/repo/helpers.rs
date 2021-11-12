@@ -1,6 +1,6 @@
 use crate::utils::repo::constants::HOLIUM_DIR;
 use crate::utils::repo::errors::Error::OutsideHoliumRepo;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use path_clean::PathClean;
 use std::env;
 use std::path::{Path, PathBuf};

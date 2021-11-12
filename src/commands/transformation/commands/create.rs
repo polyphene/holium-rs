@@ -1,9 +1,6 @@
-use std::borrow::BorrowMut;
-use std::ffi::OsStr;
-use std::fs;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
 use crate::utils::errors::Error::{

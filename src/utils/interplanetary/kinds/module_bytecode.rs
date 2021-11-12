@@ -1,13 +1,9 @@
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
 use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::local::context::LocalContext;
-use anyhow::Context;
-use anyhow::Error as AnyhowError;
+
 use anyhow::Result;
-use cid::Cid;
-use sk_cbor::Value;
-use std::convert::{TryFrom, TryInto};
-use std::io::{Cursor, Read, Seek};
+
+use std::io::Cursor;
 
 pub struct ModuleBytecode {
     pub bytecode: Cursor<Vec<u8>>,

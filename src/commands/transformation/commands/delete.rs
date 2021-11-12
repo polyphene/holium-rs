@@ -5,7 +5,6 @@ use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::prints::commands_outputs::print_delete_success;
 use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
-use console::style;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

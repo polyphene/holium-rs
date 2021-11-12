@@ -1,20 +1,9 @@
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
 use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::kinds::link::Link;
-use anyhow::Error as AnyhowError;
-use anyhow::Result;
-use cid::Cid;
-use sk_cbor::cbor_map;
-use sk_cbor::Value;
-use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
-use std::io::Cursor;
 
-#[derive(thiserror::Error, Debug)]
-enum Error {
-    #[error("failed to manipulate scalar data kind")]
-    FailedToManipulate,
-}
+use anyhow::Result;
+
+use std::io::Cursor;
 
 pub struct ScalarData {
     pub content: Vec<u8>,

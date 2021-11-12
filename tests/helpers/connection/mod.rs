@@ -14,7 +14,7 @@ use crate::helpers::transformation::{
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::TempDir;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /***********************************************************
  * Constants useful to play around connection testing
@@ -156,29 +156,6 @@ pub(crate) fn build_connection_create_cmd(
         .arg(head_name)
         .arg("--head-selector")
         .arg(head_selector)
-        .assert();
-    assert
-}
-
-/// Create and run a delete connection command, returning an [Assert] used to validate testing
-pub(crate) fn build_connection_delete_cmd(repo_path: &Path, connection_id: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium").unwrap();
-    let assert = cmd
-        .current_dir(repo_path)
-        .arg("connection")
-        .arg("delete")
-        .arg(connection_id)
-        .assert();
-    assert
-}
-
-/// Create and run a list connection command, returning an [Assert] used to validate testing
-pub(crate) fn build_connection_list_cmd(repo_path: &Path) -> Assert {
-    let mut cmd = Command::cargo_bin("holium").unwrap();
-    let assert = cmd
-        .current_dir(repo_path)
-        .arg("connection")
-        .arg("list")
         .assert();
     assert
 }

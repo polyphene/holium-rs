@@ -1,12 +1,9 @@
 use crate::helpers::connection::{
-    build_connection_id, build_connection_read_cmd, default_connection_id,
-    node_type_name_alternative_pairs, node_type_name_pairs, setup_repo_with_connection,
+    build_connection_read_cmd, default_connection_id, setup_repo_with_connection,
     ALTERNATIVE_SELECTOR, NON_VALID_SELECTOR, NON_VALID_TYPE, SELECTOR, SHAPER_TYPE, SOURCE_TYPE,
     TRANSFORMATION_TYPE,
 };
-use crate::helpers::shaper::SHAPER_ALTERNATIVE_NAME;
-use crate::helpers::source::{SOURCE_ALTERNATIVE_NAME, SOURCE_NAME};
-use crate::helpers::transformation::{TRANSFORMATION_ALTERNATIVE_NAME, TRANSFORMATION_NAME};
+
 use assert_cmd::Command;
 use predicates::prelude::predicate;
 

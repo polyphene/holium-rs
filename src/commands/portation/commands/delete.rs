@@ -1,12 +1,9 @@
-use crate::utils::errors::Error::{
-    DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey,
-};
-use crate::utils::local::context::LocalContext;
+use crate::utils::errors::Error::{MissingRequiredArgument, NoObjectForGivenKey};
+
 use crate::utils::local::helpers::prints::commands_outputs::print_delete_success;
 use crate::utils::repo::context::RepositoryContext;
 use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
-use console::style;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

@@ -1,14 +1,12 @@
-use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
-use sled::Db;
+use anyhow::{Context, Result};
 
 use crate::utils::local::context::helpers::NodeType;
 use crate::utils::local::models;
 use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR};
 use crate::utils::repo::helpers::get_root_path;
-use crate::utils::repo::models::portation::Portations;
+
 use std::fs;
 use tempfile::{tempdir, TempDir};
 

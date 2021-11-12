@@ -1,16 +1,8 @@
 use crate::helpers::connection::{
-    build_connection_create_cmd, default_connection_id, setup_repo_with_all_node_types,
-    setup_repo_with_connection, NON_VALID_CONNECTION_ID, SELECTOR, SOURCE_TYPE,
-    TRANSFORMATION_TYPE,
+    default_connection_id, setup_repo_with_all_node_types, setup_repo_with_connection,
+    NON_VALID_CONNECTION_ID,
 };
-use crate::helpers::repo::setup_repo;
-use crate::helpers::source::{
-    build_source_create_cmd, JSON_SCHEMA as SOURCE_JSON_SCHEMA, SOURCE_NAME,
-};
-use crate::helpers::transformation::{
-    build_transformation_create_cmd, JSON_SCHEMA as TRANSFORMATION_JSON_SCHEMA, SOUND_BYTECODE,
-    TRANSFORMATION_HANDLE, TRANSFORMATION_NAME,
-};
+
 use assert_cmd::Command;
 
 #[test]

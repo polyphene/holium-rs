@@ -1,6 +1,5 @@
 //! Module related to the organisation of a transformation pipeline as a Directed Acyclic Graph (DAG).
 
-use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::helpers::WriteError;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
 use crate::utils::errors::Error::{
@@ -18,14 +17,13 @@ use crate::utils::local::models::data::HoliumCbor;
 use crate::utils::local::models::transformation::Transformation;
 use crate::utils::repo::context::RepositoryContext;
 use crate::utils::run::runtime::Runtime;
-use anyhow::{anyhow, Context, Error as AnyhowError, Result};
+use anyhow::{anyhow, Context, Result};
 use bimap::BiMap;
-use itertools::Itertools;
-use petgraph::data::Element;
+
 use petgraph::graph::{DiGraph, EdgeReference, NodeIndex};
 use petgraph::prelude::EdgeRef;
 use petgraph::{algo, Direction};
-use serde::Serialize;
+
 use std::convert::TryFrom;
 
 #[derive(thiserror::Error, Debug)]
@@ -48,8 +46,6 @@ pub(crate) enum Error {
     TransformationRunFailed(String),
     #[error("could not collect connections details for node: {0}")]
     ConnectionsDetailsCollectionFailed(String),
-    #[error("failed to copy selected data for connection: {0} ")]
-    DataCopyFailed(String),
 }
 
 /// Structure holing information useful to the management of a transformation pipeline as a DAG
@@ -193,16 +189,16 @@ impl PipelineDag {
                 // Select data
                 let res_copy = data.copy_cbor(&connections_details);
                 match res_copy.err() {
-                    Some(err) => match err.downcast_ref::<WriteError>() {
-                        Some(WriteError::CborGenerationFailed) => {
-                            return Err(anyhow!(format!(
+                    Some(err) => {
+                        return match err.downcast_ref::<WriteError>() {
+                            Some(WriteError::CborGenerationFailed) => Err(anyhow!(format!(
                                 "failed to generate cbor object for head data of node: {}",
                                 node_typed_name
                             ))
-                            .into())
+                            .into()),
+                            _ => Err(err),
                         }
-                        _ => return Err(err),
-                    },
+                    }
                     _ => {}
                 };
             }
@@ -216,10 +212,9 @@ impl PipelineDag {
                         .get(&node_name)
                         .context(DbOperationFailed)?
                         .ok_or(NoObjectForGivenKey(node_name.clone()))?;
-                    let mut decoded_transformation: Transformation =
-                        bincode::deserialize(&encoded[..])
-                            .ok()
-                            .context(BinCodeDeserializeFailed)?;
+                    let decoded_transformation: Transformation = bincode::deserialize(&encoded[..])
+                        .ok()
+                        .context(BinCodeDeserializeFailed)?;
                     // instantiate transformation
                     runtime
                         .instantiate(&decoded_transformation.bytecode)
@@ -271,7 +266,7 @@ impl PipelineDag {
             .get(&connection_id)
             .context(DbOperationFailed)?
             .ok_or(NoObjectForGivenKey(connection_id.clone()))?;
-        let mut decoded_connection: Connection = bincode::deserialize(&encoded_connection[..])
+        let decoded_connection: Connection = bincode::deserialize(&encoded_connection[..])
             .ok()
             .context(BinCodeDeserializeFailed)?;
 

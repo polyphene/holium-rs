@@ -1,8 +1,6 @@
-use std::path::{Path, PathBuf};
-
 use crate::helpers::repo::setup_repo;
 use crate::helpers::shaper::{build_shaper_read_cmd, setup_repo_with_shaper, SHAPER_NAME};
-use assert_cmd::assert::Assert;
+
 use assert_cmd::Command;
 use predicates::prelude::predicate;
 

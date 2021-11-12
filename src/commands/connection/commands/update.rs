@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
@@ -7,10 +5,10 @@ use crate::utils::errors::Error::{
     BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey,
 };
 use crate::utils::local::context::LocalContext;
-use crate::utils::local::helpers::bytecode::read_all_wasm_module;
+
 use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
 use crate::utils::local::helpers::selector::validate_selector;
-use crate::utils::local::models::connection::{Connection, OptionalConnection};
+use crate::utils::local::models::connection::OptionalConnection;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

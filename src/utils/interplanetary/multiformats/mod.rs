@@ -1,25 +1,20 @@
 //! Helper methods related to the use of multiformats.
 //! Reference: https://multiformats.io/
 
-use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::io;
 use std::path::PathBuf;
-use std::{env, fs, io};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use cid::multibase::Base;
 use cid::multihash::Multihash;
 use cid::{Cid, Version};
-use console::style;
-use sk_cbor::Value;
+
 use thiserror;
 
 use crate::utils::interplanetary::context::InterplanetaryContext;
 use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::multiformats::Error::{FailedToParseCid, WrongObjectPath};
-use crate::utils::local::context::LocalContext;
-use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR};
-use crate::utils::repo::errors::Error::OutsideHoliumRepo;
+
 use std::io::{Read, Seek};
 
 /// Blake3 multicodec code.
@@ -42,18 +37,6 @@ pub(crate) enum Error {
     BlockPathCreationError,
     #[error("failed to parse block path as cid")]
     CidFromPathError,
-    /// Thrown when failing to write data object in the repository
-    #[error("failed to write holium data object : {0}")]
-    FailedToWriteObject(String),
-    /// Thrown when an error occurs while working with the path of a supposed object in a local repository
-    #[error("wrong local object path : {0}")]
-    WrongObjectPath(String),
-    /// Thrown when failing to make a valid CID from a string
-    #[error("failed to parse CID string : {0}")]
-    FailedToParseCid(String),
-    /// Thrown when a provided identifier cannot be linked to a known Holium object
-    #[error("unknown object identifier: {0}")]
-    UnknownObjectIdentifier(String),
 }
 
 /// Compute the cid of a block;

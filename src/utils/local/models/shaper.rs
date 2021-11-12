@@ -1,9 +1,8 @@
 use anyhow::Context;
-use humansize::{file_size_opts, FileSize};
+
 use optional_struct::OptionalStruct;
-use prettytable::{cell, row, Row, Table};
+use prettytable::{cell, row, Row};
 use serde::{Deserialize, Serialize};
-use serde_json;
 
 use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;

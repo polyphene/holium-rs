@@ -1,9 +1,7 @@
-use crate::utils::local::helpers::jsonschema::{
-    HoliumJsonSchema, HoliumJsonSchemaName, HoliumJsonSchemaType,
-};
-use crate::utils::local::models::data::HoliumCbor;
+use crate::utils::local::helpers::jsonschema::{HoliumJsonSchema, HoliumJsonSchemaType};
+
 use crate::utils::repo::ports::formats::{Error, FormatPorter};
-use anyhow::Error as AnyhowError;
+
 use anyhow::{Context, Result};
 use serde_json::Map;
 use serde_json::{to_writer, Number, Value as JsonValue};
@@ -102,7 +100,7 @@ fn import_value_to_holium(json_schema: &HoliumJsonSchema, v: &JsonValue) -> Resu
                     let cbor_value = import_value_to_holium(s, value)?;
                     Ok(cbor_value)
                 })
-                .collect::<Result<Vec<(CborValue)>>>()?;
+                .collect::<Result<Vec<CborValue>>>()?;
             Ok(cbor_array_vec!(cbor_array))
         }
         _ => Err(Error::IncompatibleSchemaAndValue.into()),
@@ -165,6 +163,7 @@ fn export_value_from_holium(json_schema: &HoliumJsonSchema, v: &CborValue) -> Re
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::local::helpers::jsonschema::HoliumJsonSchemaName;
 
     #[test]
     fn can_import_json_boolean_value() {

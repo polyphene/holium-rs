@@ -1,16 +1,12 @@
-use crate::utils::local::helpers::jsonschema::{
-    HoliumJsonSchema, HoliumJsonSchemaName, HoliumJsonSchemaType,
-};
-use crate::utils::local::models::data::HoliumCbor;
+use crate::utils::local::helpers::jsonschema::{HoliumJsonSchema, HoliumJsonSchemaType};
+
 use crate::utils::repo::ports::formats::{Error, FormatPorter};
-use anyhow::Error as AnyhowError;
+
 use anyhow::{Context, Result};
-use serde_json::Value as JsonValue;
+
 use sk_cbor::write;
 use sk_cbor::Value as CborValue;
-use sk_cbor::{
-    cbor_array_vec, cbor_bool, cbor_bytes, cbor_int, cbor_null, cbor_text, cbor_unsigned,
-};
+use sk_cbor::{cbor_array_vec, cbor_bytes};
 use std::io::Write;
 use std::io::{copy, Cursor, Read};
 
@@ -61,7 +57,7 @@ impl FormatPorter for BinPorter {
         let sub_value = tuples_array
             .get(0)
             .ok_or(Error::IncompatibleSchemaAndValue)?;
-        let mut bytes = match sub_value {
+        let bytes = match sub_value {
             CborValue::ByteString(bytes) => bytes,
             _ => return Err(Error::IncompatibleSchemaAndValue.into()),
         };

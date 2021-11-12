@@ -1,19 +1,16 @@
-use std::borrow::Borrow;
 use std::collections::hash_map::Values;
 use std::collections::HashMap;
 use std::fs::File;
-use std::hash::Hash;
+
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
 use clap::arg_enum;
-use humansize::{file_size_opts, FileSize};
-use prettytable::{cell, row, Row, Table};
+
+use prettytable::{cell, row, Row};
 use serde::{Deserialize, Serialize};
 use serde_yaml;
 
-use crate::utils::errors::Error::BinCodeSerializeFailed;
-use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

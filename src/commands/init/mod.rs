@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 use anyhow::Result;
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches, SubCommand};
 use console::style;
 use thiserror::Error;
 

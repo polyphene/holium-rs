@@ -1,15 +1,10 @@
-use std::path::PathBuf;
-
 use anyhow::{Context, Error as AnyhowError, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::utils::errors::Error::{
-    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument, NoObjectForGivenKey,
-};
-use crate::utils::local::context::LocalContext;
-use crate::utils::local::helpers::bytecode::read_all_wasm_module;
+use crate::utils::errors::Error::{MissingRequiredArgument, NoObjectForGivenKey};
+
 use crate::utils::local::helpers::prints::commands_outputs::print_update_success;
-use crate::utils::local::helpers::selector::validate_selector;
+
 use crate::utils::repo::context::RepositoryContext;
 use crate::utils::repo::helpers::to_relative_path_to_project_root;
 use crate::utils::repo::models::portation::{Portation, PortationFileFormat};

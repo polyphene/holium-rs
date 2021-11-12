@@ -1,10 +1,10 @@
 //! Helper methods related to JSON schema fields of local Holium objects.
 
 use anyhow::{Context, Result};
-use ellipse::Ellipse;
+
 use jsonschema::JSONSchema;
 use serde_json::value::Value;
-use serde_json::{json, Map};
+use serde_json::Map;
 
 lazy_static::lazy_static! {
     static ref META_SCHEMA: JSONSchema = {
@@ -219,6 +219,7 @@ fn get_schema_details(schema: &Value) -> Result<(&String, &Map<String, Value>)> 
 #[cfg(test)]
 mod test {
     use super::*;
+    use serde_json::json;
 
     /*******************************************
      * Validate expected fields
@@ -331,7 +332,7 @@ mod test {
     fn can_validate_proper_object() {
         let non_valid_json = json!({ "type": "object", "properties": { "id": {"type": "string"}} });
 
-        let res = match &non_valid_json {
+        match &non_valid_json {
             Value::Object(map) => parse_object_properties(map).unwrap(),
             _ => unreachable!(),
         };
@@ -396,7 +397,7 @@ mod test {
     fn can_validate_items() {
         let invalid_json = json!({"type": "array", "items": {"type": "string"}});
 
-        let res = match &invalid_json {
+        match &invalid_json {
             Value::Object(map) => parse_items_array_item(map).unwrap(),
             _ => unreachable!(),
         };
@@ -406,7 +407,7 @@ mod test {
     fn can_validate_prefix_items() {
         let invalid_json = json!({"type": "array", "prefixItems": [{"type": "string"}]});
 
-        let res = match &invalid_json {
+        match &invalid_json {
             Value::Object(map) => parse_tuples_array_items(map).unwrap(),
             _ => unreachable!(),
         };

@@ -13,21 +13,21 @@ use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
 use crate::utils::interplanetary::multiformats::path_to_cid;
 use crate::utils::local::context::helpers::{build_connection_id, parse_node_typed_name, NodeType};
 use crate::utils::local::context::LocalContext;
-use crate::utils::local::export::VerticesKeyMap;
+
 use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
-use crate::utils::local::helpers::selector::validate_selector;
+
 use crate::utils::local::models::connection::Connection;
 use crate::utils::local::models::shaper::Shaper;
 use crate::utils::local::models::source::Source;
 use crate::utils::local::models::transformation::Transformation;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use cid::Cid;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs;
-use std::fs::{DirEntry, File};
+use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Ending bytes of any Pipeline interplanetary block
 const PIPELINE_BLOC_SUFFIX: &[u8; 18] =

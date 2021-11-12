@@ -4,7 +4,7 @@ use crate::utils::errors::Error::{
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 use crate::utils::local::models::shaper::Shaper;
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Result};
 use clap::{App, Arg, ArgMatches, SubCommand};
 
 /// command

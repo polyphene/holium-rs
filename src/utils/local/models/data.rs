@@ -1,6 +1,6 @@
 use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::cbor::write_holium_cbor::WriteHoliumCbor;
-use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
+
 use sled::IVec;
 use std::io::Cursor;
 

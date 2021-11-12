@@ -8,10 +8,8 @@ extern crate humansize;
 extern crate lazy_static;
 extern crate prettytable;
 
-use std::env;
-
 use crate::utils::cli::build_cli;
-use clap::{App, AppSettings};
+
 use console::style;
 
 mod commands;

@@ -1,24 +1,14 @@
-use std::ffi::OsStr;
-use std::fs;
-use std::path::PathBuf;
+use anyhow::{Context, Error as AnyhowError, Result};
+use clap::{App, Arg, ArgMatches, SubCommand};
 
-use anyhow::{anyhow, Context, Error as AnyhowError, Result};
-use clap::{arg_enum, App, Arg, ArgMatches, SubCommand};
-
-use crate::utils::errors::Error::{
-    BinCodeSerializeFailed, DbOperationFailed, MissingRequiredArgument,
-    ObjectAlreadyExistsForGivenKey,
-};
-use crate::utils::local::context::helpers::{
-    build_portation_id, validate_node_name, PortationDirectionType,
-};
+use crate::utils::errors::Error::{MissingRequiredArgument, ObjectAlreadyExistsForGivenKey};
+use crate::utils::local::context::helpers::{build_portation_id, PortationDirectionType};
 use crate::utils::local::context::helpers::{validate_pipeline_node_existence, NodeType};
 use crate::utils::local::context::LocalContext;
-use crate::utils::local::helpers::bytecode::read_all_wasm_module;
-use crate::utils::local::helpers::jsonschema::validate_pipeline_node_json_schema;
+
 use crate::utils::local::helpers::media_type::validate_mimetype_coherence;
 use crate::utils::local::helpers::prints::commands_outputs::print_create_success;
-use crate::utils::local::helpers::selector::validate_selector;
+
 use crate::utils::repo::context::RepositoryContext;
 use crate::utils::repo::helpers::to_relative_path_to_project_root;
 use crate::utils::repo::models::portation::{Portation, PortationFileFormat};
@@ -74,7 +64,7 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
 /// handler
 pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create contexts
-    let mut local_context = LocalContext::new()?;
+    let local_context = LocalContext::new()?;
     let mut repo_context = RepositoryContext::new()?;
     // get argument values
     let direction = matches

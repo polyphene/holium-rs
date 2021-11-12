@@ -2,10 +2,9 @@
 
 use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
 use anyhow::{Context, Result};
-use ellipse::Ellipse;
+
 use jsonschema::JSONSchema;
 use serde_json::value::Value;
-use serde_json::{json, Map};
 
 lazy_static::lazy_static! {
     static ref HOLIUM_SELECTOR_SCHEMA: JSONSchema = {

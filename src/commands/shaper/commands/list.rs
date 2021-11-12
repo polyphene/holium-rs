@@ -4,9 +4,7 @@ use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 use crate::utils::local::models::shaper::Shaper;
 use anyhow::{Context, Result};
-use clap::{App, Arg, ArgMatches, SubCommand};
-use prettytable::{format, Table};
-use std::str::from_utf8;
+use clap::{App, ArgMatches, SubCommand};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -14,7 +12,7 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
 }
 
 /// handler
-pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
+pub(crate) fn handle_cmd(_matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // iterate through stored objects

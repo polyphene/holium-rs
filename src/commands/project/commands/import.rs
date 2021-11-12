@@ -1,18 +1,14 @@
-use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
 use crate::utils::interplanetary::context::InterplanetaryContext;
 use crate::utils::local::context::LocalContext;
 use crate::utils::local::dag::models::PipelineDag;
 use crate::utils::local::helpers::prints::commands_outputs::{
-    print_interplanetary_health_success, print_local_pipeline_health_success,
-    print_project_export_success, print_project_import_success,
+    print_interplanetary_health_success, print_project_import_success,
 };
-use crate::utils::local::helpers::prints::printable_model::PrintableModel;
+
 use crate::utils::local::import::import_project;
-use crate::utils::local::models::shaper::Shaper;
-use anyhow::{Context, Result};
+
+use anyhow::Result;
 use clap::{App, Arg, ArgMatches, SubCommand};
-use prettytable::{format, Table};
-use std::str::from_utf8;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

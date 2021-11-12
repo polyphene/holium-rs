@@ -34,7 +34,7 @@ impl Metadata {
     pub fn new(name: &str, encoded: &IVec, node_type: &NodeType) -> Result<Self> {
         let mut metadata = Metadata::default();
         metadata.name = Some(build_node_typed_name(node_type, name));
-        let a = match node_type {
+        match node_type {
             NodeType::shaper => {
                 let decoded: Shaper = bincode::deserialize(&encoded[..])
                     .ok()

@@ -1,15 +1,10 @@
-use crate::utils::local::helpers::jsonschema::{
-    HoliumJsonSchema, HoliumJsonSchemaName, HoliumJsonSchemaType,
-};
-use crate::utils::local::models::data::HoliumCbor;
+use crate::utils::local::helpers::jsonschema::{HoliumJsonSchema, HoliumJsonSchemaType};
+
 use crate::utils::repo::ports::formats::{Error, FormatPorter};
-use anyhow::Error as AnyhowError;
+
 use anyhow::{Context, Result};
 use sk_cbor::write;
-use sk_cbor::{
-    cbor_array_vec, cbor_bool, cbor_bytes, cbor_int, cbor_map_collection, cbor_null, cbor_text,
-    cbor_unsigned,
-};
+use sk_cbor::{cbor_array_vec, cbor_map_collection, cbor_unsigned};
 use sk_cbor::{SimpleValue, Value};
 use std::io::copy;
 use std::io::Write;
@@ -100,7 +95,7 @@ fn import_value_to_holium(json_schema: &HoliumJsonSchema, v: &Value) -> Result<V
                     let holium_cbor_value = import_value_to_holium(s, value)?;
                     Ok(holium_cbor_value)
                 })
-                .collect::<Result<Vec<(Value)>>>()?;
+                .collect::<Result<Vec<Value>>>()?;
             Ok(cbor_array_vec!(holium_cbor_array))
         }
         _ => Err(Error::IncompatibleSchemaAndValue.into()),
@@ -159,6 +154,8 @@ fn export_value_from_holium(json_schema: &HoliumJsonSchema, v: &Value) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::local::helpers::jsonschema::HoliumJsonSchemaName;
+    use sk_cbor::cbor_bool;
 
     #[test]
     fn can_import_cbor_boolean_value() {

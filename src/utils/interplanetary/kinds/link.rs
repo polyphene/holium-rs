@@ -4,7 +4,7 @@ use cid::Cid;
 use sk_cbor::cbor_bytes;
 use sk_cbor::cbor_tagged;
 use sk_cbor::Value;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]

@@ -1,15 +1,12 @@
 use anyhow::Context;
-use humansize::{file_size_opts, FileSize};
+
 use optional_struct::OptionalStruct;
-use prettytable::{cell, row, Row, Table};
+use prettytable::{cell, row, Row};
 use serde::{Deserialize, Serialize};
-use serde_json;
-use std::io::Cursor;
 
 use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
-use crate::utils::local::models::data::HoliumCbor;
 
 pub const TREE_NAME: &[u8] = b"source";
 

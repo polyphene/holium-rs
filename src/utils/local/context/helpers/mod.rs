@@ -1,11 +1,10 @@
 //! Helper methods for the local context.
 
 use anyhow::{Context, Error as AnyhowError, Result};
-use clap::{arg_enum, value_t};
-use std::io::{Read, Seek};
+use clap::arg_enum;
+
 use thiserror;
 
-use crate::utils::cbor::as_holium_cbor::AsHoliumCbor;
 use crate::utils::errors::Error::{DbOperationFailed, NoDataForNodeInput};
 use crate::utils::local::context::constants::{
     CONNECTION_ID_SEPARATOR, PORTATION_FROM_HOLIUM_PREFIX, PORTATION_PREFIX_SEPARATOR,
@@ -16,7 +15,7 @@ use crate::utils::local::models::data::HoliumCbor;
 use crate::utils::repo::context::RepositoryContext;
 use crate::utils::repo::ports::export_from_holium::export_from_holium;
 use crate::utils::repo::ports::import_to_holium::import_to_holium;
-use sled::Serialize;
+
 use std::str::{from_utf8, FromStr};
 
 #[derive(Debug, thiserror::Error)]
@@ -29,8 +28,6 @@ enum Error {
     InvalidPortationId(String),
     #[error("invalid node typed name: {0}")]
     InvalidNodeTypedName(String),
-    #[error("invalid pipeline node type: {0}")]
-    InvalidNodeType(String),
     #[error("no {0} node found with name: {1}")]
     NoPipelineNodeWithName(String, String),
     #[error("portation data is invalid for node: {0}")]
@@ -62,7 +59,7 @@ arg_enum! {
 
 /// Validate the name (used as storage key) of a DAG node.
 pub fn validate_node_name(name: &str) -> Result<()> {
-    /// Check that the string does not contain the [CONNECTION_NAME_SEPARATOR] character.
+    // Check that the string does not contain the [CONNECTION_NAME_SEPARATOR] character.
     if name.to_string().contains(CONNECTION_ID_SEPARATOR) {
         return Err(
             Error::InvalidNodeName(name.to_string(), CONNECTION_ID_SEPARATOR.to_string()).into(),
@@ -207,7 +204,7 @@ pub fn store_node_output(
     local_context: &LocalContext,
     repo_context: &RepositoryContext,
     node_typed_name: &str,
-    mut data: &HoliumCbor,
+    data: &HoliumCbor,
 ) -> Result<Option<String>> {
     // Write data in local context
     local_context

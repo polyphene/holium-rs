@@ -1,5 +1,3 @@
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
 use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
@@ -7,9 +5,8 @@ use cid::Cid;
 use sk_cbor::cbor_array;
 use sk_cbor::cbor_map;
 use sk_cbor::Value;
-use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
-use std::io::Cursor;
+
+use std::convert::TryFrom;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -50,7 +47,7 @@ impl TryFrom<sk_cbor::Value> for Connection {
     fn try_from(value: Value) -> Result<Self> {
         if let Value::Map(map) = value {
             if map.get(0).is_some() {
-                let (k, content) = &map[0];
+                let (_, content) = &map[0];
                 if let Value::Array(tuple) = content {
                     if tuple.get(0..2).is_some() {
                         let Link(tail_selector) = Link::try_from(tuple[0].clone())?;

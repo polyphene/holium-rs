@@ -15,7 +15,6 @@ pub(crate) const TRANSFORMATION_HANDLE: &'static str = "helloWorld";
 pub(crate) const TRANSFORMATION_ALTERNATIVE_HANDLE: &'static str = "alternative_transformation";
 
 pub(crate) const SOUND_BYTECODE: &'static str = "import.wasm";
-pub(crate) const ALTERNATIVE_BYTECODE: &'static str = "alternative_import.wasm";
 pub(crate) const CORRUPTED_BYTECODE: &'static str = "import_corrupted.wasm";
 
 pub(crate) const JSON_SCHEMA: &'static str =

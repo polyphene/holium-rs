@@ -2,7 +2,7 @@ use crate::helpers::repo::setup_repo;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::TempDir;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /***********************************************************
  * Constants useful to play around shaper testing

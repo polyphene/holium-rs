@@ -6,8 +6,6 @@ use std::io::{Read, Seek, SeekFrom};
 pub enum ParseError {
     #[error("non existing major type")]
     NonExistingMajorType,
-    #[error("holium cbor does not handle maps")]
-    NotHandlingMap,
     #[error("holium cbor should have root of array type")]
     RootNotArray,
     #[error("could not read byte at offset: {0}")]
@@ -64,8 +62,6 @@ pub enum WriteError {
     ExpectedCborDataForRecursiveType,
     #[error("all children of a recursive node should have an index")]
     NoIndexOnChild,
-    #[error("index not allocated to one child")]
-    IndexNotAllocatedToOneChild,
     #[error("failed to copy data for connection: {0}")]
     DataCopyFailed(String),
     #[error("failed to generate valid cbor object")]

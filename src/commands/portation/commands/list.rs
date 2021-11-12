@@ -1,12 +1,8 @@
-use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
-use crate::utils::local::context::LocalContext;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 use crate::utils::repo::context::RepositoryContext;
 use crate::utils::repo::models::portation::Portation;
-use anyhow::{Context, Result};
-use clap::{App, Arg, ArgMatches, SubCommand};
-use prettytable::{format, Table};
-use std::str::from_utf8;
+use anyhow::Result;
+use clap::{App, ArgMatches, SubCommand};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
@@ -14,9 +10,9 @@ pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
 }
 
 /// handler
-pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
+pub(crate) fn handle_cmd(_matches: &ArgMatches) -> Result<()> {
     // create repository context
-    let mut repo_context = RepositoryContext::new()?;
+    let repo_context = RepositoryContext::new()?;
     // iterate through stored objects
     let objects: Vec<&Portation> = repo_context.portations.values().collect();
     // print
