@@ -22,8 +22,8 @@ pub struct RecursiveData {
 }
 
 impl From<RecursiveData> for sk_cbor::Value {
-    fn from(o: RecursiveData) -> Self {
-        let links: Vec<sk_cbor::Value> = o.elements_cids.into_iter().map(|cid| -> sk_cbor::Value { Link(cid).into() }).collect();
+    fn from(object: RecursiveData) -> Self {
+        let links: Vec<sk_cbor::Value> = object.elements_cids.into_iter().map(|cid| -> sk_cbor::Value { Link(cid).into() }).collect();
         cbor_array_vec!(links)
     }
 }

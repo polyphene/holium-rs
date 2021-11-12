@@ -23,8 +23,8 @@ pub struct RecursiveDataEnvelope {
 }
 
 impl From<RecursiveDataEnvelope> for sk_cbor::Value {
-    fn from(o: RecursiveDataEnvelope) -> Self {
-        let recursive_data_link: Value = Link(o.recursive_data_cid).into();
+    fn from(object: RecursiveDataEnvelope) -> Self {
+        let recursive_data_link: Value = Link(object.recursive_data_cid).into();
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => recursive_data_link,

@@ -29,8 +29,8 @@ impl ModuleBytecodeEnvelope {
 }
 
 impl From<ModuleBytecodeEnvelope> for sk_cbor::Value {
-    fn from(o: ModuleBytecodeEnvelope) -> Self {
-        let content: Value = Link(o.module_bytecode_cid).into();
+    fn from(object: ModuleBytecodeEnvelope) -> Self {
+        let content: Value = Link(object.module_bytecode_cid).into();
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => content,

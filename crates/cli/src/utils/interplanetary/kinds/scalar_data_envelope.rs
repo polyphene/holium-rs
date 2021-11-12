@@ -22,8 +22,8 @@ pub struct ScalarDataEnvelope {
 }
 
 impl From<ScalarDataEnvelope> for sk_cbor::Value {
-    fn from(o: ScalarDataEnvelope) -> Self {
-        let scalar_data_link: Value = Link(o.scalar_data_cid).into();
+    fn from(object: ScalarDataEnvelope) -> Self {
+        let scalar_data_link: Value = Link(object.scalar_data_cid).into();
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => scalar_data_link,

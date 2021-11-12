@@ -60,20 +60,20 @@ impl Metadata {
 }
 
 impl From<Metadata> for sk_cbor::Value {
-    fn from(o: Metadata) -> Self {
+    fn from(object: Metadata) -> Self {
         let mut values = vec![
             (cbor_text!("typedVersion"), cbor_text!(DISCRIMINANT_KEY_V0))
         ];
-        if let Some(name) = o.name {
+        if let Some(name) = object.name {
             values.push((cbor_text!("name"), cbor_text!(name)))
         }
-        if let Some(json_schema) = o.json_schema {
+        if let Some(json_schema) = object.json_schema {
             values.push((cbor_text!("json_schema"), cbor_text!(json_schema)))
         }
-        if let Some(json_schema_in) = o.json_schema_in {
+        if let Some(json_schema_in) = object.json_schema_in {
             values.push((cbor_text!("json_schema_in"), cbor_text!(json_schema_in)))
         }
-        if let Some(json_schema_out) = o.json_schema_out {
+        if let Some(json_schema_out) = object.json_schema_out {
             values.push((cbor_text!("json_schema_out"), cbor_text!(json_schema_out)))
         }
         Value::Map(values)

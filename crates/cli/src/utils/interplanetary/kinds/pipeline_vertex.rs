@@ -26,21 +26,21 @@ pub struct PipelineVertex {
 }
 
 impl From<PipelineVertex> for sk_cbor::Value {
-    fn from(o: PipelineVertex) -> Self {
+    fn from(object: PipelineVertex) -> Self {
         let mut tuples: Vec<(Value, Value)> = Vec::new();
-        if let Some(dry_transformation) = o.dry_transformation {
+        if let Some(dry_transformation) = object.dry_transformation {
             tuples.push((
                 cbor_text!("dt"),
                 Link(dry_transformation).into(),
             ))
         }
-        if let Some(data) = o.data {
+        if let Some(data) = object.data {
             tuples.push((
                 cbor_text!("rde"),
                 Link(data).into(),
             ))
         }
-        if let Some(metadata) = o.metadata {
+        if let Some(metadata) = object.metadata {
             tuples.push((
                 cbor_text!("meta"),
                 Link(metadata).into(),

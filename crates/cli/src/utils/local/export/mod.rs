@@ -51,11 +51,11 @@ pub fn export_project(local_context: &LocalContext, ip_context: &InterplanetaryC
 }
 
 fn export_dry_transformations(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
-    for o in local_context
+    for object in local_context
         .transformations
         .iter() {
         // decode the object
-        let (name_vec, encoded) = o.context(DbOperationFailed)?;
+        let (name_vec, encoded) = object.context(DbOperationFailed)?;
         let name = db_key_to_str(name_vec)?;
         let decoded: Transformation = bincode::deserialize(&encoded[..])
             .ok()
@@ -78,9 +78,9 @@ fn export_dry_transformations(local_context: &LocalContext, ip_context: &Interpl
 }
 
 fn export_data(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
-    for o in local_context.data.iter() {
+    for object in local_context.data.iter() {
         // decode the object
-        let (name_vec, data_vec) = o.context(DbOperationFailed)?;
+        let (name_vec, data_vec) = object.context(DbOperationFailed)?;
         let node_typed_name = db_key_to_str(name_vec)?;
         let data = data_vec.to_vec();
         // recursively build and write the data structure
@@ -98,9 +98,9 @@ fn export_metadata(local_context: &LocalContext, ip_context: &InterplanetaryCont
     local_context
         .get_nodes_tree_type_tuples()
         .iter() {
-        for o in local_context_tree.iter() {
+        for object in local_context_tree.iter() {
             // decode the object
-            let (name_vec, encoded) = o.context(DbOperationFailed)?;
+            let (name_vec, encoded) = object.context(DbOperationFailed)?;
             let name = db_key_to_str(name_vec)?;
             // create and write a metadata block
             let metadata = Metadata::new(&name, &encoded, &node_type)?;
@@ -122,11 +122,11 @@ fn export_connections(local_context: &LocalContext, ip_context: &InterplanetaryC
     let mut vertex_idx_mapping = VerticesKeyMap::new();
     let mut edges: Vec<PipelineEdge> = Vec::with_capacity(local_context.connections.len());
     // iterate on the list of connexions
-    for o in local_context
+    for object in local_context
         .connections
         .iter() {
         // decode the object
-        let (id_vec, encoded) = o.context(DbOperationFailed)?;
+        let (id_vec, encoded) = object.context(DbOperationFailed)?;
         let id = db_key_to_str(id_vec)?;
         let (tail_typed_name, head_typed_name) = parse_connection_id(&id)?;
         let decoded: Connection = bincode::deserialize(&encoded[..])
