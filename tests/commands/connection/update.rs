@@ -1,7 +1,6 @@
 use crate::helpers::connection::{
     build_connection_read_cmd, default_connection_id, setup_repo_with_connection,
-    ALTERNATIVE_SELECTOR, NON_VALID_SELECTOR, NON_VALID_TYPE, SELECTOR, SHAPER_TYPE, SOURCE_TYPE,
-    TRANSFORMATION_TYPE,
+    ALTERNATIVE_SELECTOR, NON_VALID_SELECTOR,
 };
 
 use assert_cmd::Command;
