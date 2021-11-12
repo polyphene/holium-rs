@@ -5,8 +5,6 @@ authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
 
 [dependencies]
-holium = { path = "../api" }
-holium-utils = { path = "../utils" }
 anyhow = "^1.0.42"
 base64 = "^0.13.0"
 bimap = "^0.6.1"

@@ -20,7 +20,6 @@ use crate::utils::repo::context::RepositoryContext;
 use crate::utils::run::runtime::Runtime;
 use anyhow::{anyhow, Context, Error as AnyhowError, Result};
 use bimap::BiMap;
-use holium::data::data_tree::Node;
 use itertools::Itertools;
 use petgraph::data::Element;
 use petgraph::graph::{DiGraph, EdgeReference, NodeIndex};
