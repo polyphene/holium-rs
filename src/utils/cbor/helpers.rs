@@ -53,7 +53,7 @@ pub enum WriteError {
     #[error("index already taken by another element")]
     IndexAlreadyTaken,
     #[error("data set length is not equal to range length")]
-    DatasetLengthInequalRangeLength,
+    DatasetLengthUnequalRangeLength,
     #[error("no data in dataset")]
     NoDataInDataSet,
     #[error("no node at given index")]
@@ -261,7 +261,7 @@ pub fn fetch_recursive_elements_detail<R: Read + Seek>(
 }
 
 /// [retrieve_cbor_in_reader] will fetch cbor data in reader based on a [MajorType] structure containing
-/// structural information of wherethe data is in the reader
+/// structural information of where the data is in the reader
 pub fn retrieve_cbor_in_reader<R: Read + Seek>(
     reader: &mut R,
     to_retrieve: &[Vec<MajorType>],

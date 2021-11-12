@@ -234,7 +234,7 @@ impl HoliumCborNode {
                         // If range then deconstruct in it. But the data set needs to have the exact number of
                         // elements
                         if data_set.len() as u64 != explore_range.end - explore_range.start {
-                            return Err(WriteError::DatasetLengthInequalRangeLength.into());
+                            return Err(WriteError::DatasetLengthUnequalRangeLength.into());
                         }
 
                         for (i, to_set_index) in
