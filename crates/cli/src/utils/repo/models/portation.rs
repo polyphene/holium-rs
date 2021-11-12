@@ -16,7 +16,7 @@ use crate::utils::errors::Error::BinCodeSerializeFailed;
 use crate::utils::local::helpers::prints::json::shorten_prettify_json_literal;
 use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Portation {
     #[serde(skip)]
     pub id: String,
@@ -46,17 +46,20 @@ pub struct Portations {
 impl Portations {
     /// Create a [Portations] handler from the path of a portations configuration file.
     pub fn from_path(path: PathBuf) -> Result<Self> {
-        let file = File::open(&path)
-            .context(anyhow!("failed to open portations configuration file"))?;
-        let metadata = file.metadata()
-            .context(anyhow!("failed to read metadata of the portations configuration file"))?;
+        let file =
+            File::open(&path).context(anyhow!("failed to open portations configuration file"))?;
+        let metadata = file.metadata().context(anyhow!(
+            "failed to read metadata of the portations configuration file"
+        ))?;
         let mut set: PortationSet = if 0 < metadata.len() {
             serde_yaml::from_reader(file)
                 .context(anyhow!("invalid portations configuration file"))?
-        } else { PortationSet::new() };
+        } else {
+            PortationSet::new()
+        };
         for (id, portation) in set.iter_mut() {
             portation.id = id.clone();
-        };
+        }
         Ok(Portations { path, set })
     }
 
@@ -68,19 +71,24 @@ impl Portations {
             .context(anyhow!("failed to write portations configuration file"))
     }
 
-    pub fn contains_key(&self, k: &String) -> bool { self.set.contains_key(k) }
+    pub fn contains_key(&self, k: &String) -> bool {
+        self.set.contains_key(k)
+    }
 
-    pub fn get(&self, k: &String) -> Option<&Portation> { self.set.get(k) }
+    pub fn get(&self, k: &String) -> Option<&Portation> {
+        self.set.get(k)
+    }
 
-    pub fn values(&self) -> Values<'_, String, Portation> { self.set.values() }
+    pub fn values(&self) -> Values<'_, String, Portation> {
+        self.set.values()
+    }
 
     pub fn insert(&mut self, k: String, v: Portation) -> Result<Option<Portation>> {
         let ok_res = self.set.insert(k, v);
         self.save().map(|_| ok_res)
     }
 
-    pub fn remove(&mut self, k: &String) -> Result<Option<Portation>>
-    {
+    pub fn remove(&mut self, k: &String) -> Result<Option<Portation>> {
         let ok_res = self.set.remove(k);
         self.save().map(|_| ok_res)
     }
