@@ -21,23 +21,6 @@ enum Error {
     JsonSchemaParseFailed,
 }
 
-/// Check from a repository context object if a specific portation object can be found.
-pub fn get_portation(
-    repo_context: &RepositoryContext,
-    node_type: &NodeType,
-    node_name: &str,
-    direction: &PortationDirectionType,
-) -> Option<Portation> {
-    let id = build_portation_id(
-        direction,
-        build_node_typed_name(node_type, node_name).as_str(),
-    );
-    repo_context
-        .portations
-        .get(&id.to_string())
-        .map(|portation| portation.clone())
-}
-
 /// Get the json schema related to a portation.
 pub fn get_portation_json_schema(
     local_context: &LocalContext,
