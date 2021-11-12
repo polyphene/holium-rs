@@ -37,4 +37,4 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         with:
           command: publish
-          args: --token ${{secrets.CARGO_LOGIN}}
+          args: --token ${{secrets.CARGO_TOKEN}}
