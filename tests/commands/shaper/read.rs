@@ -5,7 +5,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("shaper").arg("read").arg("--help").assert();
     // Check success
     assert.success();
@@ -17,7 +17,7 @@ fn cannot_read_shaper_without_name() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to read shaper without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")

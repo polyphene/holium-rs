@@ -8,7 +8,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("transformation").arg("list").arg("--help").assert();
     // Check success
     assert.success();
@@ -20,7 +20,7 @@ fn can_list_with_no_transformation() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to list transformation
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -39,7 +39,7 @@ fn can_list_with_transformation() {
     let repo_path = repo.path();
 
     // try to list transformation
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")

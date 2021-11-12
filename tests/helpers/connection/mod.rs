@@ -139,7 +139,7 @@ pub(crate) fn build_connection_create_cmd(
     head_name: &str,
     head_selector: &str,
 ) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -162,7 +162,7 @@ pub(crate) fn build_connection_create_cmd(
 
 /// Create and run a delete connection command, returning an [Assert] used to validate testing
 pub(crate) fn build_connection_delete_cmd(repo_path: &Path, connection_id: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -174,7 +174,7 @@ pub(crate) fn build_connection_delete_cmd(repo_path: &Path, connection_id: &str)
 
 /// Create and run a list connection command, returning an [Assert] used to validate testing
 pub(crate) fn build_connection_list_cmd(repo_path: &Path) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -185,7 +185,7 @@ pub(crate) fn build_connection_list_cmd(repo_path: &Path) -> Assert {
 
 /// Create and run a read connection command, returning an [Assert] used to validate testing
 pub(crate) fn build_connection_read_cmd(repo_path: &Path, connection_id: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")

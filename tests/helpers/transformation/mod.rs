@@ -63,7 +63,7 @@ pub(crate) fn build_transformation_create_cmd(
     json_schema_in: &str,
     json_schema_out: &str,
 ) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let bytecode_path = bytecode_path(transformation_filename);
     let assert = cmd
         .current_dir(repo_path)
@@ -87,7 +87,7 @@ pub(crate) fn build_transformation_delete_cmd(
     repo_path: &Path,
     transformation_name: &str,
 ) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -99,7 +99,7 @@ pub(crate) fn build_transformation_delete_cmd(
 
 /// Create and run a list transformation command, returning an [Assert] used to validate testing
 pub(crate) fn build_transformation_list_cmd(repo_path: &Path) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -110,7 +110,7 @@ pub(crate) fn build_transformation_list_cmd(repo_path: &Path) -> Assert {
 
 /// Create and run a read transformation command, returning an [Assert] used to validate testing
 pub(crate) fn build_transformation_read_cmd(repo_path: &Path, transformation_name: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")

@@ -8,7 +8,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .arg("transformation")
         .arg("create")
@@ -43,7 +43,7 @@ fn cannot_create_transformation_without_any_positional_arg() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to create transformation without positional argument
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -61,7 +61,7 @@ fn cannot_create_transformation_without_bytecode() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to create transformation without bytecode
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -88,7 +88,7 @@ fn cannot_create_transformation_without_name() {
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
     // try to create transformation without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -114,7 +114,7 @@ fn cannot_create_transformation_without_handle() {
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
     // try to create transformation without handle
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -141,7 +141,7 @@ fn cannot_create_transformation_without_json_schema_in() {
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
     // try to create transformation without json schema in
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")
@@ -168,7 +168,7 @@ fn cannot_create_transformation_without_json_schema_out() {
     // get bytecode path
     let bytecode_path = bytecode_path(SOUND_BYTECODE);
     // try to create transformation without json schema out
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("transformation")

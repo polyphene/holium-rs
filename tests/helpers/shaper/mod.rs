@@ -36,7 +36,7 @@ pub(crate) fn build_shaper_create_cmd(
     shaper_name: &str,
     json_schema: &str,
 ) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -50,7 +50,7 @@ pub(crate) fn build_shaper_create_cmd(
 
 /// Create and run a delete shaper command, returning an [Assert] used to validate testing
 pub(crate) fn build_shaper_delete_cmd(repo_path: &Path, shaper_name: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -62,7 +62,7 @@ pub(crate) fn build_shaper_delete_cmd(repo_path: &Path, shaper_name: &str) -> As
 
 /// Create and run a list shaper command, returning an [Assert] used to validate testing
 pub(crate) fn build_shaper_list_cmd(repo_path: &Path) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -73,7 +73,7 @@ pub(crate) fn build_shaper_list_cmd(repo_path: &Path) -> Assert {
 
 /// Create and run a read shaper command, returning an [Assert] used to validate testing
 pub(crate) fn build_shaper_read_cmd(repo_path: &Path, shaper_name: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")

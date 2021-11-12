@@ -8,7 +8,7 @@ mod update;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("transformation").arg("help").assert();
     // Check success
     assert.success();

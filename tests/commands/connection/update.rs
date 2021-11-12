@@ -12,7 +12,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("connection").arg("update").arg("--help").assert();
     // Check success
     assert.success();
@@ -24,7 +24,7 @@ fn cannot_update_connection_without_id() {
     let repo = setup_repo_with_connection();
     let repo_path = repo.path();
     // try to update connection without tail type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -49,7 +49,7 @@ fn cannot_update_connection_with_non_valid_tail_selector() {
     let repo_path = repo.path();
 
     // try to update connection with non valid tail type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -72,7 +72,7 @@ fn cannot_update_connection_with_non_valid_head_selector() {
     let repo_path = repo.path();
 
     // try to update connection with non valid tail type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -95,7 +95,7 @@ fn cannot_update_connection_with_non_parsable_tail_selector() {
     let repo_path = repo.path();
 
     // try to update connection with non valid tail type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -118,7 +118,7 @@ fn cannot_update_connection_with_non_parsable_head_selector() {
     let repo_path = repo.path();
 
     // try to update connection with non valid tail type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -140,7 +140,7 @@ fn can_update_connection_without_any_positional_arg() {
     let repo = setup_repo_with_connection();
     let repo_path = repo.path();
     // try to update connection without positional argument
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -162,7 +162,7 @@ fn can_update_connection() {
     let repo_path = repo.path();
 
     // try to update connection
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")

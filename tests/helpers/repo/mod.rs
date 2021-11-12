@@ -11,7 +11,7 @@ Test helper functions
 pub(crate) fn setup_repo() -> TempDir {
     // initialize a repository
     let temp_dir = assert_fs::TempDir::new().unwrap();
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(temp_dir.path())
         .arg("init")

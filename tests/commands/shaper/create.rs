@@ -7,7 +7,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("shaper").arg("create").arg("--help").assert();
     // Check success
     assert.success();
@@ -31,7 +31,7 @@ fn cannot_create_shaper_without_any_positional_arg() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to create shaper without positional argument
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -53,7 +53,7 @@ fn cannot_create_shaper_without_name() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to create create shaper without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -76,7 +76,7 @@ fn cannot_create_shaper_without_json_schema() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to create shaper without json schema
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")

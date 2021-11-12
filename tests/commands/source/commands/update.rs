@@ -8,7 +8,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("source").arg("update").arg("--help").assert();
     // Check success
     assert.success();
@@ -20,7 +20,7 @@ fn cannot_update_source_without_name() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to update source without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -37,7 +37,7 @@ fn can_update_source_without_any_positional_arg() {
     let repo_path = repo.path();
 
     // try to update source without positional argument
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -56,7 +56,7 @@ fn cannot_update_source_with_non_valid_json_schema() {
     let repo = setup_repo_with_source();
     let repo_path = repo.path();
     // try to update source w/ non valid json schema
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -78,7 +78,7 @@ fn cannot_update_source_with_non_parsable_json_schema() {
     let repo = setup_repo_with_source();
     let repo_path = repo.path();
     // try to update source with empty string
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -100,7 +100,7 @@ fn can_update_source() {
     let repo = setup_repo_with_source();
     let repo_path = repo.path();
     // try to update source with empty string
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")

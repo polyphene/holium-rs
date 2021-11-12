@@ -15,7 +15,7 @@ use assert_cmd::Command;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("connection").arg("delete").arg("--help").assert();
     // Check success
     assert.success();
@@ -28,7 +28,7 @@ fn cannot_delete_connection_without_id() {
     let repo_path = repo.path();
 
     // try to delete connection without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -50,7 +50,7 @@ fn cannot_delete_non_existent_connection() {
     let repo_path = repo.path();
 
     // try to delete connection without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -71,7 +71,7 @@ fn can_delete_connection() {
     let repo_path = repo.path();
 
     // try to delete connection without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")

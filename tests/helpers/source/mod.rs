@@ -36,7 +36,7 @@ pub(crate) fn build_source_create_cmd(
     source_name: &str,
     json_schema: &str,
 ) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -50,7 +50,7 @@ pub(crate) fn build_source_create_cmd(
 
 /// Create and run a delete source command, returning an [Assert] used to validate testing
 pub(crate) fn build_source_delete_cmd(repo_path: &Path, source_name: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -62,7 +62,7 @@ pub(crate) fn build_source_delete_cmd(repo_path: &Path, source_name: &str) -> As
 
 /// Create and run a list source command, returning an [Assert] used to validate testing
 pub(crate) fn build_source_list_cmd(repo_path: &Path) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")
@@ -73,7 +73,7 @@ pub(crate) fn build_source_list_cmd(repo_path: &Path) -> Assert {
 
 /// Create and run a read source command, returning an [Assert] used to validate testing
 pub(crate) fn build_source_read_cmd(repo_path: &Path, source_name: &str) -> Assert {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("source")

@@ -10,7 +10,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("connection").arg("list").arg("--help").assert();
     // Check success
     assert.success();
@@ -22,7 +22,7 @@ fn can_list_with_no_connection() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to list connection
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -41,7 +41,7 @@ fn can_list_with_connection() {
     let repo_path = repo.path();
 
     // try to list connection
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")

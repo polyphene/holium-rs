@@ -8,7 +8,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("shaper").arg("update").arg("--help").assert();
     // Check success
     assert.success();
@@ -20,7 +20,7 @@ fn cannot_update_shaper_without_name() {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to update shaper without name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -37,7 +37,7 @@ fn can_update_shaper_without_any_positional_arg() {
     let repo_path = repo.path();
 
     // try to update shaper without positional argument
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -56,7 +56,7 @@ fn cannot_update_shaper_with_non_valid_json_schema() {
     let repo = setup_repo_with_shaper();
     let repo_path = repo.path();
     // try to update shaper w/ non valid json schema
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -78,7 +78,7 @@ fn cannot_update_shaper_with_non_parsable_json_schema() {
     let repo = setup_repo_with_shaper();
     let repo_path = repo.path();
     // try to update shaper with empty string
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")
@@ -100,7 +100,7 @@ fn can_update_shaper() {
     let repo = setup_repo_with_shaper();
     let repo_path = repo.path();
     // try to update shaper with empty string
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("shaper")

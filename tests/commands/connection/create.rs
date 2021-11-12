@@ -11,7 +11,7 @@ use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd.arg("connection").arg("create").arg("--help").assert();
     // Check success
     assert.success();
@@ -23,7 +23,7 @@ fn cannot_create_connection_without_any_positional_arg() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without positional argument
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -50,7 +50,7 @@ fn cannot_create_connection_without_tail_type() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without tail type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -82,7 +82,7 @@ fn cannot_create_connection_without_tail_name() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without tail name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -114,7 +114,7 @@ fn cannot_create_connection_without_tail_selector() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without tail selector
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -146,7 +146,7 @@ fn cannot_create_connection_without_head_type() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without head type
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -178,7 +178,7 @@ fn cannot_create_connection_without_head_name() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without head name
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
@@ -210,7 +210,7 @@ fn cannot_create_connection_without_head_selector() {
     let repo = setup_repo_with_all_node_types();
     let repo_path = repo.path();
     // try to create connection without head selector
-    let mut cmd = Command::cargo_bin("holium-cli").unwrap();
+    let mut cmd = Command::cargo_bin("holium").unwrap();
     let assert = cmd
         .current_dir(repo_path)
         .arg("connection")
