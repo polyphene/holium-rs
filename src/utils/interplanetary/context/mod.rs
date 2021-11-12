@@ -29,13 +29,6 @@ impl InterplanetaryContext {
         Self::from_root_path(&root_path)
     }
 
-    /// Initialize a [ InterplanetaryContext ] object in a temporary directory.
-    pub fn new_tmp() -> Result<Self> {
-        let root_dir = tempdir().context(Error::FailedToInit)?;
-        let root_path = root_dir.path().to_path_buf();
-        Self::from_root_path(&root_path)
-    }
-
     /// Initialize an interplanetary context from a project root path.
     fn from_root_path(root_path: &PathBuf) -> Result<Self> {
         // create the holium root directory if it does not exist
