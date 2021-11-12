@@ -4,8 +4,6 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-use tempfile::tempdir;
-
 use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR};
 use crate::utils::repo::helpers::get_root_path;
 

@@ -1,9 +1,8 @@
 //! Data trees are responsible for recursively holding holium data. Leaves hold scalar CBOR values
 //! while non-leaf nodes point to ordered children.
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use serde_cbor::to_vec;
+
 use serde_cbor::Value as CborValue;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
