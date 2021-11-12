@@ -4,7 +4,7 @@ use crate::utils::repo::ports::formats::{Error, FormatPorter};
 
 use anyhow::{Context, Result};
 use sk_cbor::write;
-use sk_cbor::{cbor_array_vec, cbor_map_collection, cbor_unsigned};
+use sk_cbor::{cbor_array_vec, cbor_map_collection};
 use sk_cbor::{SimpleValue, Value};
 use std::io::copy;
 use std::io::Write;
@@ -156,6 +156,7 @@ mod tests {
     use super::*;
     use crate::utils::local::helpers::jsonschema::HoliumJsonSchemaName;
     use sk_cbor::cbor_bool;
+    use sk_cbor::cbor_unsigned;
 
     #[test]
     fn can_import_cbor_boolean_value() {
