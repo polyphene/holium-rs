@@ -28,18 +28,6 @@ impl Value {
             Value::Text(v) => CborValue::Text(v.clone()),
         }
     }
-
-    pub(crate) fn to_cbor_vec(&self) -> Result<Vec<u8>> {
-        let cbor_value = match self {
-            Value::Null => CborValue::Null,
-            Value::Bool(v) => CborValue::Bool(*v),
-            Value::Integer(v) => CborValue::Integer(*v),
-            Value::Float(v) => CborValue::Float(*v),
-            Value::Bytes(v) => CborValue::Bytes(v.clone()),
-            Value::Text(v) => CborValue::Text(v.clone()),
-        };
-        Ok(to_vec(&cbor_value)?)
-    }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
