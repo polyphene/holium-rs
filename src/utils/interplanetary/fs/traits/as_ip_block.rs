@@ -14,8 +14,6 @@ use std::io::{Cursor, Read, Seek, Write};
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
-    #[error("failed to read block object content")]
-    FailedToReadContent,
     #[error("failed to write block in the interplanetary area: {0}")]
     FailedToWriteBlock(String),
     #[error("failed to create interplanetary block structure from content")]
@@ -90,8 +88,7 @@ impl AsInterplanetaryBlock<Cursor<Vec<u8>>> for sk_cbor::Value {
     fn get_content(&self) -> Cursor<Vec<u8>> {
         let cloned_value = self.clone();
         let mut encoded_cbor = Vec::new();
-        sk_cbor::writer::write(cloned_value, &mut encoded_cbor)
-            .context(Error::FailedToReadContent.into());
+        sk_cbor::writer::write(cloned_value, &mut encoded_cbor).unwrap();
         Cursor::new(encoded_cbor)
     }
 
