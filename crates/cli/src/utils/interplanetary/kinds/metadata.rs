@@ -1,17 +1,17 @@
 //! Manipulate interplanetary blocks, linked from pipelines' nodes, and holding metadata about
-//! sources, shapers and transformations. 
+//! sources, shapers and transformations.
 
+use crate::utils::errors::Error::BinCodeDeserializeFailed;
+use crate::utils::local::context::helpers::{build_node_typed_name, NodeType};
+use crate::utils::local::models::shaper::Shaper;
+use crate::utils::local::models::source::Source;
+use crate::utils::local::models::transformation::Transformation;
 use anyhow::Context;
-use anyhow::Result;
 use anyhow::Error as AnyhowError;
+use anyhow::Result;
 use sk_cbor::cbor_text;
 use sk_cbor::Value;
 use sled::IVec;
-use crate::utils::local::context::helpers::{NodeType, build_node_typed_name};
-use crate::utils::local::models::shaper::Shaper;
-use crate::utils::errors::Error::BinCodeDeserializeFailed;
-use crate::utils::local::models::source::Source;
-use crate::utils::local::models::transformation::Transformation;
 use std::convert::TryFrom;
 
 #[derive(thiserror::Error, Debug)]
@@ -61,9 +61,7 @@ impl Metadata {
 
 impl From<Metadata> for sk_cbor::Value {
     fn from(object: Metadata) -> Self {
-        let mut values = vec![
-            (cbor_text!("typedVersion"), cbor_text!(DISCRIMINANT_KEY_V0))
-        ];
+        let mut values = vec![(cbor_text!("typedVersion"), cbor_text!(DISCRIMINANT_KEY_V0))];
         if let Some(name) = object.name {
             values.push((cbor_text!("name"), cbor_text!(name)))
         }
@@ -107,7 +105,7 @@ impl TryFrom<sk_cbor::Value> for Metadata {
                     }
                 }
             }
-            return Ok(metadata)
+            return Ok(metadata);
         }
         Err(Error::FailedToManipulate.into())
     }

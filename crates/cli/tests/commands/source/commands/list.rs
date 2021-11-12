@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use crate::helpers::repo::setup_repo;
+use crate::helpers::source::{build_source_read_cmd, setup_repo_with_source, SOURCE_NAME};
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use predicates::prelude::predicate;
-use crate::helpers::source::{build_source_read_cmd, setup_repo_with_source, SOURCE_NAME};
 
 #[test]
 fn help_available() {

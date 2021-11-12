@@ -47,7 +47,7 @@ impl Value {
                     cbor_val = CborValue::Tag(IPLD_CBOR_TAG, Box::from(cbor_val));
                     cbor_val
                 })
-                .collect()
+                .collect(),
         );
         // Serialize IPLD CBOR value
         let cbor = ser_ipld_cbor(&cbor_array)?;
@@ -80,9 +80,7 @@ fn replace_cids_with_links(before: &[u8]) -> Vec<u8> {
     }
     // prefix the CID with a CBOR Tag
     let replacement_str = &b"\xd8\x2a$cid_bytes"[..];
-    Vec::from(
-        RE.replace_all(before, replacement_str)
-    )
+    Vec::from(RE.replace_all(before, replacement_str))
 }
 
 /// Nodes all hold their inner value, made of a CBOR IPLD representation and own CID, and also point
@@ -104,7 +102,10 @@ impl Node {
         let multihash = blake3_hash_to_multihash(*hash.as_bytes()).unwrap();
         let cid = Cid::new_v1(CBOR_CODE, multihash);
         // return
-        Ok(Node { value: Value { cbor, cid }, children: vec![] })
+        Ok(Node {
+            value: Value { cbor, cid },
+            children: vec![],
+        })
     }
 
     /// Create the linked data representation of any holium data
@@ -112,21 +113,19 @@ impl Node {
         if let Some(v) = n.value {
             Node::from_scalar_value(v)
         } else {
-            let (children, failures): (Vec<Node>, Vec<Error>) = n.children
+            let (children, failures): (Vec<Node>, Vec<Error>) = n
+                .children
                 .into_iter()
                 .map(|c| Node::from_data_tree(c))
                 .partition_result();
             if !failures.is_empty() {
                 return Err(anyhow!("failed to create linked data tree"));
             }
-            let value = Value::from_children_cids(
-                children.iter().map(|c| c.value.cid).collect()
-            )?;
+            let value = Value::from_children_cids(children.iter().map(|c| c.value.cid).collect())?;
             Ok(Node { value, children })
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -139,7 +138,7 @@ mod tests {
 
         const TEST_HASH: &str = "fa60a1bf690cbfdde76c4847daf15ee398ba1c81d17e6a3a24c2535b6df46c7f";
         const CID_PREFIX: &str = "0001711e20";
-        const BYTES_37_PREFIX: &str = "5825";     // CBOR prefix for 37-byte byte strings
+        const BYTES_37_PREFIX: &str = "5825"; // CBOR prefix for 37-byte byte strings
         const LINK_PREFIX: &str = "d82a";
 
         #[test]
@@ -147,34 +146,28 @@ mod tests {
             let cid_str = format!("{}{}{}", BYTES_37_PREFIX, CID_PREFIX, TEST_HASH);
             let cid = hex::decode(&cid_str).unwrap();
             let link = replace_cids_with_links(cid.as_ref());
-            assert_eq!(
-                hex::encode(link),
-                format!("{}{}", LINK_PREFIX, &cid_str)
-            )
+            assert_eq!(hex::encode(link), format!("{}{}", LINK_PREFIX, &cid_str))
         }
 
         #[test]
         fn can_replace_cids_twice_safely() {
-            let cid_with_link_str = format!("{}{}{}{}", LINK_PREFIX, BYTES_37_PREFIX, CID_PREFIX, TEST_HASH);
+            let cid_with_link_str = format!(
+                "{}{}{}{}",
+                LINK_PREFIX, BYTES_37_PREFIX, CID_PREFIX, TEST_HASH
+            );
             let cid_with_link = hex::decode(&cid_with_link_str).unwrap();
             let _link = replace_cids_with_links(cid_with_link.as_ref());
-            assert_eq!(
-                hex::encode(cid_with_link),
-                cid_with_link_str
-            )
+            assert_eq!(hex::encode(cid_with_link), cid_with_link_str)
         }
 
         #[test]
         fn can_check_cid_before_replacing_with_link() {
             // we here create a wrong CID by shortening the hash
-            let (wrong_hash_str,_) = TEST_HASH.split_at(TEST_HASH.len() - 2);
+            let (wrong_hash_str, _) = TEST_HASH.split_at(TEST_HASH.len() - 2);
             let wrong_cid_str = format!("{}{}{}", BYTES_37_PREFIX, CID_PREFIX, wrong_hash_str);
             let wrong_cid = hex::decode(&wrong_cid_str).unwrap();
             let link = replace_cids_with_links(wrong_cid.as_ref());
-            assert_eq!(
-                hex::encode(link),
-                wrong_cid_str
-            )
+            assert_eq!(hex::encode(link), wrong_cid_str)
         }
     }
 
@@ -186,25 +179,14 @@ mod tests {
         let cid = linked_data_tree.value.cid;
         let multihash = cid.hash();
         // test individual CID components
-        assert_eq!(
-            cid.version(),
-            Version::V1
-        );
-        assert_eq!(
-            cid.codec(),
-            0x51
-        );
-        assert_eq!(
-            multihash.code(),
-            0x1e
-        );
-        assert_eq!(
-            multihash.size(),
-            32
-        );
+        assert_eq!(cid.version(), Version::V1);
+        assert_eq!(cid.codec(), 0x51);
+        assert_eq!(multihash.code(), 0x1e);
+        assert_eq!(multihash.size(), 32);
         assert_eq!(
             multihash.digest(),
-            hex::decode("61a9bf10f0ffedc7dc77589ae2ab4ca80b006c806e6636e41b60410cd8f0bbc4").unwrap()
+            hex::decode("61a9bf10f0ffedc7dc77589ae2ab4ca80b006c806e6636e41b60410cd8f0bbc4")
+                .unwrap()
         );
         // test CID v1 string format
         assert_eq!(
@@ -219,10 +201,7 @@ mod tests {
         let data_tree = data_tree::Node::new(CborValue::Array(vec![CborValue::Null]));
         let linked_data_tree = Node::from_data_tree(data_tree).unwrap();
         // test child CID string
-        assert_eq!(
-            linked_data_tree.children.len(),
-            1
-        );
+        assert_eq!(linked_data_tree.children.len(), 1);
         assert_eq!(
             linked_data_tree.children[0].value.cid.to_string(),
             "bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"

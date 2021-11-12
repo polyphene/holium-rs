@@ -4,16 +4,16 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context, Result};
 use sled::Db;
 
+use crate::utils::local::context::helpers::NodeType;
 use crate::utils::local::models;
 use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR};
 use crate::utils::repo::helpers::get_root_path;
-use crate::utils::local::context::helpers::NodeType;
 use crate::utils::repo::models::portation::Portations;
-use tempfile::{tempdir, TempDir};
 use std::fs;
+use tempfile::{tempdir, TempDir};
 
-pub mod helpers;
 pub mod constants;
+pub mod helpers;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -44,8 +44,7 @@ impl LocalContext {
 
     /// Initialize a [ LocalContext ] object in a new temporary directory.
     pub fn new_tmp() -> Result<(Self, TempDir)> {
-        let root_dir = tempdir()
-            .context(Error::FailedToInit)?;
+        let root_dir = tempdir().context(Error::FailedToInit)?;
         let root_path = root_dir.path().to_path_buf();
         Ok((Self::from_root_path(&root_path)?, root_dir))
     }
@@ -53,11 +52,14 @@ impl LocalContext {
     /// Initialize a local context from a project root path.
     fn from_root_path(root_path: &PathBuf) -> Result<Self> {
         // create the holium root directory if it does not exist
-        let holium_root_path = root_path
-            .join(HOLIUM_DIR);
-        if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context(Error::FailedToInit)? }
+        let holium_root_path = root_path.join(HOLIUM_DIR);
+        if !holium_root_path.exists() {
+            fs::create_dir(&holium_root_path).context(Error::FailedToInit)?
+        }
         let local_area_path = holium_root_path.join(LOCAL_DIR);
-        if !local_area_path.exists() { fs::create_dir(&local_area_path).context(Error::FailedToInit)? }
+        if !local_area_path.exists() {
+            fs::create_dir(&local_area_path).context(Error::FailedToInit)?
+        }
         // initialize database handle
         let db: sled::Db = sled::open(&local_area_path).context(Error::FailedToInit)?;
         // configure local context
@@ -77,7 +79,15 @@ impl LocalContext {
         let connections: sled::Tree = db.open_tree(models::connection::TREE_NAME)?;
         connections.set_merge_operator(models::connection::merge);
         // Return the context handler
-        Ok(LocalContext { data, root_path: root_path.clone(), db, sources, shapers, transformations, connections })
+        Ok(LocalContext {
+            data,
+            root_path: root_path.clone(),
+            db,
+            sources,
+            shapers,
+            transformations,
+            connections,
+        })
     }
 
     /// Move local area from a context to another.

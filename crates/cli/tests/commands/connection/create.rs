@@ -1,22 +1,21 @@
-use assert_cmd::Command;
-use predicates::prelude::predicate;
-use crate::helpers::connection::{build_connection_create_cmd, build_connection_id, default_connection_id, node_type_name_alternative_pairs, node_type_name_pairs, NON_VALID_SELECTOR, NON_VALID_TYPE, SELECTOR, setup_repo_with_all_node_types, SHAPER_TYPE, SOURCE_TYPE, TRANSFORMATION_TYPE};
+use crate::helpers::connection::{
+    build_connection_create_cmd, build_connection_id, default_connection_id,
+    node_type_name_alternative_pairs, node_type_name_pairs, setup_repo_with_all_node_types,
+    NON_VALID_SELECTOR, NON_VALID_TYPE, SELECTOR, SHAPER_TYPE, SOURCE_TYPE, TRANSFORMATION_TYPE,
+};
 use crate::helpers::shaper::SHAPER_ALTERNATIVE_NAME;
 use crate::helpers::source::{SOURCE_ALTERNATIVE_NAME, SOURCE_NAME};
 use crate::helpers::transformation::{TRANSFORMATION_ALTERNATIVE_NAME, TRANSFORMATION_NAME};
+use assert_cmd::Command;
+use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .arg("connection")
-        .arg("create")
-        .arg("--help")
-        .assert();
+    let assert = cmd.arg("connection").arg("create").arg("--help").assert();
     // Check success
     assert.success();
 }
-
 
 #[test]
 fn cannot_create_connection_without_any_positional_arg() {
@@ -34,7 +33,9 @@ fn cannot_create_connection_without_any_positional_arg() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--tail-type"))
         .stderr(predicate::str::contains("--tail-name"))
         .stderr(predicate::str::contains("--tail-selector"))
@@ -69,7 +70,9 @@ fn cannot_create_connection_without_tail_type() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--tail-type"));
 }
 
@@ -99,7 +102,9 @@ fn cannot_create_connection_without_tail_name() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--tail-name"));
 }
 
@@ -129,7 +134,9 @@ fn cannot_create_connection_without_tail_selector() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--tail-selector"));
 }
 
@@ -159,7 +166,9 @@ fn cannot_create_connection_without_head_type() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--head-type"));
 }
 
@@ -189,7 +198,9 @@ fn cannot_create_connection_without_head_name() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--head-name"));
 }
 
@@ -219,7 +230,9 @@ fn cannot_create_connection_without_head_selector() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--head-selector"));
 }
 
@@ -236,17 +249,14 @@ fn cannot_create_connection_with_non_valid_tail_type() {
         SELECTOR,
         TRANSFORMATION_TYPE,
         TRANSFORMATION_NAME,
-        SELECTOR
+        SELECTOR,
     );
 
     // check output
-    assert
-        .failure()
-        .stderr(
-            predicate::str::contains(
-                format!("\'{}\' isn\'t a valid value for \'--tail-type <TYPE>\'", NON_VALID_TYPE)
-            )
-        );
+    assert.failure().stderr(predicate::str::contains(format!(
+        "\'{}\' isn\'t a valid value for \'--tail-type <TYPE>\'",
+        NON_VALID_TYPE
+    )));
 }
 
 #[test]
@@ -262,17 +272,14 @@ fn cannot_create_connection_with_non_valid_head_type() {
         SELECTOR,
         NON_VALID_TYPE,
         TRANSFORMATION_NAME,
-        SELECTOR
+        SELECTOR,
     );
 
     // check output
-    assert
-        .failure()
-        .stderr(
-            predicate::str::contains(
-                format!("\'{}\' isn\'t a valid value for \'--head-type <TYPE>\'", NON_VALID_TYPE)
-            )
-        );
+    assert.failure().stderr(predicate::str::contains(format!(
+        "\'{}\' isn\'t a valid value for \'--head-type <TYPE>\'",
+        NON_VALID_TYPE
+    )));
 }
 
 #[test]
@@ -293,13 +300,16 @@ fn cannot_create_connection_with_non_existent_tail_node() {
             SELECTOR,
             TRANSFORMATION_TYPE,
             TRANSFORMATION_NAME,
-            SELECTOR
+            SELECTOR,
         );
 
         // check output
         assert
             .failure()
-            .stderr(predicate::str::contains(format!("no {} node found with name", node_type)))
+            .stderr(predicate::str::contains(format!(
+                "no {} node found with name",
+                node_type
+            )))
             .stderr(predicate::str::contains(node_name));
     }
 }
@@ -322,13 +332,16 @@ fn cannot_create_connection_with_non_existent_head_node() {
             SELECTOR,
             node_type,
             node_name,
-            SELECTOR
+            SELECTOR,
         );
 
         // check output
         assert
             .failure()
-            .stderr(predicate::str::contains(format!("no {} node found with name", node_type)))
+            .stderr(predicate::str::contains(format!(
+                "no {} node found with name",
+                node_type
+            )))
             .stderr(predicate::str::contains(node_name));
     }
 }
@@ -347,14 +360,13 @@ fn cannot_create_connection_with_non_valid_tail_selector() {
         NON_VALID_SELECTOR,
         TRANSFORMATION_TYPE,
         TRANSFORMATION_NAME,
-        SELECTOR
+        SELECTOR,
     );
 
     // check output
     assert
         .failure()
         .stderr(predicate::str::contains("invalid holium selector"));
-
 }
 
 #[test]
@@ -371,16 +383,14 @@ fn cannot_create_connection_with_non_valid_head_selector() {
         SELECTOR,
         TRANSFORMATION_TYPE,
         TRANSFORMATION_NAME,
-        NON_VALID_SELECTOR
+        NON_VALID_SELECTOR,
     );
 
     // check output
     assert
         .failure()
         .stderr(predicate::str::contains("invalid holium selector"));
-
 }
-
 
 #[test]
 fn cannot_create_connection_with_non_parsable_tail_selector() {
@@ -396,14 +406,13 @@ fn cannot_create_connection_with_non_parsable_tail_selector() {
         "",
         TRANSFORMATION_TYPE,
         TRANSFORMATION_NAME,
-        SELECTOR
+        SELECTOR,
     );
 
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
-
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]
@@ -420,13 +429,13 @@ fn cannot_create_connection_with_non_parsable_head_selector() {
         SELECTOR,
         TRANSFORMATION_TYPE,
         TRANSFORMATION_NAME,
-        ""
+        "",
     );
 
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]
@@ -449,23 +458,22 @@ fn can_create_connection() {
                     SELECTOR,
                     head_node_type,
                     head_node_name,
-                    SELECTOR
+                    SELECTOR,
                 );
 
                 // check output
                 assert
                     .success()
                     .stdout(predicate::str::contains("new object created"))
-                    .stdout(
-                        predicate::str::contains(
-                            build_connection_id(
-                                tail_node_type,
-                                tail_node_name,
-                                head_node_type,
-                                head_node_name
-                            ).as_str()
+                    .stdout(predicate::str::contains(
+                        build_connection_id(
+                            tail_node_type,
+                            tail_node_name,
+                            head_node_type,
+                            head_node_name,
                         )
-                    );
+                        .as_str(),
+                    ));
             }
         }
     }

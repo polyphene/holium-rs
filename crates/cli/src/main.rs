@@ -18,7 +18,9 @@ fn main() {
 
     // Match subcommands
     let exec_res = match matches.subcommand() {
-        ("generate-shell-completions", Some(matches)) => commands::completion_script::handle_cmd(matches),
+        ("generate-shell-completions", Some(matches)) => {
+            commands::completion_script::handle_cmd(matches)
+        }
         ("init", Some(matches)) => commands::init::handle_cmd(matches),
         ("source", Some(matches)) => commands::source::handle_cmd(matches),
         ("shaper", Some(matches)) => commands::shaper::handle_cmd(matches),

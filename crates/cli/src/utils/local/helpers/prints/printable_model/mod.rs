@@ -1,7 +1,7 @@
 //! Trait to implement to print formatted objects in a table format.
 
 use console::style;
-use prettytable::{Table, format, Row};
+use prettytable::{format, Row, Table};
 
 /// PrintableModel can be implemented to print objects in a table format
 pub trait PrintableModel: Sized {
@@ -31,14 +31,14 @@ pub trait PrintableModel: Sized {
     fn table_print(objects: Vec<&Self>) {
         if objects.len() < 1 {
             println!("{}", style("no object in the list").yellow());
-            return
+            return;
         }
         let mut table = Table::new();
         table.set_format(*format::consts::FORMAT_BOX_CHARS);
         table.set_titles(Self::title_row());
         for object in objects {
             table.add_row(object.object_to_row());
-        };
+        }
         table.printstd();
     }
 }

@@ -22,7 +22,9 @@ pub fn blake3_hash_to_multihash(hash: [u8; 32]) -> anyhow::Result<Multihash> {
     let multihash = Multihash::from_bytes(multihash_bytes.as_slice());
     match multihash {
         Ok(mh) => Ok(mh),
-        Err(_) => Err(anyhow::anyhow!("failed to create multihash from blake3 hash")),
+        Err(_) => Err(anyhow::anyhow!(
+            "failed to create multihash from blake3 hash"
+        )),
     }
 }
 

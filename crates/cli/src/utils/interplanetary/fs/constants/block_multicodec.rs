@@ -6,7 +6,6 @@ pub enum BlockMulticodec {
     DagCbor,
 }
 
-
 impl From<&BlockMulticodec> for u64 {
     fn from(codec: &BlockMulticodec) -> Self {
         match codec {

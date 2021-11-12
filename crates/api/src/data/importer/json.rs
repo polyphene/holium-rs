@@ -10,11 +10,17 @@ impl Importable for JsonValue {
         match self {
             JsonValue::Null => CborValue::Null,
             JsonValue::Bool(v) => CborValue::Bool(*v),
-            JsonValue::Number(v) if { v.is_i64() } => CborValue::Integer(v.as_i64().unwrap() as i128),
-            JsonValue::Number(v) if { v.is_u64() } => CborValue::Integer(v.as_u64().unwrap() as i128),
+            JsonValue::Number(v) if { v.is_i64() } => {
+                CborValue::Integer(v.as_i64().unwrap() as i128)
+            }
+            JsonValue::Number(v) if { v.is_u64() } => {
+                CborValue::Integer(v.as_u64().unwrap() as i128)
+            }
             JsonValue::Number(v) if { v.is_f64() } => CborValue::Float(v.as_f64().unwrap()),
             JsonValue::String(v) => CborValue::Text(v.to_string()),
-            JsonValue::Array(v) => CborValue::Array(v.iter().map(|v| v.to_owned().to_cbor()).collect()),
+            JsonValue::Array(v) => {
+                CborValue::Array(v.iter().map(|v| v.to_owned().to_cbor()).collect())
+            }
             JsonValue::Object(v) => {
                 let mut cbor_map: BTreeMap<CborValue, CborValue> = BTreeMap::new();
                 for (key, value) in v {
@@ -36,18 +42,12 @@ mod tests {
 
         #[test]
         fn can_convert_null_value() {
-            assert_eq!(
-                JsonValue::Null.to_cbor(),
-                CborValue::Null
-            )
+            assert_eq!(JsonValue::Null.to_cbor(), CborValue::Null)
         }
 
         #[test]
         fn can_convert_boolean_value() {
-            assert_eq!(
-                JsonValue::Bool(true).to_cbor(),
-                CborValue::Bool(true)
-            )
+            assert_eq!(JsonValue::Bool(true).to_cbor(), CborValue::Bool(true))
         }
 
         #[test]
@@ -99,8 +99,19 @@ mod tests {
         #[test]
         fn can_convert_object_value() {
             assert_eq!(
-                JsonValue::Object([(String::from("k"), JsonValue::Null)].iter().cloned().collect()).to_cbor(),
-                CborValue::Map([(CborValue::Text(String::from("k")), CborValue::Null)].iter().cloned().collect())
+                JsonValue::Object(
+                    [(String::from("k"), JsonValue::Null)]
+                        .iter()
+                        .cloned()
+                        .collect()
+                )
+                .to_cbor(),
+                CborValue::Map(
+                    [(CborValue::Text(String::from("k")), CborValue::Null)]
+                        .iter()
+                        .cloned()
+                        .collect()
+                )
             )
         }
     }

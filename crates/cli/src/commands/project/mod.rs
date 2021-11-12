@@ -2,15 +2,14 @@
 
 mod commands;
 
-use std::{env, fs};
 use std::io::Write;
 use std::path::PathBuf;
+use std::{env, fs};
 
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches, SubCommand, AppSettings};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use console::style;
 use thiserror::Error;
-
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

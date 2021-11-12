@@ -1,17 +1,22 @@
-use assert_cmd::Command;
-use crate::helpers::connection::{build_connection_create_cmd, default_connection_id, NON_VALID_CONNECTION_ID, SELECTOR, setup_repo_with_connection, setup_repo_with_all_node_types, SOURCE_TYPE, TRANSFORMATION_TYPE};
+use crate::helpers::connection::{
+    build_connection_create_cmd, default_connection_id, setup_repo_with_all_node_types,
+    setup_repo_with_connection, NON_VALID_CONNECTION_ID, SELECTOR, SOURCE_TYPE,
+    TRANSFORMATION_TYPE,
+};
 use crate::helpers::repo::setup_repo;
-use crate::helpers::source::{build_source_create_cmd, SOURCE_NAME, JSON_SCHEMA as SOURCE_JSON_SCHEMA};
-use crate::helpers::transformation::{build_transformation_create_cmd, SOUND_BYTECODE, TRANSFORMATION_HANDLE, TRANSFORMATION_NAME, JSON_SCHEMA as TRANSFORMATION_JSON_SCHEMA};
+use crate::helpers::source::{
+    build_source_create_cmd, JSON_SCHEMA as SOURCE_JSON_SCHEMA, SOURCE_NAME,
+};
+use crate::helpers::transformation::{
+    build_transformation_create_cmd, JSON_SCHEMA as TRANSFORMATION_JSON_SCHEMA, SOUND_BYTECODE,
+    TRANSFORMATION_HANDLE, TRANSFORMATION_NAME,
+};
+use assert_cmd::Command;
 
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .arg("connection")
-        .arg("delete")
-        .arg("--help")
-        .assert();
+    let assert = cmd.arg("connection").arg("delete").arg("--help").assert();
     // Check success
     assert.success();
 }
@@ -32,7 +37,9 @@ fn cannot_delete_connection_without_id() {
 
     assert
         .failure()
-        .stderr(predicates::str::contains("required arguments were not provided"))
+        .stderr(predicates::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicates::str::contains("<ID>"));
 }
 

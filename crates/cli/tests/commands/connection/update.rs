@@ -1,22 +1,22 @@
-use assert_cmd::Command;
-use predicates::prelude::predicate;
-use crate::helpers::connection::{ALTERNATIVE_SELECTOR, build_connection_id, build_connection_read_cmd, default_connection_id, node_type_name_alternative_pairs, node_type_name_pairs, NON_VALID_SELECTOR, NON_VALID_TYPE, SELECTOR, setup_repo_with_connection, SHAPER_TYPE, SOURCE_TYPE, TRANSFORMATION_TYPE};
+use crate::helpers::connection::{
+    build_connection_id, build_connection_read_cmd, default_connection_id,
+    node_type_name_alternative_pairs, node_type_name_pairs, setup_repo_with_connection,
+    ALTERNATIVE_SELECTOR, NON_VALID_SELECTOR, NON_VALID_TYPE, SELECTOR, SHAPER_TYPE, SOURCE_TYPE,
+    TRANSFORMATION_TYPE,
+};
 use crate::helpers::shaper::SHAPER_ALTERNATIVE_NAME;
 use crate::helpers::source::{SOURCE_ALTERNATIVE_NAME, SOURCE_NAME};
 use crate::helpers::transformation::{TRANSFORMATION_ALTERNATIVE_NAME, TRANSFORMATION_NAME};
+use assert_cmd::Command;
+use predicates::prelude::predicate;
 
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .arg("connection")
-        .arg("update")
-        .arg("--help")
-        .assert();
+    let assert = cmd.arg("connection").arg("update").arg("--help").assert();
     // Check success
     assert.success();
 }
-
 
 #[test]
 fn cannot_update_connection_without_id() {
@@ -36,7 +36,9 @@ fn cannot_update_connection_without_id() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("<ID>"));
 }
 
@@ -61,7 +63,6 @@ fn cannot_update_connection_with_non_valid_tail_selector() {
     assert
         .failure()
         .stderr(predicate::str::contains("invalid holium selector"));
-
 }
 
 #[test]
@@ -85,9 +86,7 @@ fn cannot_update_connection_with_non_valid_head_selector() {
     assert
         .failure()
         .stderr(predicate::str::contains("invalid holium selector"));
-
 }
-
 
 #[test]
 fn cannot_update_connection_with_non_parsable_tail_selector() {
@@ -106,12 +105,10 @@ fn cannot_update_connection_with_non_parsable_tail_selector() {
         .arg("")
         .assert();
 
-
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
-
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]
@@ -131,11 +128,10 @@ fn cannot_update_connection_with_non_parsable_head_selector() {
         .arg("")
         .assert();
 
-
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]
@@ -177,7 +173,6 @@ fn can_update_connection() {
         .arg("--head-selector")
         .arg(ALTERNATIVE_SELECTOR)
         .assert();
-
 
     // check output
     assert

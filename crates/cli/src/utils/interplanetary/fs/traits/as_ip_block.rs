@@ -1,16 +1,16 @@
-use std::convert::{TryInto, TryFrom};
+use crate::utils::interplanetary::context::InterplanetaryContext;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::multiformats::{cid_to_path, compute_cid};
 use crate::utils::local::context::LocalContext;
-use cid::Cid;
-use anyhow::Result;
 use anyhow::Context;
 use anyhow::Error as AnyhowError;
-use crate::utils::interplanetary::multiformats::{compute_cid, cid_to_path};
+use anyhow::Result;
+use cid::Cid;
+use std::convert::{TryFrom, TryInto};
 use std::fs;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use std::io;
-use std::io::{Seek, Read, Cursor, Write};
-use crate::utils::interplanetary::context::InterplanetaryContext;
 use std::fs::File;
+use std::io;
+use std::io::{Cursor, Read, Seek, Write};
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -62,12 +62,9 @@ pub trait AsInterplanetaryBlock<ContentType: Read + Write + Seek + Default> {
         // write file if it does not already exist
         if !path.exists() {
             // create parent directory if necessary
-            let parent_path = &path
-                .parent()
-                .ok_or(Error::FailedToWriteBlock(cid.into()))?;
+            let parent_path = &path.parent().ok_or(Error::FailedToWriteBlock(cid.into()))?;
             if !parent_path.exists() {
-                fs::create_dir(&parent_path)
-                    .context(Error::FailedToWriteBlock(cid.into()))?;
+                fs::create_dir(&parent_path).context(Error::FailedToWriteBlock(cid.into()))?;
             }
             // write file
             let mut file = fs::OpenOptions::new()
@@ -75,10 +72,8 @@ pub trait AsInterplanetaryBlock<ContentType: Read + Write + Seek + Default> {
                 .create_new(true)
                 .open(&path)
                 .context(Error::FailedToWriteBlock(cid.into()))?;
-            io::copy(&mut content, &mut file)
-                .context(Error::FailedToWriteBlock(cid.into()))?;
-            Seek::rewind(&mut content)
-                .context(Error::FailedToWriteBlock(cid.into()))?;
+            io::copy(&mut content, &mut file).context(Error::FailedToWriteBlock(cid.into()))?;
+            Seek::rewind(&mut content).context(Error::FailedToWriteBlock(cid.into()))?;
         }
         // return CID
         Ok(cid)

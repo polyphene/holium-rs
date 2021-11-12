@@ -1,16 +1,16 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
+use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::Value;
-use sk_cbor::cbor_map;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::kinds::link::Link;
+use cid::Cid;
 use sk_cbor::cbor_array;
+use sk_cbor::cbor_map;
 use sk_cbor::cbor_unsigned;
+use sk_cbor::Value;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -30,8 +30,8 @@ impl From<PipelineEdge> for sk_cbor::Value {
     fn from(object: PipelineEdge) -> Self {
         let connection_link: Value = Link(object.connection_cid).into();
         cbor_array![
-            cbor_unsigned!( object.tail_index ),
-            cbor_unsigned!( object.head_index ),
+            cbor_unsigned!(object.tail_index),
+            cbor_unsigned!(object.head_index),
             connection_link,
         ]
     }
@@ -51,7 +51,7 @@ impl TryFrom<sk_cbor::Value> for PipelineEdge {
                 }
                 let Link(connection_cid) = Link::try_from(tuple[2].clone())?;
                 edge.connection_cid = connection_cid;
-                return Ok(edge)
+                return Ok(edge);
             }
         }
         Err(Error::FailedToManipulate.into())

@@ -1,14 +1,14 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
+use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::Value;
+use cid::Cid;
 use sk_cbor::cbor_map;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::kinds::link::Link;
+use sk_cbor::Value;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -25,7 +25,10 @@ pub struct DryTransformation {
 
 impl DryTransformation {
     pub fn new(module_bytecode_envelope_cid: Cid, handle: String) -> Self {
-        DryTransformation { module_bytecode_envelope_cid, handle }
+        DryTransformation {
+            module_bytecode_envelope_cid,
+            handle,
+        }
     }
 }
 
@@ -48,7 +51,10 @@ impl TryFrom<sk_cbor::Value> for DryTransformation {
             let Link(module_bytecode_envelope_cid) = Link::try_from(bytecode_value.clone())?;
             let (_, handle_value) = tuples.get(0).ok_or(Error::FailedToManipulate)?;
             if let sk_cbor::Value::TextString(handle) = handle_value.clone() {
-                return Ok(DryTransformation{ module_bytecode_envelope_cid, handle })
+                return Ok(DryTransformation {
+                    module_bytecode_envelope_cid,
+                    handle,
+                });
             }
         }
         Err(Error::FailedToManipulate.into())

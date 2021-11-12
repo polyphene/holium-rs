@@ -2,7 +2,7 @@ use crate::utils::cbor::helpers::{
     fetch_recursive_elements_detail, read_header, retrieve_cbor_in_reader, ParseError,
     SelectorError,
 };
-use crate::utils::interplanetary::kinds::selector::{Selector};
+use crate::utils::interplanetary::kinds::selector::Selector;
 use anyhow::Result;
 use std::io::Cursor;
 
@@ -27,10 +27,7 @@ pub trait AsHoliumCbor {
     }
 
     /// Select part of a holium cbor serialized object using a selector
-    fn select_cbor_structure(
-        &self,
-        selector_envelope: &Selector,
-    ) -> Result<Vec<Vec<MajorType>>> {
+    fn select_cbor_structure(&self, selector_envelope: &Selector) -> Result<Vec<Vec<MajorType>>> {
         let mut buff = self.as_cursor();
 
         let mut major_type = read_header(&mut buff, 0)?;

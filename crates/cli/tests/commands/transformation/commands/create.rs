@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use crate::helpers::repo::setup_repo;
+use crate::helpers::transformation::*;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use predicates::prelude::predicate;
-use crate::helpers::transformation::*;
 
 #[test]
 fn help_available() {
@@ -262,9 +262,9 @@ fn cannot_create_transformation_with_non_valid_json_object_in() {
         JSON_SCHEMA,
     );
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]
@@ -282,9 +282,9 @@ fn cannot_create_transformation_with_non_valid_json_object_out() {
         "",
     );
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]

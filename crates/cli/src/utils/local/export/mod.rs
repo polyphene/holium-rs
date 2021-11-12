@@ -6,26 +6,28 @@ use cid::Cid;
 use sk_cbor::Value;
 
 use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
+use crate::utils::interplanetary::context::InterplanetaryContext;
 use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
 use crate::utils::interplanetary::kinds;
+use crate::utils::interplanetary::kinds::connection::Connection as ConnectionBlock;
 use crate::utils::interplanetary::kinds::dry_transformation::DryTransformation;
+use crate::utils::interplanetary::kinds::helpers::holium_data::HoliumInterplanetaryNodeData;
+use crate::utils::interplanetary::kinds::metadata::Metadata;
 use crate::utils::interplanetary::kinds::module_bytecode::ModuleBytecode;
 use crate::utils::interplanetary::kinds::module_bytecode_envelope::ModuleBytecodeEnvelope;
-use crate::utils::local::context::helpers::{db_key_to_str, NodeType, build_node_typed_name, parse_connection_id};
+use crate::utils::interplanetary::kinds::pipeline::Pipeline;
+use crate::utils::interplanetary::kinds::pipeline_edge::PipelineEdge;
+use crate::utils::interplanetary::kinds::pipeline_vertex::PipelineVertex;
+use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
+use crate::utils::local::context::helpers::{
+    build_node_typed_name, db_key_to_str, parse_connection_id, NodeType,
+};
 use crate::utils::local::context::LocalContext;
+use crate::utils::local::models::connection::Connection;
 use crate::utils::local::models::shaper::Shaper;
 use crate::utils::local::models::source::Source;
 use crate::utils::local::models::transformation::Transformation;
-use crate::utils::interplanetary::kinds::metadata::Metadata;
 use bimap::BiMap;
-use crate::utils::interplanetary::kinds::selector::SelectorEnvelope;
-use crate::utils::interplanetary::kinds::pipeline_vertex::PipelineVertex;
-use crate::utils::interplanetary::kinds::pipeline_edge::PipelineEdge;
-use crate::utils::interplanetary::kinds::pipeline::Pipeline;
-use crate::utils::interplanetary::kinds::connection::Connection as ConnectionBlock;
-use crate::utils::local::models::connection::Connection;
-use crate::utils::interplanetary::context::InterplanetaryContext;
-use crate::utils::interplanetary::kinds::helpers::holium_data::HoliumInterplanetaryNodeData;
 
 /// [ VerticesContentMap ] is used to map nodes' name to their content while constructing the
 /// interplanetary representation of a pipeline.
@@ -35,7 +37,10 @@ pub type VerticesContentMap = HashMap<String, PipelineVertex>;
 /// vertices while constructing the interplanetary representation of a pipeline.
 pub type VerticesKeyMap = HashMap<String, u64>;
 
-pub fn export_project(local_context: &LocalContext, ip_context: &InterplanetaryContext) -> Result<Cid> {
+pub fn export_project(
+    local_context: &LocalContext,
+    ip_context: &InterplanetaryContext,
+) -> Result<Cid> {
     // initialize an object to store the content of the graph nodes
     let mut vertices_content = VerticesContentMap::new();
     // export dry transformations
@@ -50,10 +55,12 @@ pub fn export_project(local_context: &LocalContext, ip_context: &InterplanetaryC
     export_pipeline(&ip_context, &vertices_key_mapping, &vertices_content, edges)
 }
 
-fn export_dry_transformations(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
-    for object in local_context
-        .transformations
-        .iter() {
+fn export_dry_transformations(
+    local_context: &LocalContext,
+    ip_context: &InterplanetaryContext,
+    vertices_content: &mut VerticesContentMap,
+) -> Result<()> {
+    for object in local_context.transformations.iter() {
         // decode the object
         let (name_vec, encoded) = object.context(DbOperationFailed)?;
         let name = db_key_to_str(name_vec)?;
@@ -65,39 +72,51 @@ fn export_dry_transformations(local_context: &LocalContext, ip_context: &Interpl
         let module_bytecode_cid = module_bytecode.write_to_ip_area(&ip_context)?;
         // store the module bytecode envelope
         let module_bytecode_envelope = ModuleBytecodeEnvelope::new(module_bytecode_cid);
-        let module_bytecode_envelope_cid = Value::from(module_bytecode_envelope).write_to_ip_area(&ip_context)?;
+        let module_bytecode_envelope_cid =
+            Value::from(module_bytecode_envelope).write_to_ip_area(&ip_context)?;
         // store the dry transformation
-        let dry_transformation = DryTransformation::new(module_bytecode_envelope_cid, decoded.handle);
-        let dry_transformation_cid = Value::from(dry_transformation).write_to_ip_area(&ip_context)?;
+        let dry_transformation =
+            DryTransformation::new(module_bytecode_envelope_cid, decoded.handle);
+        let dry_transformation_cid =
+            Value::from(dry_transformation).write_to_ip_area(&ip_context)?;
         // add it to the vertices context map
         let typed_name = build_node_typed_name(&NodeType::transformation, name.as_str());
-        let vertex_content = vertices_content.entry(typed_name).or_insert(PipelineVertex::default());
+        let vertex_content = vertices_content
+            .entry(typed_name)
+            .or_insert(PipelineVertex::default());
         vertex_content.dry_transformation = Some(dry_transformation_cid);
     }
     Ok(())
 }
 
-fn export_data(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
+fn export_data(
+    local_context: &LocalContext,
+    ip_context: &InterplanetaryContext,
+    vertices_content: &mut VerticesContentMap,
+) -> Result<()> {
     for object in local_context.data.iter() {
         // decode the object
         let (name_vec, data_vec) = object.context(DbOperationFailed)?;
         let node_typed_name = db_key_to_str(name_vec)?;
         let data = data_vec.to_vec();
         // recursively build and write the data structure
-        let data_cid = HoliumInterplanetaryNodeData::new(data)?
-            .recursively_write_to_ip_area(&ip_context)?;
+        let data_cid =
+            HoliumInterplanetaryNodeData::new(data)?.recursively_write_to_ip_area(&ip_context)?;
         // add it to the vertices context map
-        let vertex_content = vertices_content.entry(node_typed_name).or_insert(PipelineVertex::default());
+        let vertex_content = vertices_content
+            .entry(node_typed_name)
+            .or_insert(PipelineVertex::default());
         vertex_content.data = Some(data_cid);
     }
     Ok(())
 }
 
-fn export_metadata(local_context: &LocalContext, ip_context: &InterplanetaryContext, vertices_content: &mut VerticesContentMap) -> Result<()> {
-    for (local_context_tree, node_type) in
-    local_context
-        .get_nodes_tree_type_tuples()
-        .iter() {
+fn export_metadata(
+    local_context: &LocalContext,
+    ip_context: &InterplanetaryContext,
+    vertices_content: &mut VerticesContentMap,
+) -> Result<()> {
+    for (local_context_tree, node_type) in local_context.get_nodes_tree_type_tuples().iter() {
         for object in local_context_tree.iter() {
             // decode the object
             let (name_vec, encoded) = object.context(DbOperationFailed)?;
@@ -107,24 +126,26 @@ fn export_metadata(local_context: &LocalContext, ip_context: &InterplanetaryCont
             let metadata_cid = Value::from(metadata).write_to_ip_area(&ip_context)?;
             // add it to the vertices context map
             let typed_name = build_node_typed_name(&node_type, name.as_str());
-            let vertex_content = vertices_content.entry(typed_name).or_insert(PipelineVertex::default());
+            let vertex_content = vertices_content
+                .entry(typed_name)
+                .or_insert(PipelineVertex::default());
             vertex_content.metadata = Some(metadata_cid);
         }
     }
     Ok(())
 }
 
-fn export_connections(local_context: &LocalContext, ip_context: &InterplanetaryContext)
-    -> Result<(Vec<PipelineEdge>, VerticesKeyMap)> {
+fn export_connections(
+    local_context: &LocalContext,
+    ip_context: &InterplanetaryContext,
+) -> Result<(Vec<PipelineEdge>, VerticesKeyMap)> {
     // initialize mapping from nodes' typed names to content block future index in the pipeline's
     // list of vertices, and the list of edges
     let mut next_vertex_idx: u64 = 0;
     let mut vertex_idx_mapping = VerticesKeyMap::new();
     let mut edges: Vec<PipelineEdge> = Vec::with_capacity(local_context.connections.len());
     // iterate on the list of connexions
-    for object in local_context
-        .connections
-        .iter() {
+    for object in local_context.connections.iter() {
         // decode the object
         let (id_vec, encoded) = object.context(DbOperationFailed)?;
         let id = db_key_to_str(id_vec)?;
@@ -169,7 +190,7 @@ fn export_pipeline(
     ip_context: &InterplanetaryContext,
     vertices_key_mapping: &VerticesKeyMap,
     vertices_content: &VerticesContentMap,
-    edges: Vec<PipelineEdge>
+    edges: Vec<PipelineEdge>,
 ) -> Result<Cid> {
     // create the pipeline object
     let pipeline = Pipeline::new(&vertices_key_mapping, &vertices_content, edges)?;

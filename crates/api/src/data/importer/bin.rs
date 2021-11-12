@@ -5,7 +5,9 @@ use crate::data::importer::Importable;
 pub struct BinaryValue(Vec<u8>);
 
 impl BinaryValue {
-    pub fn new(buf: Vec<u8>) -> Self { BinaryValue(buf) }
+    pub fn new(buf: Vec<u8>) -> Self {
+        BinaryValue(buf)
+    }
 }
 
 impl Importable for BinaryValue {
@@ -14,7 +16,6 @@ impl Importable for BinaryValue {
         CborValue::Bytes(content)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

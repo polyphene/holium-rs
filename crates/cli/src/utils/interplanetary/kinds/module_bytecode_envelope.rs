@@ -1,14 +1,14 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
+use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::Value;
+use cid::Cid;
 use sk_cbor::cbor_map;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::kinds::link::Link;
+use sk_cbor::Value;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -24,7 +24,9 @@ pub struct ModuleBytecodeEnvelope {
 
 impl ModuleBytecodeEnvelope {
     pub fn new(module_bytecode_cid: Cid) -> Self {
-        ModuleBytecodeEnvelope{module_bytecode_cid}
+        ModuleBytecodeEnvelope {
+            module_bytecode_cid,
+        }
     }
 }
 
@@ -44,7 +46,9 @@ impl TryFrom<sk_cbor::Value> for ModuleBytecodeEnvelope {
         if let sk_cbor::Value::Map(tuples) = value {
             let (_, module_bytecode_cid_value) = tuples.get(0).ok_or(Error::FailedToManipulate)?;
             let Link(module_bytecode_cid) = Link::try_from(module_bytecode_cid_value.clone())?;
-            return Ok(ModuleBytecodeEnvelope{ module_bytecode_cid })
+            return Ok(ModuleBytecodeEnvelope {
+                module_bytecode_cid,
+            });
         }
         Err(Error::FailedToManipulate.into())
     }

@@ -1,8 +1,8 @@
-use std::path::{Path, PathBuf};
+use crate::helpers::repo::setup_repo;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::TempDir;
-use crate::helpers::repo::setup_repo;
+use std::path::{Path, PathBuf};
 
 /***********************************************************
  * Constants useful to play around source testing
@@ -11,8 +11,10 @@ use crate::helpers::repo::setup_repo;
 pub(crate) const SOURCE_NAME: &'static str = "source";
 pub(crate) const SOURCE_ALTERNATIVE_NAME: &'static str = "alternative_source";
 
-pub(crate) const JSON_SCHEMA: &'static str = r#"{ "type" : "array", "prefixItems" : [ {"type" : "string"} ] }"#;
-pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = r#"{ "type" : "array", "prefixItems" : [ {"type" : "number"} ] }"#;
+pub(crate) const JSON_SCHEMA: &'static str =
+    r#"{ "type" : "array", "prefixItems" : [ {"type" : "string"} ] }"#;
+pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str =
+    r#"{ "type" : "array", "prefixItems" : [ {"type" : "number"} ] }"#;
 pub(crate) const NON_VALID_JSON_SCHEMA: &'static str = "{\"type\": \"wrong_type\"}";
 
 /// Same as [setup_repo] but with a source already created
@@ -21,11 +23,7 @@ pub(crate) fn setup_repo_with_source() -> TempDir {
     let repo = setup_repo();
     let repo_path = repo.path();
     // try to add transformation
-    let assert = build_source_create_cmd(
-        repo_path,
-        SOURCE_NAME,
-        JSON_SCHEMA,
-    );
+    let assert = build_source_create_cmd(repo_path, SOURCE_NAME, JSON_SCHEMA);
     // check output
     assert.success();
 

@@ -1,15 +1,15 @@
 //! Initialize a repository of Holium objects stored on the file system.
 
-use std::{env, fs};
 use std::io::Write;
 use std::path::PathBuf;
+use std::{env, fs};
 
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches, SubCommand, AppSettings};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use console::style;
 use thiserror::Error;
 
-use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
+use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR, LOCAL_DIR, PORTATIONS_FILE};
 
 #[derive(Error, Debug)]
 /// errors
@@ -61,7 +61,6 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
 ///
 /// In case the directory is not empty, the `--force` option must be used in order to override it.
 fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<()> {
-
     // If root directory is already an initialized repository, force re-initialization or throw an error
     let local_holium_path = root_dir.join(HOLIUM_DIR);
     if local_holium_path.exists() {
@@ -89,7 +88,11 @@ fn init(root_dir: &PathBuf, no_scm: bool, no_dvc: bool, force: bool) -> Result<(
     Ok(())
 }
 
-fn create_project_structure(root_dir: &PathBuf, is_scm_enabled: bool, is_dvc_enabled: bool) -> Result<()> {
+fn create_project_structure(
+    root_dir: &PathBuf,
+    is_scm_enabled: bool,
+    is_dvc_enabled: bool,
+) -> Result<()> {
     // Create project structure
     let holium_dir = root_dir.join(HOLIUM_DIR);
     fs::create_dir(&holium_dir)?;
@@ -127,7 +130,12 @@ fn advise_to_track(is_scm_enabled: bool, is_dvc_enabled: bool) {
     println!()
 }
 
-fn verify_scm_and_dvc_usage(is_scm_enabled: bool, is_dvc_enabled: bool, no_scm: bool, no_dvc: bool) -> Result<()> {
+fn verify_scm_and_dvc_usage(
+    is_scm_enabled: bool,
+    is_dvc_enabled: bool,
+    no_scm: bool,
+    no_dvc: bool,
+) -> Result<()> {
     if !is_scm_enabled && !no_scm {
         return Err(CmdError::NotScmTracked.into());
     }

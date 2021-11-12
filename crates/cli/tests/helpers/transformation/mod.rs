@@ -1,8 +1,8 @@
-use std::path::{Path, PathBuf};
+use crate::helpers::repo::setup_repo;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::TempDir;
-use crate::helpers::repo::setup_repo;
+use std::path::{Path, PathBuf};
 
 /***********************************************************
  * Constants useful to play around transformation testing
@@ -18,8 +18,10 @@ pub(crate) const SOUND_BYTECODE: &'static str = "import.wasm";
 pub(crate) const ALTERNATIVE_BYTECODE: &'static str = "alternative_import.wasm";
 pub(crate) const CORRUPTED_BYTECODE: &'static str = "import_corrupted.wasm";
 
-pub(crate) const JSON_SCHEMA: &'static str = r#"{ "type" : "array", "prefixItems" : [ {"type" : "string"} ] }"#;
-pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str = r#"{ "type" : "array", "prefixItems" : [ {"type" : "number"} ] }"#;
+pub(crate) const JSON_SCHEMA: &'static str =
+    r#"{ "type" : "array", "prefixItems" : [ {"type" : "string"} ] }"#;
+pub(crate) const ALTERNATIVE_JSON_SCHEMA: &'static str =
+    r#"{ "type" : "array", "prefixItems" : [ {"type" : "number"} ] }"#;
 pub(crate) const NON_VALID_JSON_SCHEMA: &'static str = "{\"type\": \"string\"}";
 
 /// Same as [setup_repo] but with a transformation already created
@@ -81,7 +83,10 @@ pub(crate) fn build_transformation_create_cmd(
 }
 
 /// Create and run a delete transformation command, returning an [Assert] used to validate testing
-pub(crate) fn build_transformation_delete_cmd(repo_path: &Path, transformation_name: &str) -> Assert {
+pub(crate) fn build_transformation_delete_cmd(
+    repo_path: &Path,
+    transformation_name: &str,
+) -> Assert {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
     let assert = cmd
         .current_dir(repo_path)

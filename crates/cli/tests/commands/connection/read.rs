@@ -1,7 +1,9 @@
+use crate::helpers::connection::{
+    build_connection_read_cmd, default_connection_id, setup_repo_with_connection,
+};
+use crate::helpers::repo::setup_repo;
 use assert_cmd::Command;
 use predicates::prelude::predicate;
-use crate::helpers::repo::setup_repo;
-use crate::helpers::connection::{build_connection_read_cmd, setup_repo_with_connection, default_connection_id};
 
 #[test]
 fn help_available() {
@@ -10,7 +12,6 @@ fn help_available() {
     // Check success
     assert.success();
 }
-
 
 #[test]
 fn cannot_read_connection_without_name() {
@@ -27,7 +28,9 @@ fn cannot_read_connection_without_name() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("<ID>"));
 }
 

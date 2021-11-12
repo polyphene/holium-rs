@@ -1,34 +1,30 @@
 //! Helper methods related to the use of multiformats.
 //! Reference: https://multiformats.io/
 
-use std::{env, fs, io};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::PathBuf;
+use std::{env, fs, io};
 
 use anyhow::{anyhow, Context, Result};
-use sk_cbor::Value;
-use cid::{Cid, Version};
-use cid::multihash::Multihash;
 use cid::multibase::Base;
+use cid::multihash::Multihash;
+use cid::{Cid, Version};
 use console::style;
+use sk_cbor::Value;
 use thiserror;
 
-use holium::data::linked_data_tree::{
-    Node as LinkedDataTreeNode,
-    Value as LinkedDataTreeValue,
-};
+use holium::data::linked_data_tree::{Node as LinkedDataTreeNode, Value as LinkedDataTreeValue};
 use holium::fragment_serialize::HoliumDeserializable;
 use holium::transformation::Transformation;
 
+use crate::utils::interplanetary::context::InterplanetaryContext;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::multiformats::Error::{FailedToParseCid, WrongObjectPath};
+use crate::utils::local::context::LocalContext;
 use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR};
 use crate::utils::repo::errors::Error::OutsideHoliumRepo;
-use crate::utils::interplanetary::multiformats::Error::{WrongObjectPath, FailedToParseCid};
 use std::io::{Read, Seek};
-use crate::utils::local::context::LocalContext;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::context::InterplanetaryContext;
-
 
 /// Blake3 multicodec code.
 pub const BLAKE3_HASH_FUNC_TYPE: u8 = 0x1e;
@@ -69,17 +65,14 @@ pub fn compute_cid<T: Read + Seek>(mut content: T, codec: &BlockMulticodec) -> R
     // initialize a hasher
     let mut hasher = blake3::Hasher::new();
     // write block content to it
-    io::copy(&mut content, &mut hasher)
-        .context(Error::Blake3HashingError)?;
-    content.rewind()
-        .context(Error::Blake3HashingError)?;
+    io::copy(&mut content, &mut hasher).context(Error::Blake3HashingError)?;
+    content.rewind().context(Error::Blake3HashingError)?;
     // finalize hashing
     let hash = hasher.finalize();
     // create multihash
     let multihash = blake3_hash_to_multihash(*hash.as_bytes())?;
     // create and return cid
-    let cid = Cid::new(CID_VERSION,  codec.into(), multihash)
-        .context(Error::CidCreationError)?;
+    let cid = Cid::new(CID_VERSION, codec.into(), multihash).context(Error::CidCreationError)?;
     Ok(cid)
 }
 
@@ -89,18 +82,15 @@ pub fn compute_cid<T: Read + Seek>(mut content: T, codec: &BlockMulticodec) -> R
 pub fn blake3_hash_to_multihash(hash: [u8; 32]) -> Result<Multihash> {
     let mut multihash_bytes = vec![BLAKE3_HASH_FUNC_TYPE, hash.len() as u8];
     multihash_bytes.extend_from_slice(hash.as_ref());
-    Multihash::from_bytes(multihash_bytes.as_slice())
-        .context(Error::Blake3MultihashCreationError)
+    Multihash::from_bytes(multihash_bytes.as_slice()).context(Error::Blake3MultihashCreationError)
 }
-
 
 /// Deterministically convert an object CID to a path for local storage.
 pub(crate) fn cid_to_path(cid: &Cid, ip_context: &InterplanetaryContext) -> Result<PathBuf> {
     // create relative path from cid
     let rel_path = cid_to_object_path(&cid)?;
     // create absolute path with context and return
-    Ok(ip_context.ip_area_path
-        .join(rel_path))
+    Ok(ip_context.ip_area_path.join(rel_path))
 }
 
 /// Deterministically convert an object CID to a relative path.
@@ -109,11 +99,18 @@ pub(crate) fn cid_to_path(cid: &Cid, ip_context: &InterplanetaryContext) -> Resu
 /// Reference: https://github.com/ipfs/go-ds-flatfs/blob/master/readme.go
 fn cid_to_object_path(cid: &Cid) -> Result<PathBuf> {
     // create base 32 cid string
-    let cid_str = cid.to_string_of_base(DEFAULT_MULTIBASE)
+    let cid_str = cid
+        .to_string_of_base(DEFAULT_MULTIBASE)
         .context(Error::BlockPathCreationError)?;
     // get the next-to-last two characters
-    let c0 = cid_str.chars().nth_back(2).ok_or(Error::BlockPathCreationError)?;
-    let c1 = cid_str.chars().nth_back(1).ok_or(Error::BlockPathCreationError)?;
+    let c0 = cid_str
+        .chars()
+        .nth_back(2)
+        .ok_or(Error::BlockPathCreationError)?;
+    let c1 = cid_str
+        .chars()
+        .nth_back(1)
+        .ok_or(Error::BlockPathCreationError)?;
     // remove multibase character
     let mut cs = cid_str.chars();
     cs.next().ok_or(Error::BlockPathCreationError)?;
@@ -126,7 +123,7 @@ pub fn path_to_cid(path: &PathBuf, ip_context: &InterplanetaryContext) -> Result
     // check if given path is in expected directory according to the context
     let interplanetary_dir_path = &ip_context.ip_area_path;
     if !path.starts_with(&interplanetary_dir_path) {
-        return Err(Error::CidFromPathError.into())
+        return Err(Error::CidFromPathError.into());
     }
     // strip prefix, convert relative path to cid, and return it
     let rel_path = path
@@ -138,11 +135,9 @@ pub fn path_to_cid(path: &PathBuf, ip_context: &InterplanetaryContext) -> Result
 /// Deterministically convert an object local path to related CID.
 /// This function should be the inverse of [cid_to_object_path].
 fn object_path_to_cid(path: &PathBuf) -> Result<Cid> {
-    let file_name = path.file_name()
-        .ok_or(Error::CidFromPathError)?;
+    let file_name = path.file_name().ok_or(Error::CidFromPathError)?;
     let cid_str = format!("b{}", file_name.to_string_lossy());
-    Cid::try_from(cid_str)
-        .context(Error::CidFromPathError)
+    Cid::try_from(cid_str).context(Error::CidFromPathError)
 }
 
 #[cfg(test)]
@@ -160,21 +155,33 @@ mod tests {
 
     #[test]
     fn test_cid_to_object_path() {
-        let cid = Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap();
+        let cid =
+            Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap();
         let path = cid_to_object_path(&cid).unwrap();
-        assert_eq!(path, PathBuf::new().join("3y").join("afir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq"))
+        assert_eq!(
+            path,
+            PathBuf::new()
+                .join("3y")
+                .join("afir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq")
+        )
     }
 
     #[test]
     fn test_object_path_to_cid() {
-        let path = PathBuf::new().join("3y").join("afir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq");
+        let path = PathBuf::new()
+            .join("3y")
+            .join("afir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq");
         let cid = object_path_to_cid(&path).unwrap();
-        assert_eq!(cid, Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap())
+        assert_eq!(
+            cid,
+            Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap()
+        )
     }
 
     #[test]
     fn test_cid_to_object_path_to_cid() {
-        let cid = Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap();
+        let cid =
+            Cid::try_from("bafir4idbvg7rb4h75xd5y52ytlrkwtfibmagzadomy3oig3aiegnr4f3yq").unwrap();
         assert_eq!(
             cid,
             object_path_to_cid(&cid_to_object_path(&cid).unwrap()).unwrap()

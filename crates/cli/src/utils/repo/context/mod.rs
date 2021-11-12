@@ -1,5 +1,5 @@
-use std::fs::{File, OpenOptions};
 use std::fs;
+use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
@@ -35,9 +35,10 @@ impl RepositoryContext {
     /// Initialize an repository context from a project root path.
     fn from_root_path(root_path: &PathBuf) -> Result<Self> {
         // create the holium root directory if it does not exist
-        let holium_root_path = root_path
-            .join(HOLIUM_DIR);
-        if !holium_root_path.exists() { fs::create_dir(&holium_root_path).context(Error::FailedToInit)? }
+        let holium_root_path = root_path.join(HOLIUM_DIR);
+        if !holium_root_path.exists() {
+            fs::create_dir(&holium_root_path).context(Error::FailedToInit)?
+        }
         // create the portation file if it does not exist
         let portations_file_path = holium_root_path.join(PORTATIONS_FILE);
         if !portations_file_path.exists() {

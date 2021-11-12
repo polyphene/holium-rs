@@ -1,16 +1,14 @@
+use crate::helpers::repo::setup_repo;
+use crate::helpers::source::{
+    build_source_create_cmd, build_source_read_cmd, JSON_SCHEMA, NON_VALID_JSON_SCHEMA, SOURCE_NAME,
+};
 use assert_cmd::Command;
 use predicates::prelude::predicate;
-use crate::helpers::repo::setup_repo;
-use crate::helpers::source::{build_source_create_cmd, build_source_read_cmd, JSON_SCHEMA, NON_VALID_JSON_SCHEMA, SOURCE_NAME};
 
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .arg("source")
-        .arg("create")
-        .arg("--help")
-        .assert();
+    let assert = cmd.arg("source").arg("create").arg("--help").assert();
     // Check success
     assert.success();
 }
@@ -20,11 +18,7 @@ fn cannot_create_source_outside_repo() {
     // work in an empty directory
     let temp_dir = assert_fs::TempDir::new().unwrap();
     // try to create source
-    let assert = build_source_create_cmd(
-        temp_dir.path(),
-        SOURCE_NAME,
-        JSON_SCHEMA
-    );
+    let assert = build_source_create_cmd(temp_dir.path(), SOURCE_NAME, JSON_SCHEMA);
     // check output
     assert
         .failure()
@@ -46,7 +40,9 @@ fn cannot_create_source_without_any_positional_arg() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("<NAME>"))
         .stderr(predicate::str::contains("--json-schema"));
 }
@@ -68,7 +64,9 @@ fn cannot_create_source_without_name() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("<NAME>"));
 }
 
@@ -88,7 +86,9 @@ fn cannot_create_source_without_json_schema() {
     // check output
     assert
         .failure()
-        .stderr(predicate::str::contains("required arguments were not provided"))
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
         .stderr(predicate::str::contains("--json-schema"));
 }
 
@@ -113,9 +113,9 @@ fn cannot_create_source_with_non_parsable_json_schema() {
     // try to create source with empty string
     let assert = build_source_create_cmd(repo_path, SOURCE_NAME, "");
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]

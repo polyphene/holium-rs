@@ -1,20 +1,18 @@
+use crate::helpers::repo::setup_repo;
+use crate::helpers::shaper::{
+    build_shaper_read_cmd, setup_repo_with_shaper, ALTERNATIVE_JSON_SCHEMA, NON_VALID_JSON_SCHEMA,
+    SHAPER_NAME,
+};
 use assert_cmd::Command;
 use predicates::prelude::predicate;
-use crate::helpers::repo::setup_repo;
-use crate::helpers::shaper::{ALTERNATIVE_JSON_SCHEMA, build_shaper_read_cmd, NON_VALID_JSON_SCHEMA, setup_repo_with_shaper, SHAPER_NAME};
 
 #[test]
 fn help_available() {
     let mut cmd = Command::cargo_bin("holium-cli").unwrap();
-    let assert = cmd
-        .arg("shaper")
-        .arg("update")
-        .arg("--help")
-        .assert();
+    let assert = cmd.arg("shaper").arg("update").arg("--help").assert();
     // Check success
     assert.success();
 }
-
 
 #[test]
 fn cannot_update_shaper_without_name() {
@@ -91,9 +89,9 @@ fn cannot_update_shaper_with_non_parsable_json_schema() {
         .assert();
 
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]

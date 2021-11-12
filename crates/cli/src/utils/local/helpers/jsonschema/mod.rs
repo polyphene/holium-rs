@@ -43,7 +43,6 @@ enum Error {
     InvalidSchemaForPipelineNode,
 }
 
-
 pub struct HoliumJsonSchema(pub HoliumJsonSchemaName, pub Box<HoliumJsonSchemaType>);
 
 pub struct HoliumJsonSchemaName(pub Option<String>);
@@ -78,7 +77,7 @@ pub fn validate_pipeline_node_json_schema(literal: &str) -> Result<()> {
 }
 
 /// Check that the root element of a JSON schema is an array of *tuples*.
-fn validate_has_tuple_array_root(schema: &Value)  -> Result<()> {
+fn validate_has_tuple_array_root(schema: &Value) -> Result<()> {
     // get type of the root schema
     let (type_name, schema_map) = get_schema_details(schema)?;
     // check that it is of *tuples array* type
@@ -90,51 +89,76 @@ fn validate_has_tuple_array_root(schema: &Value)  -> Result<()> {
 
 /// Parse a JSON schema from a JSON Value into a HoliumJsonSchema. The `root` term refers to the fact
 /// that the schema itself is freed from any attached name, as a root JSON schema would.
-pub fn parse_root_json_schema(schema: &Value)  -> Result<HoliumJsonSchema> {
+pub fn parse_root_json_schema(schema: &Value) -> Result<HoliumJsonSchema> {
     parse_json_schema(HoliumJsonSchemaName(None), schema)
 }
 
 /// Check for the presence of fields in a JSON Schema necessary to their use in local Holium objects,
 /// and parse them into a HoliumJsonSchema.
 /// This function fails iff this condition is not satisfied.
-fn parse_json_schema(schema_name: HoliumJsonSchemaName, schema: &Value) -> Result<HoliumJsonSchema> {
+fn parse_json_schema(
+    schema_name: HoliumJsonSchemaName,
+    schema: &Value,
+) -> Result<HoliumJsonSchema> {
     // get type of the root schema
     let (type_name, schema_map) = get_schema_details(schema)?;
     // match scalar and recursive types
     match type_name.as_str() {
-        "null" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Null))),
-        "boolean" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Boolean))),
-        "number" => Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::Number))),
+        "null" => Ok(HoliumJsonSchema(
+            schema_name,
+            Box::from(HoliumJsonSchemaType::Null),
+        )),
+        "boolean" => Ok(HoliumJsonSchema(
+            schema_name,
+            Box::from(HoliumJsonSchemaType::Boolean),
+        )),
+        "number" => Ok(HoliumJsonSchema(
+            schema_name,
+            Box::from(HoliumJsonSchemaType::Number),
+        )),
         "string" => {
             if has_base64_encoding(&schema_map) {
-                Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::ByteString)))
+                Ok(HoliumJsonSchema(
+                    schema_name,
+                    Box::from(HoliumJsonSchemaType::ByteString),
+                ))
             } else {
-                Ok(HoliumJsonSchema(schema_name, Box::from(HoliumJsonSchemaType::TextString)))
+                Ok(HoliumJsonSchema(
+                    schema_name,
+                    Box::from(HoliumJsonSchemaType::TextString),
+                ))
             }
         }
         "object" => Ok(HoliumJsonSchema(
             schema_name,
-            Box::from(HoliumJsonSchemaType::Object(parse_object_properties(schema_map)?))
+            Box::from(HoliumJsonSchemaType::Object(parse_object_properties(
+                schema_map,
+            )?)),
         )),
         "array" => {
             if is_tuples_array(&schema_map) {
                 Ok(HoliumJsonSchema(
                     schema_name,
-                    Box::from(HoliumJsonSchemaType::TupleArray(parse_tuples_array_items(schema_map)?))
+                    Box::from(HoliumJsonSchemaType::TupleArray(parse_tuples_array_items(
+                        schema_map,
+                    )?)),
                 ))
             } else {
                 Ok(HoliumJsonSchema(
                     schema_name,
-                    Box::from(HoliumJsonSchemaType::ItemsArray(parse_items_array_item(schema_map)?))
+                    Box::from(HoliumJsonSchemaType::ItemsArray(parse_items_array_item(
+                        schema_map,
+                    )?)),
                 ))
             }
-        },
+        }
         invalid_type => Err(Error::InvalidTypeFieldValue(invalid_type.to_string()).into()),
     }
 }
 
 fn has_base64_encoding(schema_map: &Map<String, Value>) -> bool {
-    schema_map.get("contentEncoding")
+    schema_map
+        .get("contentEncoding")
         .map(|encoding| encoding == &Value::String("base64".to_string()))
         .unwrap_or(false)
 }
@@ -144,7 +168,8 @@ fn is_tuples_array(schema_map: &Map<String, Value>) -> bool {
 }
 
 fn parse_object_properties(schema_map: &Map<String, Value>) -> Result<Vec<HoliumJsonSchema>> {
-    schema_map.get("properties")
+    schema_map
+        .get("properties")
         .ok_or(Error::MissingPropertiesField)?
         .as_object()
         .ok_or(Error::PropertiesFieldShouldHoldObjectValue)?
@@ -157,7 +182,8 @@ fn parse_object_properties(schema_map: &Map<String, Value>) -> Result<Vec<Holium
 }
 
 fn parse_tuples_array_items(schema_map: &Map<String, Value>) -> Result<Vec<HoliumJsonSchema>> {
-    schema_map.get("prefixItems")
+    schema_map
+        .get("prefixItems")
         .ok_or(Error::MissingItemsField)?
         .as_array()
         .ok_or(Error::PrefixItemsFieldShouldHoldArrayValue)?
@@ -167,8 +193,7 @@ fn parse_tuples_array_items(schema_map: &Map<String, Value>) -> Result<Vec<Holiu
 }
 
 fn parse_items_array_item(schema_map: &Map<String, Value>) -> Result<HoliumJsonSchema> {
-    let items_field = schema_map.get("items")
-        .ok_or(Error::MissingItemsField)?;
+    let items_field = schema_map.get("items").ok_or(Error::MissingItemsField)?;
     if !items_field.is_object() {
         return Err(Error::ItemsFieldShouldHoldObjectValue.into());
     }

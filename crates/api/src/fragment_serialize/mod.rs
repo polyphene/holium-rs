@@ -3,12 +3,11 @@
 
 use anyhow::Result;
 use cid::Cid;
-use thiserror::Error;
 use std::io::Read;
+use thiserror::Error;
 
 mod linked_data_tree;
 mod transformation;
-
 
 #[derive(Debug, Error)]
 /// Errors for the [fragment_serialize] module.

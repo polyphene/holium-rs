@@ -1,10 +1,10 @@
-use anyhow::{anyhow, Result, Context};
-use std::path::{PathBuf, Path};
-use std::env;
-use thiserror;
-use path_clean::PathClean;
 use crate::utils::repo::constants::HOLIUM_DIR;
 use crate::utils::repo::errors::Error::OutsideHoliumRepo;
+use anyhow::{anyhow, Context, Result};
+use path_clean::PathClean;
+use std::env;
+use std::path::{Path, PathBuf};
+use thiserror;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -37,11 +37,10 @@ pub fn to_relative_path_to_project_root(tested_path_os_str: &str) -> Result<Stri
     // is not part of the project, otherwise return an equivalent path string relative to the
     // project root directory.
     let root_path = get_root_path()?;
-    let stripped_path = path.strip_prefix(&root_path)
+    let stripped_path = path
+        .strip_prefix(&root_path)
         .context(Error::UnsecureFilePath)?;
-    let stripped_path_str = stripped_path
-        .to_str()
-        .ok_or(Error::NonUnicodeFilePath)?;
+    let stripped_path_str = stripped_path.to_str().ok_or(Error::NonUnicodeFilePath)?;
     Ok(stripped_path_str.to_string())
 }
 
@@ -53,6 +52,7 @@ pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
         path.to_path_buf()
     } else {
         env::current_dir()?.join(path)
-    }.clean();
+    }
+    .clean();
     Ok(absolute_path)
 }

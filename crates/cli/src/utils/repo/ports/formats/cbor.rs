@@ -1,54 +1,63 @@
-use anyhow::{Result, Context};
-use anyhow::Error as AnyhowError;
-use std::io::{Read, Cursor};
-use std::io::Write;
-use std::io::copy;
-use sk_cbor::{Value, SimpleValue};
-use sk_cbor::{cbor_null, cbor_map_collection, cbor_bool, cbor_unsigned, cbor_int, cbor_text, cbor_bytes, cbor_array_vec};
-use sk_cbor::write;
+use crate::utils::local::helpers::jsonschema::{
+    HoliumJsonSchema, HoliumJsonSchemaName, HoliumJsonSchemaType,
+};
 use crate::utils::local::models::data::HoliumCbor;
-use crate::utils::local::helpers::jsonschema::{HoliumJsonSchema, HoliumJsonSchemaType, HoliumJsonSchemaName};
-use crate::utils::repo::ports::formats::{FormatPorter, Error};
+use crate::utils::repo::ports::formats::{Error, FormatPorter};
+use anyhow::Error as AnyhowError;
+use anyhow::{Context, Result};
+use sk_cbor::write;
+use sk_cbor::{
+    cbor_array_vec, cbor_bool, cbor_bytes, cbor_int, cbor_map_collection, cbor_null, cbor_text,
+    cbor_unsigned,
+};
+use sk_cbor::{SimpleValue, Value};
+use std::io::copy;
+use std::io::Write;
+use std::io::{Cursor, Read};
 
 pub struct CborPorter;
 
 impl FormatPorter for CborPorter {
-    fn import_to_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()> {
+    fn import_to_holium<R: Read, W: Write>(
+        json_schema: &HoliumJsonSchema,
+        reader: &mut R,
+        writer: &mut W,
+    ) -> Result<()> {
         // read the CBOR contents
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer)?;
-        let cbor_value = sk_cbor::read(&buffer)
-            .map_err(|_| Error::FailedToReadCborData)?;
+        let cbor_value = sk_cbor::read(&buffer).map_err(|_| Error::FailedToReadCborData)?;
         // convert the CBOR value to HoliumCBOR
         let holium_cbor = import_value_to_holium(&json_schema, &cbor_value)?;
         // write the HoliumCBOR to the writer
         let mut buffer: Vec<u8> = Vec::new();
-        write(holium_cbor, &mut buffer)
-            .map_err(|_| Error::FailedToWriteHoliumCbor)?;
-        writer.write_all(&buffer)
+        write(holium_cbor, &mut buffer).map_err(|_| Error::FailedToWriteHoliumCbor)?;
+        writer
+            .write_all(&buffer)
             .context(Error::FailedToWriteHoliumCbor)?;
         Ok(())
     }
 
-    fn export_from_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()> {
+    fn export_from_holium<R: Read, W: Write>(
+        json_schema: &HoliumJsonSchema,
+        reader: &mut R,
+        writer: &mut W,
+    ) -> Result<()> {
         // read the Holium CBOR contents
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer)?;
-        let holium_cbor_value = sk_cbor::read(&buffer)
-            .map_err(|_| Error::FailedToReadHoliumCborData)?;
+        let holium_cbor_value =
+            sk_cbor::read(&buffer).map_err(|_| Error::FailedToReadHoliumCborData)?;
         // convert the HoliumCBOR data to CBOR
         let contents = export_value_from_holium(&json_schema, &holium_cbor_value)?;
         // write the byte string to the writer
         let mut buffer = Vec::new();
-        sk_cbor::writer::write(contents, &mut buffer)
-            .map_err(|_| Error::FailedToWriteCborData)?;
+        sk_cbor::writer::write(contents, &mut buffer).map_err(|_| Error::FailedToWriteCborData)?;
         let mut readable_buffer = Cursor::new(buffer);
-        copy(&mut readable_buffer, writer)
-            .context(Error::FailedToWriteCborData)?;
+        copy(&mut readable_buffer, writer).context(Error::FailedToWriteCborData)?;
         Ok(())
     }
 }
-
 
 fn import_value_to_holium(json_schema: &HoliumJsonSchema, v: &Value) -> Result<Value> {
     let schema: &HoliumJsonSchemaType = &json_schema.1.as_ref();
@@ -79,17 +88,16 @@ fn import_value_to_holium(json_schema: &HoliumJsonSchema, v: &Value) -> Result<V
             let holium_cbor_array = object_schemata
                 .into_iter()
                 .map(|s| {
-                    let key = s.0.0.as_ref().ok_or(Error::MissingKeyInObjectTypeSchema)?;
+                    let key = s.0 .0.as_ref().ok_or(Error::MissingKeyInObjectTypeSchema)?;
                     let cbor_key = Value::TextString(key.to_string());
                     // get element from the list of tuples which matches the key
                     let value = &values
                         .iter()
                         .find(|(k, _)| *k == cbor_key)
-                        .ok_or(Error::MissingObjectKey(key.to_string()))?.1.clone();
-                    let holium_cbor_value = import_value_to_holium(
-                        s,
-                        value,
-                    )?;
+                        .ok_or(Error::MissingObjectKey(key.to_string()))?
+                        .1
+                        .clone();
+                    let holium_cbor_value = import_value_to_holium(s, value)?;
                     Ok(holium_cbor_value)
                 })
                 .collect::<Result<Vec<(Value)>>>()?;
@@ -131,13 +139,14 @@ fn export_value_from_holium(json_schema: &HoliumJsonSchema, v: &Value) -> Result
                 .zip(values.iter())
                 .map(|(schema, value)| {
                     // build text key
-                    let key = schema.0.0.as_ref().ok_or(Error::MissingKeyInObjectTypeSchema)?;
+                    let key = schema
+                        .0
+                         .0
+                        .as_ref()
+                        .ok_or(Error::MissingKeyInObjectTypeSchema)?;
                     let cbor_key = Value::TextString(key.to_string());
                     // get element
-                    let cbor_value = export_value_from_holium(
-                        schema,
-                        value,
-                    )?;
+                    let cbor_value = export_value_from_holium(schema, value)?;
                     Ok((cbor_key, cbor_value))
                 })
                 .collect::<Result<Vec<(Value, Value)>>>()?;
@@ -146,8 +155,6 @@ fn export_value_from_holium(json_schema: &HoliumJsonSchema, v: &Value) -> Result
         _ => Err(Error::IncompatibleSchemaAndValue.into()),
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -164,14 +171,19 @@ mod tests {
         assert_eq!(holium_cbor, Value::Simple(SimpleValue::TrueValue));
     }
 
-
     #[test]
     fn can_import_cbor_map_value() {
         let json_schema = HoliumJsonSchema(
             HoliumJsonSchemaName(None),
             Box::new(HoliumJsonSchemaType::Object(vec![
-                HoliumJsonSchema(HoliumJsonSchemaName(Some("key1".to_string())), Box::new(HoliumJsonSchemaType::Boolean)),
-                HoliumJsonSchema(HoliumJsonSchemaName(Some("key0".to_string())), Box::new(HoliumJsonSchemaType::Number)),
+                HoliumJsonSchema(
+                    HoliumJsonSchemaName(Some("key1".to_string())),
+                    Box::new(HoliumJsonSchemaType::Boolean),
+                ),
+                HoliumJsonSchema(
+                    HoliumJsonSchemaName(Some("key0".to_string())),
+                    Box::new(HoliumJsonSchemaType::Number),
+                ),
             ])),
         );
         let cbor_value = Value::Map(vec![
@@ -185,9 +197,9 @@ mod tests {
             ),
         ]);
         let holium_cbor = import_value_to_holium(&json_schema, &cbor_value).unwrap();
-        assert_eq!(holium_cbor, cbor_array_vec!(vec![
-            cbor_bool!(true),
-            cbor_unsigned!(42),
-        ]));
+        assert_eq!(
+            holium_cbor,
+            cbor_array_vec!(vec![cbor_bool!(true), cbor_unsigned!(42),])
+        );
     }
 }

@@ -1,12 +1,11 @@
+use crate::utils::local::helpers::jsonschema::HoliumJsonSchema;
 use anyhow::Result;
 use std::io::Read;
 use std::io::Write;
-use crate::utils::local::helpers::jsonschema::HoliumJsonSchema;
 
-pub mod json;
-pub mod cbor;
 pub mod bin;
-
+pub mod cbor;
+pub mod json;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -40,6 +39,14 @@ pub enum Error {
 
 /// Trait FormatPorter with [ import_to_holium ] and [ export_from_holium ]
 pub trait FormatPorter {
-    fn import_to_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()>;
-    fn export_from_holium<R: Read, W: Write>(json_schema: &HoliumJsonSchema, reader: &mut R, writer: &mut W) -> Result<()>;
+    fn import_to_holium<R: Read, W: Write>(
+        json_schema: &HoliumJsonSchema,
+        reader: &mut R,
+        writer: &mut W,
+    ) -> Result<()>;
+    fn export_from_holium<R: Read, W: Write>(
+        json_schema: &HoliumJsonSchema,
+        reader: &mut R,
+        writer: &mut W,
+    ) -> Result<()>;
 }

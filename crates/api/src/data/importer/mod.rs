@@ -2,10 +2,10 @@
 
 use serde_cbor::Value as CborValue;
 
-pub mod json;
-pub mod cbor;
 pub mod bin;
+pub mod cbor;
 pub mod csv;
+pub mod json;
 
 /// This trait is shared by types tha can be imported as holium data in the Holium Framework.
 /// Any type which objects can be converted into a CBOR object may implement this trait.

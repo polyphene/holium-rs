@@ -1,14 +1,14 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
+use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::Value;
+use cid::Cid;
 use sk_cbor::cbor_map;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::kinds::link::Link;
+use sk_cbor::Value;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -39,7 +39,7 @@ impl TryFrom<sk_cbor::Value> for ScalarDataEnvelope {
             if *discriminant_key == Value::TextString(DISCRIMINANT_KEY_V0.to_string()) {
                 let (_, scalar_data_cid_value) = tuples.get(1).ok_or(Error::FailedToManipulate)?;
                 let Link(scalar_data_cid) = Link::try_from(scalar_data_cid_value.clone())?;
-                return Ok(ScalarDataEnvelope{ scalar_data_cid });
+                return Ok(ScalarDataEnvelope { scalar_data_cid });
             }
         }
         Err(Error::FailedToManipulate.into())

@@ -39,22 +39,13 @@ mod tests {
 
     #[test]
     fn test_create_cbor_header_on_both_string_major_types() {
-        assert_eq!(
-            create_cbor_string_header(true, 3),
-            vec![0b010_00011]
-        );
-        assert_eq!(
-            create_cbor_string_header(false, 3),
-            vec![0b011_00011]
-        );
+        assert_eq!(create_cbor_string_header(true, 3), vec![0b010_00011]);
+        assert_eq!(create_cbor_string_header(false, 3), vec![0b011_00011]);
     }
 
     #[test]
     fn test_create_cbor_string_header_in_all_extended_count_cases() {
-        assert_eq!(
-            create_cbor_string_header(true, 50),
-            vec![0b010_11000, 50]
-        );
+        assert_eq!(create_cbor_string_header(true, 50), vec![0b010_11000, 50]);
         assert_eq!(
             create_cbor_string_header(true, 500),
             vec![0b010_11001, 1, 244]
@@ -65,47 +56,35 @@ mod tests {
         );
         assert_eq!(
             create_cbor_string_header(true, 5000000000),
-            vec![0b010_11011, 0, 0 , 0, 1, 42, 5 , 242, 0]
+            vec![0b010_11011, 0, 0, 0, 1, 42, 5, 242, 0]
         );
     }
 
     #[test]
     fn test_create_cbor_string_header_on_edge_cases() {
-        assert_eq!(
-            create_cbor_string_header(true, 0),
-            vec![0b010_00000]
-        );
-        assert_eq!(
-            create_cbor_string_header(true, 23),
-            vec![0b010_10111]
-        );
-        assert_eq!(
-            create_cbor_string_header(true, 24),
-            vec![0b010_11000, 24]
-        );
-        assert_eq!(
-            create_cbor_string_header(true, 255),
-            vec![0b010_11000, 255]
-        );
+        assert_eq!(create_cbor_string_header(true, 0), vec![0b010_00000]);
+        assert_eq!(create_cbor_string_header(true, 23), vec![0b010_10111]);
+        assert_eq!(create_cbor_string_header(true, 24), vec![0b010_11000, 24]);
+        assert_eq!(create_cbor_string_header(true, 255), vec![0b010_11000, 255]);
         assert_eq!(
             create_cbor_string_header(true, 256),
-            vec![0b010_11001, 1,0]
+            vec![0b010_11001, 1, 0]
         );
         assert_eq!(
             create_cbor_string_header(true, 65535),
-            vec![0b010_11001, 255,255]
+            vec![0b010_11001, 255, 255]
         );
         assert_eq!(
             create_cbor_string_header(true, 65536),
-            vec![0b010_11010, 0,1,0,0]
+            vec![0b010_11010, 0, 1, 0, 0]
         );
         assert_eq!(
             create_cbor_string_header(true, 4294967295),
-            vec![0b010_11010, 255,255,255,255]
+            vec![0b010_11010, 255, 255, 255, 255]
         );
         assert_eq!(
             create_cbor_string_header(true, 4294967296),
-            vec![0b010_11011, 0,0,0,1,0,0,0,0]
+            vec![0b010_11011, 0, 0, 0, 1, 0, 0, 0, 0]
         );
     }
 }

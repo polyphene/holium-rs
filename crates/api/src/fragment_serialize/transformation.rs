@@ -13,7 +13,8 @@ impl HoliumDeserializable for Transformation {
         // CBOR string header may take up to 9 bytes
         // WebAssembly magic code should then take for 4 bytes
         let mut first_bytes = [0u8; 13];
-        data_reader.read(&mut first_bytes)
+        data_reader
+            .read(&mut first_bytes)
             .context("failed to read transformation file")?;
         // Check for the presence of a valid CBOR header
         let expected_magic_number: &[u8] = match first_bytes[0] {
@@ -22,16 +23,18 @@ impl HoliumDeserializable for Transformation {
             0b010_11001 => &first_bytes[3..7],
             0b010_11010 => &first_bytes[5..9],
             0b010_11011 => &first_bytes[9..13],
-            _ => {return Ok(false)},
+            _ => return Ok(false),
         };
         Ok(expected_magic_number == WASM_MAGIC_NUMBER)
     }
 
     fn value_from_bytes(data: &[u8]) -> FragmentedDataDeserResult<Box<Self>> {
-        FragmentedDataDeserResult { value: Box::new(Transformation {}), links: vec![] }
+        FragmentedDataDeserResult {
+            value: Box::new(Transformation {}),
+            links: vec![],
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

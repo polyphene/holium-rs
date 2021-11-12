@@ -2,16 +2,16 @@
 
 mod commands;
 
-use std::{env, fs};
 use std::io::Write;
 use std::path::PathBuf;
+use std::{env, fs};
 
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches, SubCommand, AppSettings};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use console::style;
 use thiserror::Error;
 
-use crate::utils::repo::constants::{HOLIUM_DIR, LOCAL_DIR, INTERPLANETARY_DIR, PORTATIONS_FILE};
+use crate::utils::repo::constants::{HOLIUM_DIR, INTERPLANETARY_DIR, LOCAL_DIR, PORTATIONS_FILE};
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {

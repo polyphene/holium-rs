@@ -4,7 +4,9 @@ use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Result;
 use anyhow::{Context, Error as AnyhowError};
 use cid::Cid;
+use serde_json::map::Map;
 use serde_json::value::Value as JsonValue;
+use serde_json::Number;
 use sk_cbor::values::IntoCborValue;
 use sk_cbor::{cbor_array, cbor_array_vec, cbor_map, cbor_unsigned};
 use std::borrow::Borrow;
@@ -13,8 +15,6 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Cursor;
 use std::marker::PhantomData;
 use std::ops::Deref;
-use serde_json::map::Map;
-use serde_json::Number;
 use std::option::Option::Some;
 
 #[derive(thiserror::Error, Debug)]
@@ -118,9 +118,9 @@ impl From<Selector> for JsonValue {
     fn from(object: Selector) -> Self {
         let (key, child_selector): (&str, JsonValue) = match object {
             Selector::Matcher(child) => (".", child.into()),
-            Selector::ExploreIndex(child) => ("i", {*child}.into()),
-            Selector::ExploreRange(child) => ("r", {*child}.into()),
-            Selector::ExploreUnion(child) => ("|", {*child}.into()),
+            Selector::ExploreIndex(child) => ("i", { *child }.into()),
+            Selector::ExploreRange(child) => ("r", { *child }.into()),
+            Selector::ExploreUnion(child) => ("|", { *child }.into()),
         };
         let mut map = Map::new();
         map.insert(key.to_string(), child_selector);
@@ -208,7 +208,9 @@ impl TryFrom<sk_cbor::Value> for Matcher {
         if let sk_cbor::Value::Map(tuples) = value {
             if let Some((_, label_value)) = tuples.get(0) {
                 if let sk_cbor::Value::TextString(label) = label_value {
-                    return Ok(Matcher { label: Some(label.clone()) });
+                    return Ok(Matcher {
+                        label: Some(label.clone()),
+                    });
                 }
             }
             return Ok(Matcher { label: None });
@@ -258,7 +260,10 @@ impl From<ExploreIndex> for JsonValue {
     fn from(object: ExploreIndex) -> Self {
         let selector: JsonValue = { *object.next }.into();
         let mut map = Map::new();
-        map.insert("i".to_string(), JsonValue::Number(Number::from_f64(object.index as f64).unwrap()));
+        map.insert(
+            "i".to_string(),
+            JsonValue::Number(Number::from_f64(object.index as f64).unwrap()),
+        );
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
     }
@@ -297,14 +302,12 @@ impl TryFrom<sk_cbor::Value> for ExploreIndex {
                             next: Box::new(next_value.clone().try_into()?),
                         });
                     }
-
                 }
             }
         };
         Err(Error::FailedToManipulate.into())
     }
 }
-
 
 /****************
 ExploreRange
@@ -332,8 +335,14 @@ impl From<ExploreRange> for JsonValue {
     fn from(object: ExploreRange) -> Self {
         let selector: JsonValue = { *object.next }.into();
         let mut map = Map::new();
-        map.insert("^".to_string(), JsonValue::Number(Number::from_f64(object.start as f64).unwrap()));
-        map.insert("$".to_string(), JsonValue::Number(Number::from_f64(object.end as f64).unwrap()));
+        map.insert(
+            "^".to_string(),
+            JsonValue::Number(Number::from_f64(object.start as f64).unwrap()),
+        );
+        map.insert(
+            "$".to_string(),
+            JsonValue::Number(Number::from_f64(object.end as f64).unwrap()),
+        );
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
     }
@@ -431,17 +440,14 @@ impl TryFrom<JsonValue> for ExploreUnion {
     }
 }
 
-
 impl TryFrom<sk_cbor::Value> for ExploreUnion {
     type Error = AnyhowError;
     fn try_from(value: sk_cbor::Value) -> Result<Self> {
         if let sk_cbor::Value::Array(vec) = value {
-            let selectors_res: Result<Vec<Selector>> = vec
-                .iter()
-                .map(|v| { v.clone().try_into() })
-                .collect();
+            let selectors_res: Result<Vec<Selector>> =
+                vec.iter().map(|v| v.clone().try_into()).collect();
             let selectors = selectors_res?;
-            return Ok(ExploreUnion(selectors))
+            return Ok(ExploreUnion(selectors));
         };
         Err(Error::FailedToManipulate.into())
     }

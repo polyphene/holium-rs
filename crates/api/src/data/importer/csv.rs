@@ -8,14 +8,16 @@ impl Importable for Vec<StringRecord> {
         let mut vec: Vec<CborValue> = Vec::new();
         for record in self {
             let cbor_value = CborValue::Array(
-                record.iter().map(|v| CborValue::Text(String::from(v))).collect()
+                record
+                    .iter()
+                    .map(|v| CborValue::Text(String::from(v)))
+                    .collect(),
             );
             vec.push(cbor_value);
         }
         CborValue::Array(vec)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -29,7 +31,8 @@ mod tests {
         let mut reader = ReaderBuilder::new()
             .has_headers(false)
             .from_reader("a,b,c\nx,y,z".as_bytes());
-        let records: Vec<StringRecord> = reader.records()
+        let records: Vec<StringRecord> = reader
+            .records()
             .into_iter()
             .filter_map(|record| record.ok())
             .collect();

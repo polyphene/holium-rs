@@ -1,17 +1,16 @@
-use anyhow::{Result, Context};
-use clap::{App, SubCommand, Arg, ArgMatches};
-use crate::utils::local::context::LocalContext;
 use crate::utils::errors::Error::{BinCodeDeserializeFailed, DbOperationFailed};
-use std::str::from_utf8;
-use crate::utils::local::models::source::Source;
-use prettytable::{Table, format};
-use crate::utils::local::helpers::prints::printable_model::PrintableModel;
 use crate::utils::local::context::helpers::db_key_to_str;
+use crate::utils::local::context::LocalContext;
+use crate::utils::local::helpers::prints::printable_model::PrintableModel;
+use crate::utils::local::models::source::Source;
+use anyhow::{Context, Result};
+use clap::{App, Arg, ArgMatches, SubCommand};
+use prettytable::{format, Table};
+use std::str::from_utf8;
 
 /// command
 pub(crate) fn cmd<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("list")
-        .about("List all nodes of this type")
+    SubCommand::with_name("list").about("List all nodes of this type")
 }
 
 /// handler
@@ -19,7 +18,8 @@ pub(crate) fn handle_cmd(matches: &ArgMatches) -> Result<()> {
     // create local context
     let local_context = LocalContext::new()?;
     // iterate through stored objects
-    let objects_result: Result<Vec<Source>> = local_context.sources
+    let objects_result: Result<Vec<Source>> = local_context
+        .sources
         .iter()
         .map(|o| -> Result<Source> {
             let (name_vec, encoded) = o.context(DbOperationFailed)?;

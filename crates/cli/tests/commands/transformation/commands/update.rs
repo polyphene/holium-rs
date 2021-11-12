@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use crate::helpers::repo::setup_repo;
+use crate::helpers::transformation::*;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use predicates::prelude::predicate;
-use crate::helpers::transformation::*;
 
 #[test]
 fn help_available() {
@@ -120,7 +120,6 @@ fn cannot_update_transformation_with_incorrect_json_schema_out() {
         .stderr(predicate::str::contains("json schema"));
 }
 
-
 #[test]
 fn cannot_update_transformation_with_non_valid_json_object_in() {
     // initialize a repository
@@ -138,9 +137,9 @@ fn cannot_update_transformation_with_non_valid_json_object_in() {
         .arg("")
         .assert();
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
 
 #[test]
@@ -160,11 +159,10 @@ fn cannot_update_transformation_with_non_valid_json_object_out() {
         .arg("")
         .assert();
     // check output
-    assert
-        .failure()
-        .stderr(predicate::str::contains("invalid string can not be parsed to json"));
+    assert.failure().stderr(predicate::str::contains(
+        "invalid string can not be parsed to json",
+    ));
 }
-
 
 #[test]
 fn can_update_transformation() {

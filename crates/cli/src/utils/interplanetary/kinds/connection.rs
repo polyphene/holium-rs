@@ -1,15 +1,15 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
+use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::Value;
-use sk_cbor::cbor_map;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::kinds::link::Link;
+use cid::Cid;
 use sk_cbor::cbor_array;
+use sk_cbor::cbor_map;
+use sk_cbor::Value;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -26,7 +26,10 @@ pub struct Connection {
 
 impl Connection {
     pub fn new(tail_selector: Cid, head_selector: Cid) -> Self {
-        Connection { tail_selector, head_selector }
+        Connection {
+            tail_selector,
+            head_selector,
+        }
     }
 }
 
@@ -34,10 +37,7 @@ impl From<Connection> for sk_cbor::Value {
     fn from(object: Connection) -> Self {
         let tail_selector_link: Value = Link(object.tail_selector).into();
         let head_selector_link: Value = Link(object.head_selector).into();
-        let content = cbor_array![
-            tail_selector_link,
-            head_selector_link,
-        ];
+        let content = cbor_array![tail_selector_link, head_selector_link,];
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => content,
@@ -55,7 +55,10 @@ impl TryFrom<sk_cbor::Value> for Connection {
                     if tuple.get(0..2).is_some() {
                         let Link(tail_selector) = Link::try_from(tuple[0].clone())?;
                         let Link(head_selector) = Link::try_from(tuple[1].clone())?;
-                        return Ok(Connection{ tail_selector, head_selector })
+                        return Ok(Connection {
+                            tail_selector,
+                            head_selector,
+                        });
                     }
                 }
             }

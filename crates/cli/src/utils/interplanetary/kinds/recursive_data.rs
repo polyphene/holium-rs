@@ -1,15 +1,15 @@
-use std::io::Cursor;
-use cid::Cid;
-use std::collections::HashMap;
+use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
+use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
+use crate::utils::interplanetary::kinds::link::Link;
 use anyhow::Error as AnyhowError;
 use anyhow::Result;
-use std::convert::{TryInto, TryFrom};
-use sk_cbor::Value;
-use sk_cbor::cbor_map;
+use cid::Cid;
 use sk_cbor::cbor_array_vec;
-use crate::utils::interplanetary::fs::traits::as_ip_block::AsInterplanetaryBlock;
-use crate::utils::interplanetary::fs::constants::block_multicodec::BlockMulticodec;
-use crate::utils::interplanetary::kinds::link::Link;
+use sk_cbor::cbor_map;
+use sk_cbor::Value;
+use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
 #[derive(thiserror::Error, Debug)]
 enum Error {
@@ -23,7 +23,11 @@ pub struct RecursiveData {
 
 impl From<RecursiveData> for sk_cbor::Value {
     fn from(object: RecursiveData) -> Self {
-        let links: Vec<sk_cbor::Value> = object.elements_cids.into_iter().map(|cid| -> sk_cbor::Value { Link(cid).into() }).collect();
+        let links: Vec<sk_cbor::Value> = object
+            .elements_cids
+            .into_iter()
+            .map(|cid| -> sk_cbor::Value { Link(cid).into() })
+            .collect();
         cbor_array_vec!(links)
     }
 }
