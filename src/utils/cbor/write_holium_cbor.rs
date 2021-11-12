@@ -140,24 +140,10 @@ enum HoliumCborNode {
 }
 
 impl HoliumCborNode {
-    fn new() -> Self {
-        HoliumCborNode::NonLeaf(RecursiveNode {
-            index: Default::default(),
-            data: Right(vec![]),
-        })
-    }
-
     fn get_index(&self) -> Option<u64> {
         match self {
             HoliumCborNode::NonLeaf(node) => node.index,
             HoliumCborNode::Leaf(leaf) => Some(leaf.index),
-        }
-    }
-
-    fn is_node(&self) -> bool {
-        match self {
-            HoliumCborNode::NonLeaf(_) => true,
-            _ => false,
         }
     }
 
@@ -194,7 +180,7 @@ impl HoliumCborNode {
                                                 })
                                                 .collect(),
                                         ),
-                                    }));
+                                    }))?;
                                 } else {
                                     node.push_child(HoliumCborNode::Leaf(ScalarNode {
                                         index: explore_index.index,
@@ -202,7 +188,7 @@ impl HoliumCborNode {
                                             .get(0)
                                             .ok_or(WriteError::NoDataInDataSet)?
                                             .clone(),
-                                    }));
+                                    }))?;
                                 }
                             }
                             Selector::ExploreIndex(_) | Selector::ExploreRange(_) => {
@@ -211,7 +197,7 @@ impl HoliumCborNode {
                                     node.push_child(HoliumCborNode::NonLeaf(RecursiveNode {
                                         index: Some(explore_index.index),
                                         data: Right(vec![]),
-                                    }));
+                                    }))?;
                                 }
 
                                 return node
@@ -247,7 +233,7 @@ impl HoliumCborNode {
                             node.push_child(HoliumCborNode::Leaf(ScalarNode {
                                 index: to_set_index,
                                 data: data_set[i].clone(),
-                            }));
+                            }))?;
                         }
                     }
                     _ => return Err(WriteError::RangeSelectionOnLeaf.into()),
