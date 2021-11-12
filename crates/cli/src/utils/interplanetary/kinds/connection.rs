@@ -31,9 +31,9 @@ impl Connection {
 }
 
 impl From<Connection> for sk_cbor::Value {
-    fn from(o: Connection) -> Self {
-        let tail_selector_link: Value = Link(o.tail_selector).into();
-        let head_selector_link: Value = Link(o.head_selector).into();
+    fn from(object: Connection) -> Self {
+        let tail_selector_link: Value = Link(object.tail_selector).into();
+        let head_selector_link: Value = Link(object.head_selector).into();
         let content = cbor_array![
             tail_selector_link,
             head_selector_link,

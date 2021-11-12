@@ -50,9 +50,9 @@ impl Pipeline {
 impl Pipeline {}
 
 impl From<Pipeline> for sk_cbor::Value {
-    fn from(o: Pipeline) -> Self {
-        let vertices = sk_cbor::Value::Array(o.vertices.iter().map(|v| -> Value { v.clone().into() }).collect());
-        let edges = sk_cbor::Value::Array(o.edges.iter().map(|v| -> Value { v.clone().into() }).collect());
+    fn from(object: Pipeline) -> Self {
+        let vertices = sk_cbor::Value::Array(object.vertices.iter().map(|v| -> Value { v.clone().into() }).collect());
+        let edges = sk_cbor::Value::Array(object.edges.iter().map(|v| -> Value { v.clone().into() }).collect());
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "content" => cbor_array![ vertices, edges ],

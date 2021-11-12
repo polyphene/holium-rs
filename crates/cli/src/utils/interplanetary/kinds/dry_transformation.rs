@@ -30,12 +30,12 @@ impl DryTransformation {
 }
 
 impl From<DryTransformation> for sk_cbor::Value {
-    fn from(o: DryTransformation) -> Self {
-        let bytecode_link: Value = Link(o.module_bytecode_envelope_cid).into();
+    fn from(object: DryTransformation) -> Self {
+        let bytecode_link: Value = Link(object.module_bytecode_envelope_cid).into();
         cbor_map! {
             "typedVersion" => DISCRIMINANT_KEY_V0,
             "bytecode" => bytecode_link,
-            "handle" => o.handle,
+            "handle" => object.handle,
         }
     }
 }

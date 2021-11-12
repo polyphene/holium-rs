@@ -11,3 +11,8 @@ pub mod selector;
 pub mod pipeline_edge;
 pub mod pipeline_vertex;
 pub mod pipeline;
+pub mod scalar_data;
+pub mod recursive_data;
+pub mod helpers;
+pub mod scalar_data_envelope;
+pub mod recursive_data_envelope;

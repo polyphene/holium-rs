@@ -42,8 +42,8 @@ impl SelectorEnvelope {
 }
 
 impl From<SelectorEnvelope> for sk_cbor::Value {
-    fn from(o: SelectorEnvelope) -> Self {
-        let selector: sk_cbor::Value = o.0.into();
+    fn from(object: SelectorEnvelope) -> Self {
+        let selector: sk_cbor::Value = object.0.into();
         cbor_map! {
             "selector" => selector
         }
@@ -101,8 +101,8 @@ impl TryFrom<&str> for Selector {
 }
 
 impl From<Selector> for sk_cbor::Value {
-    fn from(o: Selector) -> Self {
-        let (key, child_selector): (&str, sk_cbor::Value) = match o {
+    fn from(object: Selector) -> Self {
+        let (key, child_selector): (&str, sk_cbor::Value) = match object {
             Selector::Matcher(child) => (".", child.into()),
             Selector::ExploreIndex(child) => ("i", { *child }.into()),
             Selector::ExploreRange(child) => ("r", { *child }.into()),
@@ -115,8 +115,8 @@ impl From<Selector> for sk_cbor::Value {
 }
 
 impl From<Selector> for JsonValue {
-    fn from(o: Selector) -> Self {
-        let (key, child_selector): (&str, JsonValue) = match o {
+    fn from(object: Selector) -> Self {
+        let (key, child_selector): (&str, JsonValue) = match object {
             Selector::Matcher(child) => (".", child.into()),
             Selector::ExploreIndex(child) => ("i", {*child}.into()),
             Selector::ExploreRange(child) => ("r", {*child}.into()),
@@ -183,8 +183,8 @@ pub struct Matcher {
 }
 
 impl From<Matcher> for sk_cbor::Value {
-    fn from(o: Matcher) -> Self {
-        if let Some(label) = o.label {
+    fn from(object: Matcher) -> Self {
+        if let Some(label) = object.label {
             cbor_map! {"label" => label}
         } else {
             cbor_map! {}
@@ -193,9 +193,9 @@ impl From<Matcher> for sk_cbor::Value {
 }
 
 impl From<Matcher> for JsonValue {
-    fn from(o: Matcher) -> Self {
+    fn from(object: Matcher) -> Self {
         let mut map = Map::new();
-        if let Some(label) = o.label {
+        if let Some(label) = object.label {
             map.insert("label".to_string(), JsonValue::String(label));
         }
         JsonValue::Object(map)
@@ -245,20 +245,20 @@ pub struct ExploreIndex {
 }
 
 impl From<ExploreIndex> for sk_cbor::Value {
-    fn from(o: ExploreIndex) -> Self {
-        let selector: sk_cbor::Value = { *o.next }.into();
+    fn from(object: ExploreIndex) -> Self {
+        let selector: sk_cbor::Value = { *object.next }.into();
         cbor_map! {
-            "i" => cbor_unsigned!( o.index ),
+            "i" => cbor_unsigned!( object.index ),
             ">" => selector,
         }
     }
 }
 
 impl From<ExploreIndex> for JsonValue {
-    fn from(o: ExploreIndex) -> Self {
-        let selector: JsonValue = { *o.next }.into();
+    fn from(object: ExploreIndex) -> Self {
+        let selector: JsonValue = { *object.next }.into();
         let mut map = Map::new();
-        map.insert("i".to_string(), JsonValue::Number(Number::from_f64(o.index as f64).unwrap()));
+        map.insert("i".to_string(), JsonValue::Number(Number::from_f64(object.index as f64).unwrap()));
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
     }
@@ -318,22 +318,22 @@ pub struct ExploreRange {
 }
 
 impl From<ExploreRange> for sk_cbor::Value {
-    fn from(o: ExploreRange) -> Self {
-        let selector: sk_cbor::Value = { *o.next }.into();
+    fn from(object: ExploreRange) -> Self {
+        let selector: sk_cbor::Value = { *object.next }.into();
         cbor_map! {
-            "^" => cbor_unsigned!( o.start ),
-            "$" => cbor_unsigned!( o.end ),
+            "^" => cbor_unsigned!( object.start ),
+            "$" => cbor_unsigned!( object.end ),
             ">" => selector,
         }
     }
 }
 
 impl From<ExploreRange> for JsonValue {
-    fn from(o: ExploreRange) -> Self {
-        let selector: JsonValue = { *o.next }.into();
+    fn from(object: ExploreRange) -> Self {
+        let selector: JsonValue = { *object.next }.into();
         let mut map = Map::new();
-        map.insert("^".to_string(), JsonValue::Number(Number::from_f64(o.start as f64).unwrap()));
-        map.insert("$".to_string(), JsonValue::Number(Number::from_f64(o.end as f64).unwrap()));
+        map.insert("^".to_string(), JsonValue::Number(Number::from_f64(object.start as f64).unwrap()));
+        map.insert("$".to_string(), JsonValue::Number(Number::from_f64(object.end as f64).unwrap()));
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
     }
@@ -397,9 +397,9 @@ ExploreUnion
 pub struct ExploreUnion(pub Vec<Selector>);
 
 impl From<ExploreUnion> for sk_cbor::Value {
-    fn from(o: ExploreUnion) -> Self {
-        let mut selectors = Vec::with_capacity(o.0.len());
-        for s in o.0 {
+    fn from(object: ExploreUnion) -> Self {
+        let mut selectors = Vec::with_capacity(object.0.len());
+        for s in object.0 {
             let cbor_selector: sk_cbor::Value = s.into();
             selectors.push(cbor_selector);
         }
@@ -408,9 +408,9 @@ impl From<ExploreUnion> for sk_cbor::Value {
 }
 
 impl From<ExploreUnion> for JsonValue {
-    fn from(o: ExploreUnion) -> Self {
-        let mut selectors = Vec::with_capacity(o.0.len());
-        for s in o.0 {
+    fn from(object: ExploreUnion) -> Self {
+        let mut selectors = Vec::with_capacity(object.0.len());
+        for s in object.0 {
             let cbor_selector: JsonValue = s.into();
             selectors.push(cbor_selector);
         }

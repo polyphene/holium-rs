@@ -27,6 +27,7 @@ use crate::utils::interplanetary::kinds::dry_transformation::DryTransformation;
 use crate::utils::interplanetary::kinds::module_bytecode_envelope::ModuleBytecodeEnvelope;
 use crate::utils::interplanetary::kinds::module_bytecode::ModuleBytecode;
 use crate::utils::local::helpers::prints::errors::Error::StructureCreationError;
+use crate::utils::interplanetary::kinds::helpers::holium_data::HoliumInterplanetaryNodeData;
 
 
 /// Ending bytes of any Pipeline interplanetary block
@@ -138,6 +139,17 @@ fn import_vertices(ip_context: &InterplanetaryContext, local_context: &LocalCont
             NodeType::transformation => import_transformation(&ip_context, &local_context, &metadata, &untyped_node_name, &v)?,
             NodeType::source => import_source(&local_context, &metadata, &untyped_node_name)?,
             NodeType::shaper => import_shaper(&local_context, &metadata, &untyped_node_name)?,
+        }
+        // recursively fetch data, and import it
+        if let Some(data_cid) = &v.data {
+            // parse data
+            let data_object = HoliumInterplanetaryNodeData::from_cid(&data_cid, &ip_context)?;
+            let data_vec = data_object.as_bytes()?;
+            // import data into the local area
+            local_context
+                .data
+                .insert(node_typed_name, data_vec)
+                .context(DbOperationFailed)?;
         }
     }
     Ok(vertex_idx_mapping)

@@ -27,11 +27,11 @@ pub struct PipelineEdge {
 }
 
 impl From<PipelineEdge> for sk_cbor::Value {
-    fn from(o: PipelineEdge) -> Self {
-        let connection_link: Value = Link(o.connection_cid).into();
+    fn from(object: PipelineEdge) -> Self {
+        let connection_link: Value = Link(object.connection_cid).into();
         cbor_array![
-            cbor_unsigned!( o.tail_index ),
-            cbor_unsigned!( o.head_index ),
+            cbor_unsigned!( object.tail_index ),
+            cbor_unsigned!( object.head_index ),
             connection_link,
         ]
     }
