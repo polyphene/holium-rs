@@ -3,6 +3,8 @@ name = "holium"
 version = "1.0.0-alpha.1"
 authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
+license = "MIT"
+description = "This crate provides a CLI offering a simple implementation of the Holium protocol."
 
 [dependencies]
 anyhow = "^1.0.42"
