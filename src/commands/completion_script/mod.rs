@@ -1,6 +1,6 @@
 //! Generate tab-completion scripts for different types of shells.
 
-use crate::{build_cli, BIN_NAME};
+use crate::utils::cli::{build_cli, BIN_NAME};
 use anyhow::Result;
 use clap::value_t;
 use clap::Shell;

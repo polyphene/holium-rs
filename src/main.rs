@@ -1,3 +1,7 @@
+//! This crate provides a CLI offering a simple implementation of the [Holium](https://holium.org/) protocol.
+//!
+//! Check out the [official documentation](https://docs.holium.org/) for more information.
+
 #[macro_use]
 extern crate alloc;
 extern crate humansize;
@@ -6,7 +10,8 @@ extern crate prettytable;
 
 use std::env;
 
-use clap::{crate_authors, crate_version, App, AppSettings};
+use crate::utils::cli::build_cli;
+use clap::{App, AppSettings};
 use console::style;
 
 mod commands;
@@ -39,25 +44,4 @@ fn main() {
             1
         }
     })
-}
-
-pub const BIN_NAME: &str = "holium";
-
-pub fn build_cli() -> App<'static, 'static> {
-    App::new("Holium")
-        .bin_name(BIN_NAME)
-        .version(crate_version!())
-        .author(crate_authors!("\n"))
-        .about("Enjoy the power of the Holium Framework")
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommands(vec![
-            commands::completion_script::cmd(),
-            commands::init::cmd(),
-            commands::source::cmd(),
-            commands::shaper::cmd(),
-            commands::transformation::cmd(),
-            commands::connection::cmd(),
-            commands::portation::cmd(),
-            commands::project::cmd(),
-        ])
 }
