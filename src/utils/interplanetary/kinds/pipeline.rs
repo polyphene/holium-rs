@@ -38,7 +38,7 @@ impl Pipeline {
             let content = vertices_content
                 .get(typed_name)
                 .ok_or(Error::FailedToCreatePipelineVertex)?;
-            std::mem::replace(&mut vertices[idx as usize], content.clone());
+            let _ = std::mem::replace(&mut vertices[idx as usize], content.clone());
         }
         Ok(Pipeline { vertices, edges })
     }
