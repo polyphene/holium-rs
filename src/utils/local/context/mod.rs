@@ -100,7 +100,7 @@ impl LocalContext {
         if to_local_area_path.exists() {
             fs::remove_dir_all(&to_local_area_path)?;
         }
-        fs::create_dir_all(&to_local_area_path);
+        fs::create_dir_all(&to_local_area_path)?;
         let new_db = sled::open(&to_local_area_path)?;
         // export and import the db to move it
         let dump = self.db.export();
