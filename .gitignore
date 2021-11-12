@@ -1,0 +1,9 @@
+# Rust ignore
+/target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+
+# IDE ignore
+.idea/

@@ -1,0 +1,40 @@
+# Flow that has 2 possible logics depending on the event:
+#   - "pull_request":
+#     - `cargo workspaces exec cargo publish --dry-run`: Execute a dry run for publication on each crate in the repo, making sure
+#     that publication will be possible on merge
+#   - "push":
+#   - `cargo workspaces exec cargo publish --token ***`: For every crate in our workspace, publish it on crates.io
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+name: Publish
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      # Publication dry-run flow should run on pull request on the `main` branch
+      - uses: actions-rs/cargo@v1
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          command: publish
+          args: --dry-run
+      # Publication flow should run on merge on the `main` branch
+      - uses: actions-rs/cargo@v1
+        if: ${{ github.event_name == 'push' }}
+        with:
+          command: publish
+          args: --token ${{secrets.CARGO_TOKEN}}
