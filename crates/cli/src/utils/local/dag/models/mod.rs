@@ -8,7 +8,7 @@ use crate::utils::errors::Error::{
 };
 use crate::utils::interplanetary::kinds::selector::Selector;
 use crate::utils::local::context::helpers::{
-    build_connection_id, build_node_typed_name, build_portation_id, db_key_to_str, node_data,
+    build_connection_id, build_node_typed_name, build_portation_id, db_key_to_str, get_node_data,
     parse_connection_id, parse_node_typed_name, store_node_output, NodeType,
     PortationDirectionType,
 };
@@ -122,7 +122,9 @@ impl PipelineDag {
         Ok(sorted_nodes)
     }
 
-    /// Check the a [PipelineDg] is healthy then runs the ordered list of node that it contains
+    /// Check the a [PipelineDg] is healthy then runs the ordered list of node that it contains. It
+    /// returns a vector of tuples containing the node typed name and the writen file path of nodes
+    /// that had some export from Holium portation attached to them.
     pub fn run(
         runtime: &mut Runtime,
         local_context: &LocalContext,
@@ -176,7 +178,7 @@ impl PipelineDag {
                 .len()
                 == 0usize
             {
-                data = node_data(local_context, repo_context, node_typed_name)?;
+                data = get_node_data(local_context, repo_context, node_typed_name)?;
             } else {
                 // Retrieve all information about connections so that we are able to form our selected
                 // data
@@ -232,14 +234,11 @@ impl PipelineDag {
                 _ => {}
             }
 
-            // Store data in local context
+            // Store data in local context and execute *to-holium* portation if any.
             let portation_file_path =
                 store_node_output(local_context, repo_context, node_typed_name, &data)?;
-            match portation_file_path {
-                Some(file_path) => {
-                    node_portation_pairs.push((node_typed_name.clone(), file_path.clone()));
-                }
-                None => {}
+            if let Some(file_path) = portation_file_path {
+                node_portation_pairs.push((node_typed_name.clone(), file_path.clone()));
             }
         }
 
@@ -282,7 +281,7 @@ impl PipelineDag {
         let head_selector = Selector::try_from(decoded_connection.head_selector.as_str())?;
 
         // Arrange data to fit head selector
-        let data_at_tail = node_data(local_context, repo_context, tail_typed_name)?;
+        let data_at_tail = get_node_data(local_context, repo_context, tail_typed_name)?;
 
         Ok((connection_id, data_at_tail, tail_selector, head_selector))
     }

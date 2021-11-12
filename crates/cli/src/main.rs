@@ -14,25 +14,11 @@ mod utils;
 
 fn main() {
     // Create CLI matches
-    let matches = App::new("Holium")
-        .bin_name("holium")
-        .version(crate_version!())
-        .author(crate_authors!("\n"))
-        .about("Enjoy the power of the Holium Framework")
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommands(vec![
-            commands::init::cmd(),
-            commands::source::cmd(),
-            commands::shaper::cmd(),
-            commands::transformation::cmd(),
-            commands::connection::cmd(),
-            commands::portation::cmd(),
-            commands::project::cmd(),
-        ])
-        .get_matches();
+    let matches = build_cli().get_matches();
 
     // Match subcommands
     let exec_res = match matches.subcommand() {
+        ("generate-shell-completions", Some(matches)) => commands::completion_script::handle_cmd(matches),
         ("init", Some(matches)) => commands::init::handle_cmd(matches),
         ("source", Some(matches)) => commands::source::handle_cmd(matches),
         ("shaper", Some(matches)) => commands::shaper::handle_cmd(matches),
@@ -51,4 +37,25 @@ fn main() {
             1
         }
     })
+}
+
+pub const BIN_NAME: &str = "holium";
+
+pub fn build_cli() -> App<'static, 'static> {
+    App::new("Holium")
+        .bin_name(BIN_NAME)
+        .version(crate_version!())
+        .author(crate_authors!("\n"))
+        .about("Enjoy the power of the Holium Framework")
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .subcommands(vec![
+            commands::completion_script::cmd(),
+            commands::init::cmd(),
+            commands::source::cmd(),
+            commands::shaper::cmd(),
+            commands::transformation::cmd(),
+            commands::connection::cmd(),
+            commands::portation::cmd(),
+            commands::project::cmd(),
+        ])
 }

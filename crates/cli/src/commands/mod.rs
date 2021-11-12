@@ -5,3 +5,4 @@ pub mod project;
 pub mod shaper;
 pub mod source;
 pub mod transformation;
+pub mod completion_script;

@@ -35,9 +35,9 @@ enum Error {
     NoPipelineNodeWithName(String, String),
     #[error("portation data is invalid for node: {0}")]
     PortationDataInvalid(String),
-    #[error("import via portation failed for node: {0}")]
+    #[error("import to Holium via portation failed for node: {0}")]
     PortationImportFailed(String),
-    #[error("export via portation failed for node: {0}")]
+    #[error("export from Holium via portation failed for node: {0}")]
     PortationExportFailed(String),
 }
 
@@ -168,7 +168,7 @@ pub fn db_key_to_str(k: sled::IVec) -> Result<String> {
 }
 
 /// Helper to get data for a node from a local context
-pub fn node_data(
+pub fn get_node_data(
     local_context: &LocalContext,
     repo_context: &RepositoryContext,
     node_typed_name: &str,
@@ -209,28 +209,24 @@ pub fn store_node_output(
     node_typed_name: &str,
     mut data: &HoliumCbor,
 ) -> Result<Option<String>> {
-    // Try to export with portation
-    let mut portation_file_path: Option<String> = None;
-    let portation = repo_context.portations.get(&build_portation_id(
-        &PortationDirectionType::fromHolium,
-        node_typed_name,
-    ));
-
-    match portation {
-        Some(portation) => {
-            let mut portation_data: HoliumCbor = Vec::new();
-
-            export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
-                .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
-            portation_file_path = Some(portation.file_path.clone());
-        }
-        None => {}
-    }
-
+    // Write data in local context
     local_context
         .data
         .insert(node_typed_name, data.to_vec())
         .context(DbOperationFailed)?;
+
+    // Try to export with portation
+    let mut portation_file_path: Option<String> = None;
+    let res_portation = repo_context.portations.get(&build_portation_id(
+        &PortationDirectionType::fromHolium,
+        node_typed_name,
+    ));
+
+    if let Some(portation) = res_portation {
+        export_from_holium(local_context, portation, &mut std::io::Cursor::new(data))
+            .context(Error::PortationExportFailed(node_typed_name.to_string()))?;
+        portation_file_path = Some(portation.file_path.clone());
+    }
 
     Ok(portation_file_path)
 }
