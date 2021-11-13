@@ -27,7 +27,7 @@ cargo install holium
 
 Contributions, issues and feature requests are welcome!
 
-Feel free to check the dedicated sectino in the documentation. 
+Feel free to check the dedicated section in the documentation. 
 
 ### 🙋 Show your support
 
