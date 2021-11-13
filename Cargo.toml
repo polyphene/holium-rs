@@ -4,7 +4,14 @@ version = "1.0.0-alpha.2"
 authors = ["Polyphene <contact@polyphene.io>"]
 edition = "2018"
 license = "MIT"
-description = "This crate provides a CLI offering a simple implementation of the Holium protocol."
+description = """This crate provides a CLI offering a simple implementation of the Holium protocol.
+For more information, check out the official documentation at https://docs.holium.org ."""
+documentation = "https://docs.holium.org"
+readme = "README.md"
+homepage = "https://holium.org"
+repository = "https://github.com/polyphene/holium-rs"
+keywords = ["holium", "cli", "data", "wasm"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "^1.0.42"
