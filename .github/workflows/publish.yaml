@@ -1,9 +1,9 @@
 # Flow that has 2 possible logics depending on the event:
 #   - "pull_request":
-#     - `cargo workspaces exec cargo publish --dry-run`: Execute a dry run for publication on each crate in the repo, making sure
+#     - `cargo publish --dry-run`: Execute a dry run for publication on each crate in the repo, making sure
 #     that publication will be possible on merge
 #   - "push":
-#   - `cargo workspaces exec cargo publish --token ***`: For every crate in our workspace, publish it on crates.io
+#   - `cargo publish --token ***`: For every crate in our workspace, publish it on crates.io
 
 on:
   pull_request:
