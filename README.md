@@ -1,4 +1,4 @@
-# Welcome to holium 👋
+# Welcome to Holium 👋
 
 [![crates.io](https://img.shields.io/crates/v/holium.svg)](https://crates.io/crates/holium)
 [![dependency status](https://deps.rs/repo/github/polyphene/holium/status.svg)](https://deps.rs/repo/github/polyphene/holium)
