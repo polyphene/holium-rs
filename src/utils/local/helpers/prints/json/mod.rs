@@ -36,7 +36,7 @@ mod test {
         // Non prettify JSON
         let string = "{\"type\": \"array\", \"prefixItems\": [{\"type\": \"string\"}]}";
         // We add indentation and return to line to have a pretty formatting
-        let expected_result = "{\n  \"prefixItems\": [\n    {\n      \"type\": \"string\"\n    }\n  ],\n  \"type\": \"array\"\n}";
+        let expected_result = "{\n  \"type\": \"array\",\n  \"prefixItems\": [\n    {\n      \"type\": \"string\"\n    }\n  ]\n}";
 
         // Format JSON
         let result_string = shorten_prettify_json_literal(string);
