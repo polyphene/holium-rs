@@ -107,9 +107,8 @@ impl Runtime {
         // Because of legacy from SDK we need to convert to Data Node before sending off payload.
         // TODO fix when sdk is corrected with custom serde
         let serde_value: serde_cbor::Value = serde_cbor::from_slice(data).unwrap();
-        let data_tree = crate::utils::run::data::data_tree::Node::new(serde_value);
+        let data_tree = crate::utils::run::data::data_tree::Node::new(serde_value)?;
         let payload_cbor: Vec<u8> = serde_cbor::to_vec(&data_tree).unwrap();
-
         // Get module linear memory
         let memory = self.memory()?;
 
@@ -145,6 +144,7 @@ impl Runtime {
 
         let res_node: crate::utils::run::data::data_tree::Node =
             serde_cbor::from_slice(&node_bytes_payload).unwrap();
+
         Ok(serde_cbor::to_vec(&serde_cbor::Value::from(res_node)).unwrap())
     }
 

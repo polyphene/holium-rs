@@ -1,9 +1,16 @@
 //! Data trees are responsible for recursively holding holium data. Leaves hold scalar CBOR values
 //! while non-leaf nodes point to ordered children.
+use anyhow::Result;
 
 use serde::{Deserialize, Serialize};
 
 use serde_cbor::Value as CborValue;
+
+#[derive(thiserror::Error, Debug)]
+enum Error {
+    #[error("float types are currently unhandled")]
+    FloatUnhandled,
+}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 /// Value held by the leaf of a data tree
@@ -11,7 +18,6 @@ pub(crate) enum Value {
     Null,
     Bool(bool),
     Integer(i128),
-    Float(f64),
     Bytes(Vec<u8>),
     Text(String),
 }
@@ -22,7 +28,6 @@ impl Value {
             Value::Null => CborValue::Null,
             Value::Bool(v) => CborValue::Bool(*v),
             Value::Integer(v) => CborValue::Integer(*v),
-            Value::Float(v) => CborValue::Float(*v),
             Value::Bytes(v) => CborValue::Bytes(v.clone()),
             Value::Text(v) => CborValue::Text(v.clone()),
         }
@@ -38,34 +43,40 @@ pub struct Node {
 
 impl Node {
     /// Create a data tree from a Cbor value
-    pub fn new(src_value: CborValue) -> Self {
-        fn new_leaf(v: Value) -> Node {
-            Node {
+    pub fn new(src_value: CborValue) -> Result<Self> {
+        fn new_leaf(v: Value) -> Result<Node> {
+            Ok(Node {
                 value: Some(v),
                 children: vec![],
-            }
+            })
         }
-        fn new_non_leaf(children: Vec<Node>) -> Node {
-            Node {
+        fn new_non_leaf(children: Vec<Node>) -> Result<Node> {
+            Ok(Node {
                 value: None,
                 children,
-            }
+            })
         }
 
         match src_value {
             CborValue::Null => new_leaf(Value::Null),
             CborValue::Bool(v) => new_leaf(Value::Bool(v)),
             CborValue::Integer(v) => new_leaf(Value::Integer(v)),
-            CborValue::Float(v) => new_leaf(Value::Float(v)),
+            CborValue::Float(v) => Err(Error::FloatUnhandled.into()),
             CborValue::Bytes(v) => new_leaf(Value::Bytes(v)),
             CborValue::Text(v) => new_leaf(Value::Text(v)),
             CborValue::Tag(_, boxed_value) => Self::new(*boxed_value),
-            CborValue::Array(values) => {
-                new_non_leaf(values.into_iter().map(|v| Self::new(v)).collect())
-            }
-            CborValue::Map(tree_map) => {
-                new_non_leaf(tree_map.into_values().map(|v| Self::new(v)).collect())
-            }
+            CborValue::Array(values) => new_non_leaf(
+                values
+                    .into_iter()
+                    .map(|v| Self::new(v))
+                    .collect::<Result<Vec<Node>>>()?,
+            ),
+            CborValue::Map(tree_map) => new_non_leaf(
+                tree_map
+                    .into_values()
+                    .map(|v| Self::new(v))
+                    .collect::<Result<Vec<Node>>>()?,
+            ),
             CborValue::__Hidden => unreachable!(),
         }
     }
@@ -95,7 +106,7 @@ mod tests {
     #[test]
     fn can_represent_null_value() {
         assert_eq!(
-            Node::new(CborValue::Null),
+            Node::new(CborValue::Null).unwrap(),
             Node {
                 value: Some(Value::Null),
                 children: vec![]
@@ -106,14 +117,14 @@ mod tests {
     #[test]
     fn can_represent_boolean_value() {
         assert_eq!(
-            Node::new(CborValue::from(true)),
+            Node::new(CborValue::from(true)).unwrap(),
             Node {
                 value: Some(Value::Bool(true)),
                 children: vec![]
             }
         );
         assert_eq!(
-            Node::new(CborValue::from(false)),
+            Node::new(CborValue::from(false)).unwrap(),
             Node {
                 value: Some(Value::Bool(false)),
                 children: vec![]
@@ -127,7 +138,8 @@ mod tests {
             Node::new(CborValue::from(vec![
                 CborValue::from(vec![CborValue::Null]),
                 CborValue::Null,
-            ])),
+            ]))
+            .unwrap(),
             Node {
                 value: None,
                 children: vec![
@@ -152,7 +164,7 @@ mod tests {
         let mut tree_map = BTreeMap::new();
         tree_map.insert(CborValue::Null, CborValue::Integer(0));
         assert_eq!(
-            Node::new(CborValue::from(tree_map)),
+            Node::new(CborValue::from(tree_map)).unwrap(),
             Node {
                 value: None,
                 children: vec![Node {
@@ -166,7 +178,7 @@ mod tests {
     #[test]
     fn can_import_tagged_value() {
         assert_eq!(
-            Node::new(CborValue::Tag(0, Box::from(CborValue::Null),)),
+            Node::new(CborValue::Tag(0, Box::from(CborValue::Null),)).unwrap(),
             Node {
                 value: Some(Value::Null),
                 children: vec![]
