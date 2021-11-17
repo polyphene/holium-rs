@@ -1,4 +1,4 @@
-# Welcome to holium 👋
+# Welcome to Holium 👋
 
 [![crates.io](https://img.shields.io/crates/v/holium.svg)](https://crates.io/crates/holium)
 [![dependency status](https://deps.rs/repo/github/polyphene/holium/status.svg)](https://deps.rs/repo/github/polyphene/holium)
@@ -27,7 +27,7 @@ cargo install holium
 
 Contributions, issues and feature requests are welcome!
 
-Feel free to check the dedicated sectino in the documentation. 
+Feel free to check the dedicated section in the documentation. 
 
 ### 🙋 Show your support
 
