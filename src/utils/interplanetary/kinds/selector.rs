@@ -255,7 +255,7 @@ impl From<ExploreIndex> for JsonValue {
         let mut map = Map::new();
         map.insert(
             "i".to_string(),
-            JsonValue::Number(Number::from_f64(object.index as f64).unwrap()),
+            JsonValue::Number(Number::from(object.index as u64)),
         );
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
@@ -330,11 +330,11 @@ impl From<ExploreRange> for JsonValue {
         let mut map = Map::new();
         map.insert(
             "^".to_string(),
-            JsonValue::Number(Number::from_f64(object.start as f64).unwrap()),
+            JsonValue::Number(Number::from(object.start as u64)),
         );
         map.insert(
             "$".to_string(),
-            JsonValue::Number(Number::from_f64(object.end as f64).unwrap()),
+            JsonValue::Number(Number::from(object.end as u64)),
         );
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
