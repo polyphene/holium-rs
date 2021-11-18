@@ -330,11 +330,11 @@ impl From<ExploreRange> for JsonValue {
         let mut map = Map::new();
         map.insert(
             "^".to_string(),
-            JsonValue::Number(Number::from(object.start as u64).unwrap()),
+            JsonValue::Number(Number::from(object.start as u64)),
         );
         map.insert(
             "$".to_string(),
-            JsonValue::Number(Number::from(object.end as u64).unwrap()),
+            JsonValue::Number(Number::from(object.end as u64)),
         );
         map.insert(">".to_string(), selector);
         JsonValue::Object(map)
